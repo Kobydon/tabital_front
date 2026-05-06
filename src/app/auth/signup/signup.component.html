@@ -1,0 +1,609 @@
+<div class="signup-container">
+  <div class="signup-card">
+    <!-- Header Section -->
+    <div class="header">
+      <h2>✨ Join Our Platform</h2>
+      <p class="subtitle">Create your account and start your journey with us</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="tabs">
+      <button 
+        [class.active]="activeTab === 'customer'" 
+        (click)="switchTab('customer')"
+        class="tab-btn">
+        <span class="tab-icon">👤</span>
+        Customer
+      </button>
+      <button 
+        [class.active]="activeTab === 'merchant'" 
+        (click)="switchTab('merchant')"
+        class="tab-btn">
+        <span class="tab-icon">🏪</span>
+        Merchant
+      </button>
+    </div>
+
+    <!-- ================= CUSTOMER FORM ================= -->
+    <form *ngIf="activeTab === 'customer' && customerForm" [formGroup]="customerForm" (ngSubmit)="submitCustomer()" class="signup-form">
+      
+      <!-- Personal Information Section -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">👤</span>
+          Personal Information
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Full Name *</label>
+            <input formControlName="full_name" type="text" placeholder="Enter your full name">
+            <small class="error-text" *ngIf="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
+              Full name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Phone Number *</label>
+            <input formControlName="phone" type="tel" placeholder="024XXXXXXX">
+            <small class="error-text" *ngIf="customerForm.get('phone')?.invalid && customerForm.get('phone')?.touched">
+              Valid phone number required (10-15 digits)
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Date of Birth *</label>
+            <input formControlName="dob" type="date">
+            <small class="error-text" *ngIf="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
+              Date of birth is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Ghana Card / Voter ID *</label>
+            <input formControlName="national_id" placeholder="GHA-XXXXXXXXXX-XX">
+            <small class="error-text" *ngIf="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
+              National ID is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">📍</span>
+          Location Details
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>City *</label>
+            <input formControlName="city" placeholder="Accra, Kumasi, etc.">
+            <small class="error-text" *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
+              City is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Ghana Post GPS</label>
+            <input formControlName="gps" placeholder="GA-123-4567">
+          </div>
+
+          <div class="form-field full-width">
+            <label>Full Address *</label>
+            <textarea formControlName="address" placeholder="House number, street, landmark" rows="2"></textarea>
+            <small class="error-text" *ngIf="customerForm.get('address')?.invalid && customerForm.get('address')?.touched">
+              Address is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Employment Section -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">💼</span>
+          Employment & Income
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Job Title</label>
+            <input formControlName="designation" placeholder="e.g., Software Engineer">
+          </div>
+
+          <div class="form-field">
+            <label>Company Name</label>
+            <input formControlName="company" placeholder="Company/organization">
+          </div>
+
+          <div class="form-field">
+            <label>Income Range *</label>
+            <select formControlName="income_range">
+              <option value="">Select income range</option>
+              <option>Below GHS 1,000</option>
+              <option>GHS 1,000 – 3,000</option>
+              <option>GHS 3,000 – 5,000</option>
+              <option>GHS 5,000+</option>
+            </select>
+            <small class="error-text" *ngIf="customerForm.get('income_range')?.invalid && customerForm.get('income_range')?.touched">
+              Income range is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Request Section -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">🛍️</span>
+          Product Request
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Product Name *</label>
+            <input formControlName="product_name" placeholder="What product do you need?">
+            <small class="error-text" *ngIf="customerForm.get('product_name')?.invalid && customerForm.get('product_name')?.touched">
+              Product name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Total Price (GHS) *</label>
+            <input formControlName="total_price" type="number" placeholder="Amount in GHS">
+            <small class="error-text" *ngIf="customerForm.get('total_price')?.invalid && customerForm.get('total_price')?.touched">
+              Valid price is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Payment Plan *</label>
+            <select formControlName="payment_plan">
+              <option value="">Select plan</option>
+              <option>3 Months</option>
+              <option>4 Months</option>
+              <option>6 Months</option>
+            </select>
+            <small class="error-text" *ngIf="customerForm.get('payment_plan')?.invalid && customerForm.get('payment_plan')?.touched">
+              Payment plan is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Payment Frequency *</label>
+            <select formControlName="payment_frequency">
+              <option value="">Select frequency</option>
+              <option>Weekly</option>
+              <option>Monthly</option>
+            </select>
+            <small class="error-text" *ngIf="customerForm.get('payment_frequency')?.invalid && customerForm.get('payment_frequency')?.touched">
+              Payment frequency is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference Section -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">👥</span>
+          Reference Information
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Reference Name *</label>
+            <input formControlName="ref_name" placeholder="Full name of reference">
+            <small class="error-text" *ngIf="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
+              Reference name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Reference Phone *</label>
+            <input formControlName="ref_phone" placeholder="Reference's phone number">
+            <small class="error-text" *ngIf="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
+              Valid reference phone required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Relationship *</label>
+            <input formControlName="ref_relationship" placeholder="Friend, family, colleague">
+            <small class="error-text" *ngIf="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
+              Relationship is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Setup -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">🔐</span>
+          Account Security
+        </h3>
+        <div class="form-field">
+          <label>Create Password *</label>
+          <input formControlName="password" type="password" placeholder="Minimum 6 characters">
+          <small class="error-text" *ngIf="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
+            Password is required (minimum 6 characters)
+          </small>
+        </div>
+      </div>
+
+      <!-- Terms & Conditions -->
+      <div class="terms">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="agree">
+          <span>I agree to the <a href="#" class="terms-link">Terms and Conditions</a> and <a href="#" class="terms-link">Privacy Policy</a></span>
+        </label>
+        <small class="error-text" *ngIf="customerForm.get('agree')?.invalid && customerForm.get('agree')?.touched">
+          You must agree to the terms
+        </small>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="submit-btn" [disabled]="customerForm.invalid || isLoading">
+        <span *ngIf="!isLoading">🚀 Create Customer Account</span>
+        <span *ngIf="isLoading" class="spinner"></span>
+        <span *ngIf="isLoading">Creating account...</span>
+      </button>
+      
+      <!-- Show validation summary -->
+      <div *ngIf="customerForm.invalid && customerForm.touched" class="validation-summary">
+        <small>⚠️ Please fill in all required fields correctly</small>
+      </div>
+    </form>
+
+    <!-- ================= MERCHANT FORM ================= -->
+    <form *ngIf="activeTab === 'merchant' && merchantForm" [formGroup]="merchantForm" (ngSubmit)="submitMerchant()" class="signup-form">
+      
+      <!-- Business Information -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">🏢</span>
+          Business Information
+        </h3>
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label>Business Name *</label>
+            <input formControlName="business_name" placeholder="Official business name">
+            <small class="error-text" *ngIf="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
+              Business name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Business Type</label>
+            <select formControlName="business_type">
+              <option value="">Select business type</option>
+              <option value="retail">Retail</option>
+              <option value="wholesale">Wholesale</option>
+              <option value="manufacturer">Manufacturer</option>
+              <option value="distributor">Distributor</option>
+              <option value="service">Service Provider</option>
+              <option value="ecommerce">E-commerce</option>
+              <option value="restaurant">Restaurant</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Owner Name *</label>
+            <input formControlName="owner_name" placeholder="Full name of owner">
+            <small class="error-text" *ngIf="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
+              Owner name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Registration Number</label>
+            <input formControlName="registration_number" placeholder="Business registration number">
+          </div>
+
+          <div class="form-field">
+            <label>Tax ID</label>
+            <input formControlName="tax_id" placeholder="Tax identification number">
+          </div>
+
+          <div class="form-field">
+            <label>Phone Number *</label>
+            <input formControlName="phone" placeholder="Business contact number">
+            <small class="error-text" *ngIf="merchantForm.get('phone')?.invalid && merchantForm.get('phone')?.touched">
+              Valid phone number required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Business Phone</label>
+            <input formControlName="business_phone" placeholder="Alternative business phone">
+          </div>
+
+          <div class="form-field">
+            <label>Business Email</label>
+            <input formControlName="business_email" type="email" placeholder="business@example.com">
+            <small class="error-text" *ngIf="merchantForm.get('business_email')?.invalid && merchantForm.get('business_email')?.touched">
+              Valid email address required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Website</label>
+            <input formControlName="website" placeholder="https://your-website.com">
+          </div>
+
+          <div class="form-field">
+            <label>City *</label>
+            <input formControlName="city" placeholder="City/Town">
+            <small class="error-text" *ngIf="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
+              City is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Details -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">📍</span>
+          Location Details
+        </h3>
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label>Shop Address *</label>
+            <textarea formControlName="address" placeholder="Full shop address with landmark" rows="2"></textarea>
+            <small class="error-text" *ngIf="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched">
+              Shop address is required
+            </small>
+          </div>
+
+          <div class="form-field full-width">
+            <label>Business Address</label>
+            <textarea formControlName="business_address" placeholder="Alternative business address" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Details -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">📊</span>
+          Business Details
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Product Type *</label>
+            <select formControlName="product_type">
+              <option value="">Select category</option>
+              <option>Electronics</option>
+              <option>Phones & Tablets</option>
+              <option>Fashion & Clothing</option>
+              <option>Home & Furniture</option>
+              <option>Groceries</option>
+              <option>Services</option>
+              <option>Other</option>
+            </select>
+            <small class="error-text" *ngIf="merchantForm.get('product_type')?.invalid && merchantForm.get('product_type')?.touched">
+              Product type is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Physical Shop *</label>
+            <select formControlName="has_shop">
+              <option value="">Select option</option>
+              <option value="yes">Yes, I have a physical shop</option>
+              <option value="no">No, online only</option>
+            </select>
+            <small class="error-text" *ngIf="merchantForm.get('has_shop')?.invalid && merchantForm.get('has_shop')?.touched">
+              Please specify if you have a physical shop
+            </small>
+          </div>
+          
+          <!-- Conditional Shop URL Field -->
+          <div class="form-field full-width" *ngIf="showShopUrl()">
+            <label>Shop URL / Website <span class="optional-badge">Required</span></label>
+            <div class="url-input-wrapper">
+              <span class="url-prefix">🔗</span>
+              <input 
+                formControlName="shop_url" 
+                type="url" 
+                placeholder="https://your-shop.com or https://facebook.com/yourpage"
+                class="url-input">
+            </div>
+            <small class="hint-text">
+              💡 Enter your shop's website URL, social media page, or online store link
+            </small>
+            <small class="error-text" *ngIf="merchantForm.get('shop_url')?.invalid && merchantForm.get('shop_url')?.touched">
+              <span *ngIf="merchantForm.get('shop_url')?.errors?.['required']">Shop URL is required when you have a physical shop</span>
+              <span *ngIf="merchantForm.get('shop_url')?.errors?.['invalidUrl']">Please enter a valid URL (e.g., https://example.com)</span>
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Years in Business *</label>
+            <select formControlName="years_in_business">
+              <option value="">Select range</option>
+              <option>Less than 1 year</option>
+              <option>1–3 years</option>
+              <option>3–5 years</option>
+              <option>5+ years</option>
+            </select>
+            <small class="error-text" *ngIf="merchantForm.get('years_in_business')?.invalid && merchantForm.get('years_in_business')?.touched">
+              Years in business is required
+            </small>
+          </div>
+
+          <div class="form-field full-width">
+            <label>Business Description</label>
+            <textarea formControlName="description" placeholder="Describe your business, products, and services" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Operations -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">⚙️</span>
+          Business Operations
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Offer Credit to Customers? *</label>
+            <select formControlName="offers_credit">
+              <option value="">Select option</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+            <small class="error-text" *ngIf="merchantForm.get('offers_credit')?.invalid && merchantForm.get('offers_credit')?.touched">
+              Please specify if you offer credit
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Average Price Range *</label>
+            <select formControlName="price_range">
+              <option value="">Select range</option>
+              <option>Below GHS 500</option>
+              <option>GHS 500 – 2,000</option>
+              <option>GHS 2,000 – 5,000</option>
+              <option>GHS 5,000+</option>
+            </select>
+            <small class="error-text" *ngIf="merchantForm.get('price_range')?.invalid && merchantForm.get('price_range')?.touched">
+              Price range is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Total Products</label>
+            <input formControlName="total_products" type="number" placeholder="Number of products">
+          </div>
+
+          <div class="form-field">
+            <label>Total Sales (GHS)</label>
+            <input formControlName="total_sales" type="number" placeholder="Total sales amount">
+          </div>
+
+          <div class="form-field">
+            <label>Rating (1-5)</label>
+            <select formControlName="rating">
+              <option value="0">Select rating</option>
+              <option value="1">⭐ 1 Star</option>
+              <option value="2">⭐⭐ 2 Stars</option>
+              <option value="3">⭐⭐⭐ 3 Stars</option>
+              <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+              <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Details -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">💳</span>
+          Payment Details
+        </h3>
+        <div class="form-field">
+          <label>Preferred Payment Method *</label>
+          <select formControlName="payment_method">
+            <option value="">Select method</option>
+            <option>Mobile Money</option>
+            <option>Bank Transfer</option>
+            <option>Both</option>
+          </select>
+          <small class="error-text" *ngIf="merchantForm.get('payment_method')?.invalid && merchantForm.get('payment_method')?.touched">
+            Payment method is required
+          </small>
+        </div>
+
+        <!-- Mobile Money Fields (conditional) -->
+        <div class="form-grid" *ngIf="showMomoFields()">
+          <div class="form-field">
+            <label>MoMo Account Name *</label>
+            <input formControlName="momo_name" placeholder="Name on mobile money">
+            <small class="error-text" *ngIf="merchantForm.get('momo_name')?.invalid && merchantForm.get('momo_name')?.touched">
+              MoMo account name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>MoMo Number *</label>
+            <input formControlName="momo_number" placeholder="024XXXXXXX">
+            <small class="error-text" *ngIf="merchantForm.get('momo_number')?.invalid && merchantForm.get('momo_number')?.touched">
+              Valid MoMo number is required
+            </small>
+          </div>
+        </div>
+
+        <!-- Bank Fields (conditional) -->
+        <div class="form-grid" *ngIf="showBankFields()">
+          <div class="form-field">
+            <label>Bank Name *</label>
+            <input formControlName="bank_name" placeholder="Name of bank">
+            <small class="error-text" *ngIf="merchantForm.get('bank_name')?.invalid && merchantForm.get('bank_name')?.touched">
+              Bank name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Account Name *</label>
+            <input formControlName="account_name" placeholder="Account holder name">
+            <small class="error-text" *ngIf="merchantForm.get('account_name')?.invalid && merchantForm.get('account_name')?.touched">
+              Account name is required
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Account Number *</label>
+            <input formControlName="account_number" placeholder="Account number">
+            <small class="error-text" *ngIf="merchantForm.get('account_number')?.invalid && merchantForm.get('account_number')?.touched">
+              Account number is required
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Security -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <span class="section-icon">🔐</span>
+          Account Security
+        </h3>
+        <div class="form-field">
+          <label>Create Password *</label>
+          <input formControlName="password" type="password" placeholder="Minimum 6 characters">
+          <small class="error-text" *ngIf="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
+            Password is required (minimum 6 characters)
+          </small>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div class="terms">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="agree">
+          <span>I agree to the <a href="#" class="terms-link">Partnership Terms</a> and <a href="#" class="terms-link">Merchant Agreement</a></span>
+        </label>
+        <small class="error-text" *ngIf="merchantForm.get('agree')?.invalid && merchantForm.get('agree')?.touched">
+          You must agree to the terms
+        </small>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="submit-btn" [disabled]="merchantForm.invalid || isLoading">
+        <span *ngIf="!isLoading">🏪 Register Business</span>
+        <span *ngIf="isLoading" class="spinner"></span>
+        <span *ngIf="isLoading">Registering...</span>
+      </button>
+      
+      <!-- Show validation summary -->
+      <div *ngIf="merchantForm.invalid && merchantForm.touched" class="validation-summary">
+        <small>⚠️ Please fill in all required fields correctly</small>
+      </div>
+    </form>
+
+    <!-- Login Link -->
+    <p class="login-link">
+      Already have an account?
+      <a routerLink="/login">Sign in →</a>
+    </p>
+  </div>
+</div>

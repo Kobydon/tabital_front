@@ -1,0 +1,52 @@
+<!-- admin/dashboard/dashboard.component.html -->
+<div class="dashboard-container">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Users</h3>
+      <p class="stat-number">{{ stats.total }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Customers</h3>
+      <p class="stat-number">{{ stats.customers }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Merchants</h3>
+      <p class="stat-number">{{ stats.merchants }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Pending</h3>
+      <p class="stat-number">{{ stats.pending }}</p>
+    </div>
+  </div>
+
+  <div class="users-table" *ngIf="!loading">
+    <h2>Pending Approvals</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th>
+          <th>Phone</th>
+  
+          <th>City </th>
+          <th>Income Range</th>
+                  <th>Role</th> 
+          <th>Joined</th>
+          <th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.full_name || user.business_name }}</td>
+          <td>{{ user.phone }}</td>
+          <td>{{ user.city }}</td>
+          <td>{{ user.income_range }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{user.created_at | date:'short'}}</td>
+          
+          <td>
+            <button class="approve" (click)="approve(user.id)">Approve</button>
+            <button class="reject" (click)="reject(user.id)">Reject</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

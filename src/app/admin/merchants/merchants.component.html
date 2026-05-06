@@ -1,0 +1,507 @@
+<div class="merchants-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🏪</span>
+        Merchants Management
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ filteredMerchants.length }}</span>
+        <span class="stat-label">Total Merchants</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="export-btn" (click)="exportToCSV()">
+        📥 Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Search and Filter Bar -->
+  <div class="filter-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search by Merchant ID, business name, owner, phone or city..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; onSearchChange()">✕</button>
+    </div>
+
+    <div class="filter-actions">
+      <div class="status-filters">
+        <button
+          *ngFor="let status of ['all', 'active', 'pending', 'inactive', 'rejected']"
+          class="filter-btn"
+          [class.active]="selectedStatus === status"
+          (click)="onStatusChange(status)"
+        >
+          <span class="status-icon">{{ getStatusIcon(status) }}</span>
+          {{ status | titlecase }}
+        </button>
+      </div>
+      
+      <div class="business-type-filter">
+        <select 
+          class="business-type-select" 
+          [(ngModel)]="selectedBusinessType" 
+          (ngModelChange)="onBusinessTypeChange(selectedBusinessType)"
+        >
+          <option *ngFor="let option of businessTypeOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      
+      <button *ngIf="searchTerm || selectedStatus !== 'all' || selectedBusinessType !== 'all'" class="reset-btn" (click)="resetFilters()">
+        Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading merchants...</p>
+  </div>
+
+  <!-- Desktop Table View -->
+  <div class="table-wrapper" *ngIf="!loading && !isMobile && filteredMerchants.length > 0">
+    <table class="merchants-table">
+      <thead>
+        <tr>
+          <th (click)="sort('merchant_id')" class="sortable">
+            Merchant ID <span class="sort-icon">{{ getSortIcon('merchant_id') }}</span>
+          </th>
+          <th (click)="sort('business_name')" class="sortable">
+            Business <span class="sort-icon">{{ getSortIcon('business_name') }}</span>
+          </th>
+          <th (click)="sort('owner_name')" class="sortable">
+            Owner <span class="sort-icon">{{ getSortIcon('owner_name') }}</span>
+          </th>
+          <th (click)="sort('phone')" class="sortable">
+            Contact <span class="sort-icon">{{ getSortIcon('phone') }}</span>
+          </th>
+          <th (click)="sort('business_type')" class="sortable">
+            Type <span class="sort-icon">{{ getSortIcon('business_type') }}</span>
+          </th>
+          <th (click)="sort('city')" class="sortable">
+            Location <span class="sort-icon">{{ getSortIcon('city') }}</span>
+          </th>
+          <th (click)="sort('status')" class="sortable">
+            Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+          </th>
+          <th (click)="sort('verified')" class="sortable">
+            Verified <span class="sort-icon">{{ getSortIcon('verified') }}</span>
+          </th>
+          <th (click)="sort('created_at')" class="sortable">
+            Joined <span class="sort-icon">{{ getSortIcon('created_at') }}</span>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let merchant of paginatedMerchants">
+          <td class="merchant-id-cell">
+            <span class="merchant-id-badge">{{ merchant.merchant_id || 'N/A' }}</span>
+          </td>
+          <td class="business-info">
+            <div class="avatar" [style.background]="getAvatarGradient(merchant.id)">
+              {{ getInitials(merchant.business_name) }}
+            </div>
+            <div class="business-details">
+              <div class="business-name">{{ merchant.business_name }}</div>
+              <div class="business-reg">{{ merchant.registration_number || 'No Reg Number' }}</div>
+            </div>
+           </td>
+          <td class="owner-info">
+            <div class="owner-name">{{ merchant.owner_name || 'N/A' }}</div>
+            <div class="owner-contact">{{ merchant.phone }}</div>
+           </td>
+          <td class="contact-info">
+            <div class="phone">{{ merchant.phone }}</div>
+            <div class="email">{{ generateEmail(merchant) }}</div>
+            <div class="business-phone" *ngIf="merchant.business_phone">{{ merchant.business_phone }}</div>
+           </td>
+          <td>
+            <span class="business-type-badge">
+              {{ getBusinessTypeIcon(merchant.business_type) }}
+              {{ formatBusinessType(merchant.business_type) }}
+            </span>
+           </td>
+          <td>
+            <div class="city">{{ merchant.city || 'N/A' }}</div>
+            <div class="address">{{ getShortAddress(merchant.address) }}</div>
+           </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(merchant.status)">
+              <span class="status-icon">{{ getStatusIcon(merchant.status) }}</span>
+              {{ merchant.status }}
+            </span>
+           </td>
+          <td>
+            <span class="verified-badge" [class]="getVerifiedClass(merchant.verified)">
+              {{ getVerifiedBadge(merchant.verified) }}
+            </span>
+           </td>
+          <td class="date-cell">{{ formatDate(merchant.created_at) }}</td>
+          <td class="actions">
+            <button class="action-btn view" (click)="viewMerchantDetails(merchant)" title="View Details">
+              👁️
+            </button>
+            <button class="action-btn edit" (click)="openEditModal(merchant)" title="Edit">
+              ✏️
+            </button>
+            <button *ngIf="!merchant.verified" class="action-btn verify" (click)="verifyMerchant()" title="Verify">
+              ✓
+            </button>
+            <button class="action-btn delete" (click)="openDeleteModal(merchant)" title="Delete">
+              🗑️
+            </button>
+           </td>
+         </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination Desktop -->
+    <div class="pagination">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        ← Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-cards" *ngIf="!loading && isMobile && filteredMerchants.length > 0">
+    <div
+      *ngFor="let merchant of paginatedMerchants"
+      class="merchant-card"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd($event, merchant)"
+    >
+      <div class="card-header">
+        <div class="avatar-large" [style.background]="getAvatarGradient(merchant.id)">
+          {{ getInitials(merchant.business_name) }}
+        </div>
+        <div class="card-title">
+          <h3>{{ merchant.business_name }}</h3>
+          <span class="merchant-id-badge small">{{ merchant.merchant_id || 'No ID' }}</span>
+          <span class="status-badge" [class]="getStatusClass(merchant.status)">
+            {{ getStatusIcon(merchant.status) }} {{ merchant.status }}
+          </span>
+        </div>
+        <button class="menu-btn" (click)="$event.stopPropagation(); onSwipeLeft(merchant)">
+          ⋮
+        </button>
+      </div>
+      
+      <div class="card-details">
+        <div class="detail-item">
+          <span class="detail-label">🆔 Merchant ID:</span>
+          <span class="detail-value">{{ merchant.merchant_id || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">👤 Owner:</span>
+          <span class="detail-value">{{ merchant.owner_name || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">📱 Phone:</span>
+          <span class="detail-value">{{ merchant.phone }}</span>
+        </div>
+        <div class="detail-item" *ngIf="merchant.business_phone">
+          <span class="detail-label">📞 Business Phone:</span>
+          <span class="detail-value">{{ merchant.business_phone }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">📧 Email:</span>
+          <span class="detail-value">{{ generateEmail(merchant) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">🏢 Business Type:</span>
+          <span class="detail-value">{{ formatBusinessType(merchant.business_type) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">📍 Location:</span>
+          <span class="detail-value">
+            {{ merchant.city || 'N/A' }}{{ merchant.address ? ', ' + getShortAddress(merchant.address) : '' }}
+          </span>
+        </div>
+        <div class="detail-item" *ngIf="merchant.business_address">
+          <span class="detail-label">🏢 Business Address:</span>
+          <span class="detail-value">{{ getShortAddress(merchant.business_address) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">✅ Verification:</span>
+          <span class="detail-value">{{ getVerifiedBadge(merchant.verified) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">📅 Joined:</span>
+          <span class="detail-value">{{ formatDate(merchant.created_at) }}</span>
+        </div>
+      </div>
+      
+      <div class="card-footer" *ngIf="merchant.registration_number || merchant.tax_id">
+        <div class="reg-info" *ngIf="merchant.registration_number">
+          <span class="detail-label">📋 Reg Number:</span>
+          <span class="detail-value">{{ merchant.registration_number }}</span>
+        </div>
+        <div class="tax-info" *ngIf="merchant.tax_id">
+          <span class="detail-label">🔖 Tax ID:</span>
+          <span class="detail-value">{{ merchant.tax_id }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Pagination -->
+    <div class="mobile-pagination">
+      <button class="mobile-page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        ←
+      </button>
+      <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+      <button class="mobile-page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        →
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredMerchants.length === 0" class="empty-state">
+    <div class="empty-icon">🏪</div>
+    <p>No merchants found</p>
+    <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+  </div>
+
+  <!-- Merchant Detail Modal -->
+  <div class="modal" *ngIf="showDetailModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Merchant Details</h2>
+        <button class="close-modal" (click)="closeModals()">✕</button>
+      </div>
+      <div *ngIf="selectedMerchant" class="modal-body">
+        <div class="detail-section">
+          
+          <!-- Merchant ID Section -->
+          <div class="detail-group">
+            <h3>🆔 Merchant Identification</h3>
+            <div class="detail-row">
+              <strong>Merchant ID:</strong>
+              <span class="merchant-id-badge">{{ selectedMerchant.merchant_id || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>System ID:</strong>
+              <span>{{ selectedMerchant.id }}</span>
+            </div>
+          </div>
+          
+          <!-- Business Information -->
+          <div class="detail-group">
+            <h3>🏢 Business Information</h3>
+            <div class="detail-row">
+              <strong>Business Name:</strong>
+              <span>{{ selectedMerchant.business_name || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Owner Name:</strong>
+              <span>{{ selectedMerchant.owner_name || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Business Type:</strong>
+              <span>{{ formatBusinessType(selectedMerchant.business_type) }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Registration Number:</strong>
+              <span>{{ selectedMerchant.registration_number || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Tax ID:</strong>
+              <span>{{ selectedMerchant.tax_id || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Years in Business:</strong>
+              <span>{{ selectedMerchant.years_in_business || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.description">
+              <strong>Description:</strong>
+              <span>{{ selectedMerchant.description }}</span>
+            </div>
+          </div>
+          
+          <!-- Contact Information -->
+          <div class="detail-group">
+            <h3>📞 Contact Information</h3>
+            <div class="detail-row">
+              <strong>Primary Phone:</strong>
+              <span>{{ selectedMerchant.phone || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.business_phone">
+              <strong>Business Phone:</strong>
+              <span>{{ selectedMerchant.business_phone }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.business_email">
+              <strong>Business Email:</strong>
+              <span>{{ selectedMerchant.business_email }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.website">
+              <strong>Website:</strong>
+              <span>
+                <a href="{{ selectedMerchant.website }}" target="_blank">{{ selectedMerchant.website }}</a>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Location Information -->
+          <div class="detail-group">
+            <h3>📍 Location Information</h3>
+            <div class="detail-row">
+              <strong>City:</strong>
+              <span>{{ selectedMerchant.city || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Shop Address:</strong>
+              <span>{{ selectedMerchant.address || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.business_address">
+              <strong>Business Address:</strong>
+              <span>{{ selectedMerchant.business_address }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.gps">
+              <strong>GPS Location:</strong>
+              <span>{{ selectedMerchant.gps }}</span>
+            </div>
+          </div>
+          
+          <!-- Business Operations -->
+          <div class="detail-group">
+            <h3>⚙️ Business Operations</h3>
+            <div class="detail-row">
+              <strong>Product Type:</strong>
+              <span>{{ selectedMerchant.product_type || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Physical Shop:</strong>
+              <span>{{ selectedMerchant.has_shop === 'yes' ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.shop_url">
+              <strong>Shop URL:</strong>
+              <span>
+                <a href="{{ selectedMerchant.shop_url }}" target="_blank">{{ selectedMerchant.shop_url }}</a>
+              </span>
+            </div>
+            <div class="detail-row">
+              <strong>Offers Credit:</strong>
+              <span>{{ selectedMerchant.offers_credit || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Price Range:</strong>
+              <span>{{ selectedMerchant.price_range || 'N/A' }}</span>
+            </div>
+          </div>
+          
+          <!-- Payment Details -->
+          <div class="detail-group">
+            <h3>💳 Payment Details</h3>
+            <div class="detail-row">
+              <strong>Payment Method:</strong>
+              <span>{{ selectedMerchant.payment_method || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.momo_name">
+              <strong>MoMo Account Name:</strong>
+              <span>{{ selectedMerchant.momo_name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.momo_number">
+              <strong>MoMo Number:</strong>
+              <span>{{ selectedMerchant.momo_number }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.bank_name">
+              <strong>Bank Name:</strong>
+              <span>{{ selectedMerchant.bank_name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.account_name">
+              <strong>Account Name:</strong>
+              <span>{{ selectedMerchant.account_name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.account_number">
+              <strong>Account Number:</strong>
+              <span>{{ selectedMerchant.account_number }}</span>
+            </div>
+          </div>
+          
+          <!-- Account Information -->
+          <div class="detail-group">
+            <h3>🔐 Account Information</h3>
+            <div class="detail-row">
+              <strong>Status:</strong>
+              <span class="status-badge" [class]="getStatusClass(selectedMerchant.status)">
+                {{ getStatusIcon(selectedMerchant.status) }} {{ selectedMerchant.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <strong>Verification:</strong>
+              <span class="verified-badge" [class]="getVerifiedClass(selectedMerchant.verified)">
+                {{ getVerifiedBadge(selectedMerchant.verified) }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.payment_plan">
+              <strong>Payment Plan:</strong>
+              <span>{{ selectedMerchant.payment_plan }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.income_range">
+              <strong>Income Range:</strong>
+              <span>{{ selectedMerchant.income_range }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Joined Date:</strong>
+              <span>{{ formatDate(selectedMerchant.created_at) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.total_products">
+              <strong>Total Products:</strong>
+              <span>{{ selectedMerchant.total_products }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.total_sales">
+              <strong>Total Sales:</strong>
+              <span>{{ formatCurrency(selectedMerchant.total_sales) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedMerchant.rating && selectedMerchant.rating > 0">
+              <strong>Rating:</strong>
+              <span>⭐ {{ selectedMerchant.rating }}/5</span>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeModals()">Close</button>
+        <button class="btn-edit" (click)="openEditModal(selectedMerchant!)">Edit Merchant</button>
+        <button *ngIf="selectedMerchant && !selectedMerchant.verified" class="btn-verify" (click)="verifyMerchant()">Verify Merchant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Merchant Modal (same as before) -->
+  <!-- ... keep existing edit modal ... -->
+
+  <!-- Delete Confirmation Modal (same as before) -->
+  <!-- ... keep existing delete modal ... -->
+
+  <!-- Mobile Action Sheet (same as before) -->
+  <!-- ... keep existing action sheet ... -->
+  
+</div>

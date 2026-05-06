@@ -1,0 +1,49 @@
+<div class="login-container">
+  <div class="login-card">
+    <h2>✨ Welcome Back</h2>
+    <div class="subtitle">Sign in to continue your journey</div>
+
+    <form [formGroup]="form" (ngSubmit)="login()">
+      <!-- Phone Input with Icon -->
+      <div class="input-group">
+        <span class="input-icon">📱</span>
+        <input 
+          formControlName="phone" 
+          placeholder="Phone Number"
+          type="tel"
+          autocomplete="tel">
+      </div>
+
+      <!-- Password Input with Icon -->
+      <div class="input-group">
+        <span class="input-icon">🔒</span>
+        <input 
+          type="password" 
+          formControlName="password" 
+          placeholder="Password"
+          autocomplete="current-password">
+      </div>
+
+      <!-- Error Message -->
+      <div class="error" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <!-- Login Button with Loading State -->
+      <button 
+        type="submit" 
+        class="login-btn"
+        [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        <span *ngIf="!loading">🚀 Login</span>
+        <span *ngIf="loading">Logging in...</span>
+      </button>
+    </form>
+
+    <!-- Signup Link -->
+    <p class="link">
+      New to our platform?
+      <a routerLink="/signup">Create an account →</a>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,614 @@
+<div class="transactions-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">💸</span>
+        Transactions
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ filteredTransactions.length }}</span>
+        <span class="stat-label">Total Transactions</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="create-btn" (click)="openCreateModal()">
+        <span class="plus-icon">+</span> New Transaction
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon purple">💰</div>
+      <div class="stat-info">
+        <h3>{{ formatCurrency(stats.total_amount) }}</h3>
+        <p>Total Volume</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">📊</div>
+      <div class="stat-info">
+        <h3>{{ stats.total_transactions }}</h3>
+        <p>Total Transactions</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">⏳</div>
+      <div class="stat-info">
+        <h3>{{ stats.pending }}</h3>
+        <p>Pending</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-info">
+        <h3>{{ stats.completed }}</h3>
+        <p>Completed</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter Bar -->
+  <div class="filter-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search by Transaction ID, Product, Customer or Merchant..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; onSearchChange()">✕</button>
+    </div>
+
+    <div class="filter-actions">
+      <div class="filter-group">
+        <label>Status</label>
+        <div class="status-filters">
+          <button
+            *ngFor="let option of statusOptions"
+            class="filter-btn"
+            [class.active]="selectedStatus === option.value"
+            (click)="selectedStatus = option.value; onStatusChange()"
+          >
+            <span class="filter-icon">{{ option.icon }}</span>
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Payment Status</label>
+        <div class="payment-filters">
+          <button
+            *ngFor="let option of paymentStatusOptions"
+            class="filter-btn"
+            [class.active]="selectedPaymentStatus === option.value"
+            (click)="selectedPaymentStatus = option.value; onPaymentStatusChange()"
+          >
+            <span class="filter-icon">{{ option.icon }}</span>
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="date-range">
+        <div class="date-input">
+          <span class="date-icon">📅</span>
+          <input type="date" [(ngModel)]="startDate" (change)="onDateChange()" placeholder="Start Date">
+        </div>
+        <span class="date-separator">to</span>
+        <div class="date-input">
+          <span class="date-icon">📅</span>
+          <input type="date" [(ngModel)]="endDate" (change)="onDateChange()" placeholder="End Date">
+        </div>
+      </div>
+
+      <button *ngIf="searchTerm || selectedStatus !== 'all' || selectedPaymentStatus !== 'all' || startDate || endDate" 
+              class="reset-btn" (click)="resetFilters()">
+        Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Desktop Table View -->
+  <div class="table-wrapper" *ngIf="!loading && !isMobile && filteredTransactions.length > 0">
+    <table class="transactions-table">
+      <thead>
+        <tr>
+          <th (click)="sort('transaction_id')" class="sortable">
+            Transaction ID <span class="sort-icon">{{ getSortIcon('transaction_id') }}</span>
+          </th>
+          <th (click)="sort('product_name')" class="sortable">
+            Product <span class="sort-icon">{{ getSortIcon('product_name') }}</span>
+          </th>
+          <th (click)="sort('amount')" class="sortable">
+            Amount <span class="sort-icon">{{ getSortIcon('amount') }}</span>
+          </th>
+          <th (click)="sort('customer_name')" class="sortable">
+            Customer <span class="sort-icon">{{ getSortIcon('customer_name') }}</span>
+          </th>
+          <th (click)="sort('merchant_name')" class="sortable">
+            Merchant <span class="sort-icon">{{ getSortIcon('merchant_name') }}</span>
+          </th>
+          <th (click)="sort('status')" class="sortable">
+            Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+          </th>
+          <th (click)="sort('payment_status')" class="sortable">
+            Payment <span class="sort-icon">{{ getSortIcon('payment_status') }}</span>
+          </th>
+          <th (click)="sort('transaction_date')" class="sortable">
+            Date <span class="sort-icon">{{ getSortIcon('transaction_date') }}</span>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let transaction of paginatedTransactions">
+          <td class="transaction-id">
+            <span class="id-badge">{{ transaction.transaction_id }}</span>
+          </td>
+          <td class="product-info">
+            <div class="product-name">{{ transaction.product_name }}</div>
+            <div class="product-qty">Qty: {{ transaction.quantity }}</div>
+          </td>
+          <td class="amount">{{ formatCurrency(transaction.amount) }}</td>
+          <td class="customer-info">
+            <div class="customer-name">{{ transaction.customer_name }}</div>
+            <div class="customer-phone">{{ transaction.customer_phone }}</div>
+          </td>
+          <td class="merchant-info">
+            <div class="merchant-name">{{ transaction.merchant_name }}</div>
+            <div class="merchant-phone">{{ transaction.merchant_phone }}</div>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(transaction.status)">
+              <span class="status-icon">{{ getStatusIcon(transaction.status) }}</span>
+              {{ transaction.status }}
+            </span>
+          </td>
+          <td>
+            <span class="payment-badge" [class]="getPaymentStatusClass(transaction.payment_status)">
+              <span class="payment-icon">{{ getPaymentStatusIcon(transaction.payment_status) }}</span>
+              {{ transaction.payment_status }}
+            </span>
+          </td>
+          <td class="date-cell">{{ formatDate(transaction.transaction_date) }}</td>
+          <td class="actions">
+            <button class="action-btn view" (click)="viewTransactionDetails(transaction)" title="View Details">
+              👁️
+            </button>
+            <button class="action-btn edit" (click)="openUpdateModal(transaction)" title="Update Status">
+              ✏️
+            </button>
+            <button class="action-btn delete" (click)="openDeleteModal(transaction)" title="Delete">
+              🗑️
+            </button>
+          </td>
+        </tr>
+      </tbody>
+     </table>
+
+    <!-- Pagination Desktop -->
+    <div class="pagination">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        ← Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="mobile-cards" *ngIf="!loading && isMobile && filteredTransactions.length > 0">
+    <div
+      *ngFor="let transaction of paginatedTransactions"
+      class="transaction-card"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd($event, transaction)"
+    >
+      <div class="card-header">
+        <div class="card-id">
+          <span class="id-badge">{{ transaction.transaction_id }}</span>
+        </div>
+        <button class="menu-btn" (click)="$event.stopPropagation(); onSwipeLeft(transaction)">
+          ⋮
+        </button>
+      </div>
+      
+      <div class="card-product">
+        <h4>{{ transaction.product_name }}</h4>
+        <span class="product-qty">Quantity: {{ transaction.quantity }}</span>
+      </div>
+      
+      <div class="card-amount">
+        <span class="amount-label">Total Amount</span>
+        <span class="amount-value">{{ formatCurrency(transaction.amount) }}</span>
+      </div>
+      
+      <div class="card-parties">
+        <div class="party customer">
+          <span class="party-icon">👤</span>
+          <div class="party-info">
+            <span class="party-label">Customer</span>
+            <span class="party-name">{{ transaction.customer_name }}</span>
+            <span class="party-contact">{{ transaction.customer_phone }}</span>
+          </div>
+        </div>
+        <div class="party-arrow">→</div>
+        <div class="party merchant">
+          <span class="party-icon">🏪</span>
+          <div class="party-info">
+            <span class="party-label">Merchant</span>
+            <span class="party-name">{{ transaction.merchant_name }}</span>
+            <span class="party-contact">{{ transaction.merchant_phone }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-statuses">
+        <div class="status-item">
+          <span class="status-label">Transaction</span>
+          <span class="status-badge" [class]="getStatusClass(transaction.status)">
+            {{ getStatusIcon(transaction.status) }} {{ transaction.status }}
+          </span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Payment</span>
+          <span class="payment-badge" [class]="getPaymentStatusClass(transaction.payment_status)">
+            {{ getPaymentStatusIcon(transaction.payment_status) }} {{ transaction.payment_status }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="card-date">
+        <span class="date-icon">📅</span>
+        {{ formatDate(transaction.transaction_date) }}
+      </div>
+    </div>
+
+    <!-- Mobile Pagination -->
+    <div class="mobile-pagination">
+      <button class="mobile-page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        ←
+      </button>
+      <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+      <button class="mobile-page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        →
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredTransactions.length === 0" class="empty-state">
+    <div class="empty-icon">💸</div>
+    <h3>No transactions found</h3>
+    <p>Try adjusting your search or filters</p>
+    <button class="create-btn" (click)="openCreateModal()">Create New Transaction</button>
+  </div>
+
+  <!-- Transaction Detail Modal -->
+  <div class="modal" *ngIf="showDetailModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Transaction Details</h2>
+        <button class="close-modal" (click)="closeModals()">✕</button>
+      </div>
+      <div *ngIf="selectedTransaction" class="modal-body">
+        <div class="detail-section">
+          
+          <!-- Transaction ID -->
+          <div class="detail-group highlight">
+            <div class="detail-row">
+              <strong>Transaction ID:</strong>
+              <span class="id-badge">{{ selectedTransaction.transaction_id }}</span>
+            </div>
+          </div>
+          
+          <!-- Product Information -->
+          <div class="detail-group">
+            <h3>📦 Product Information</h3>
+            <div class="detail-row">
+              <strong>Product Name:</strong>
+              <span>{{ selectedTransaction.product_name }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.product_description">
+              <strong>Description:</strong>
+              <span>{{ selectedTransaction.product_description }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Quantity:</strong>
+              <span>{{ selectedTransaction.quantity }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Amount:</strong>
+              <span class="amount-highlight">{{ formatCurrency(selectedTransaction.amount) }}</span>
+            </div>
+          </div>
+          
+          <!-- Parties Information -->
+          <div class="detail-group">
+            <h3>👥 Parties Involved</h3>
+            <div class="detail-row">
+              <strong>Customer:</strong>
+              <span>{{ selectedTransaction.customer_name }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Customer Phone:</strong>
+              <span>{{ selectedTransaction.customer_phone }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Merchant:</strong>
+              <span>{{ selectedTransaction.merchant_name }}</span>
+            </div>
+            <div class="detail-row">
+              <strong>Merchant Phone:</strong>
+              <span>{{ selectedTransaction.merchant_phone }}</span>
+            </div>
+          </div>
+          
+          <!-- Status Information -->
+          <div class="detail-group">
+            <h3>📊 Status Information</h3>
+            <div class="detail-row">
+              <strong>Transaction Status:</strong>
+              <span class="status-badge" [class]="getStatusClass(selectedTransaction.status)">
+                {{ getStatusIcon(selectedTransaction.status) }} {{ selectedTransaction.status }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <strong>Payment Status:</strong>
+              <span class="payment-badge" [class]="getPaymentStatusClass(selectedTransaction.payment_status)">
+                {{ getPaymentStatusIcon(selectedTransaction.payment_status) }} {{ selectedTransaction.payment_status }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.payment_method">
+              <strong>Payment Method:</strong>
+              <span>{{ selectedTransaction.payment_method }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.payment_reference">
+              <strong>Payment Reference:</strong>
+              <span>{{ selectedTransaction.payment_reference }}</span>
+            </div>
+          </div>
+          
+          <!-- Delivery Information -->
+          <div class="detail-group" *ngIf="selectedTransaction.delivery_address">
+            <h3>🚚 Delivery Information</h3>
+            <div class="detail-row">
+              <strong>Delivery Address:</strong>
+              <span>{{ selectedTransaction.delivery_address }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.delivery_status">
+              <strong>Delivery Status:</strong>
+              <span>{{ selectedTransaction.delivery_status }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.tracking_number">
+              <strong>Tracking Number:</strong>
+              <span>{{ selectedTransaction.tracking_number }}</span>
+            </div>
+          </div>
+          
+          <!-- Timeline -->
+          <div class="detail-group">
+            <h3>⏰ Timeline</h3>
+            <div class="detail-row">
+              <strong>Transaction Date:</strong>
+              <span>{{ formatDate(selectedTransaction.transaction_date) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.completion_date">
+              <strong>Completion Date:</strong>
+              <span>{{ formatDate(selectedTransaction.completion_date) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedTransaction.notes">
+              <strong>Notes:</strong>
+              <span>{{ selectedTransaction.notes }}</span>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeModals()">Close</button>
+        <button class="btn-edit" (click)="openUpdateModal(selectedTransaction!)">Update Status</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Transaction Modal -->
+  <div class="modal" *ngIf="showUpdateModal" (click)="closeModals()">
+    <div class="modal-content edit-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✏️ Update Transaction</h2>
+        <button class="close-modal" (click)="closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="updateForm" (ngSubmit)="updateTransaction()">
+          <div class="form-group">
+            <label>Transaction Status</label>
+            <select formControlName="status">
+              <option value="">Select status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="disputed">Disputed</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Payment Status</label>
+            <select formControlName="payment_status">
+              <option value="">Select payment status</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Delivery Status</label>
+            <select formControlName="delivery_status">
+              <option value="">Select delivery status</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Tracking Number</label>
+            <input type="text" formControlName="tracking_number" placeholder="Enter tracking number">
+          </div>
+          
+          <div class="form-group">
+            <label>Payment Reference</label>
+            <input type="text" formControlName="payment_reference" placeholder="Enter payment reference">
+          </div>
+          
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="notes" placeholder="Add notes" rows="3"></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-save">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Transaction Modal -->
+  <div class="modal" *ngIf="showCreateModal" (click)="closeModals()">
+    <div class="modal-content edit-modal large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>➕ New Transaction</h2>
+        <button class="close-modal" (click)="closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="createForm" (ngSubmit)="createTransaction()">
+          <div class="form-group">
+            <label>Select Merchant *</label>
+            <select formControlName="merchant_id" required>
+              <option value="">Select a merchant</option>
+              <option *ngFor="let merchant of merchants" [value]="merchant.id">
+                {{ merchant.business_name || merchant.full_name }} - {{ merchant.phone }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Product Name *</label>
+            <input type="text" formControlName="product_name" placeholder="Enter product name" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (GHS) *</label>
+              <input type="number" formControlName="amount" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label>Quantity *</label>
+              <input type="number" formControlName="quantity" placeholder="1" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Product Description</label>
+            <textarea formControlName="product_description" placeholder="Describe the product" rows="2"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select formControlName="payment_method">
+              <option value="">Select payment method</option>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Delivery Address</label>
+            <textarea formControlName="delivery_address" placeholder="Enter delivery address" rows="2"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="notes" placeholder="Additional notes" rows="2"></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-save" [disabled]="createForm.invalid">Create Transaction</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" *ngIf="showDeleteModal" (click)="closeModals()">
+    <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Confirm Delete</h2>
+      </div>
+      <div class="modal-body">
+        <div class="delete-icon">⚠️</div>
+        <p>Are you sure you want to delete transaction <strong>{{ selectedTransaction?.transaction_id }}</strong>?</p>
+        <p class="delete-warning">This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeModals()">Cancel</button>
+        <button class="btn-delete" (click)="deleteTransaction()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Action Sheet -->
+  <div class="action-sheet" *ngIf="showActionSheet" (click)="closeModals()">
+    <div class="action-sheet-content" (click)="$event.stopPropagation()">
+      <div class="action-sheet-header">
+        <h3>Actions</h3>
+        <button class="close-sheet" (click)="closeModals()">✕</button>
+      </div>
+      <button class="action-sheet-btn" (click)="selectedTransaction && viewTransactionDetails(selectedTransaction)">
+        👁️ View Details
+      </button>
+      <button class="action-sheet-btn" (click)="selectedTransaction && openUpdateModal(selectedTransaction)">
+        ✏️ Update Status
+      </button>
+      <button class="action-sheet-btn delete" (click)="selectedTransaction && openDeleteModal(selectedTransaction)">
+        🗑️ Delete Transaction
+      </button>
+      <button class="action-sheet-btn cancel" (click)="closeModals()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>a
