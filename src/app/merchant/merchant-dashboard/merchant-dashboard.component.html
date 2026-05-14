@@ -1,0 +1,206 @@
+<div class="merchant-dashboard">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <div *ngIf="!isLoading">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+      <div>
+        <h1 class="welcome-title">Welcome back, {{ merchantName }}!</h1>
+        <p class="welcome-subtitle">Here's what's happening with your business today.</p>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-icon">💰</span>
+          <span class="stat-label">Total Sales (Today)</span>
+        </div>
+        <div class="stat-value">{{ formatCurrency(stats.totalSales) }}</div>
+        <div class="stat-trend" [class]="getTrendClass(stats.salesGrowth)">
+          {{ getTrendIcon(stats.salesGrowth) }} {{ Math.abs(stats.salesGrowth).toFixed(1) }}% vs Yesterday
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-icon">📊</span>
+          <span class="stat-label">Total Transactions</span>
+        </div>
+        <div class="stat-value">{{ stats.totalTransactions }}</div>
+        <div class="stat-trend" [class]="getTrendClass(stats.transactionsGrowth)">
+          {{ getTrendIcon(stats.transactionsGrowth) }} {{ Math.abs(stats.transactionsGrowth).toFixed(1) }}% vs Yesterday
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-icon">👥</span>
+          <span class="stat-label">New Customers</span>
+        </div>
+        <div class="stat-value">{{ stats.newCustomers }}</div>
+        <div class="stat-trend" [class]="getTrendClass(stats.customersGrowth)">
+          {{ getTrendIcon(stats.customersGrowth) }} {{ Math.abs(stats.customersGrowth).toFixed(1) }}% vs Yesterday
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-icon">📅</span>
+          <span class="stat-label">Instalment Sales</span>
+        </div>
+        <div class="stat-value">{{ formatCurrency(stats.instalmentSales) }}</div>
+        <div class="stat-trend" [class]="getTrendClass(stats.instalmentGrowth)">
+          {{ getTrendIcon(stats.instalmentGrowth) }} {{ Math.abs(stats.instalmentGrowth).toFixed(1) }}% vs Yesterday
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-icon">✅</span>
+          <span class="stat-label">Successful Rate</span>
+        </div>
+        <div class="stat-value">{{ stats.successfulRate.toFixed(1) }}%</div>
+        <div class="stat-trend" [class]="getTrendClass(stats.successRateGrowth)">
+          {{ getTrendIcon(stats.successRateGrowth) }} {{ Math.abs(stats.successRateGrowth).toFixed(1) }}% vs Yesterday
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Overview Chart -->
+    <div class="chart-card">
+      <h3>📈 Sales Overview</h3>
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Two Columns Layout -->
+    <div class="two-columns">
+      <!-- Recent Transactions -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📋 Recent Transactions</h3>
+          <button class="view-all" (click)="goToTransactions()">View All Transactions →</button>
+        </div>
+        <div class="transactions-list">
+          <div class="transaction-item" *ngFor="let tx of recentTransactions">
+            <div class="transaction-icon" [class.instalment]="tx.type === 'Installment Plan'">
+              {{ getTransactionTypeIcon(tx.type) }}
+            </div>
+            <div class="transaction-details">
+              <div class="transaction-title">{{ tx.type }}</div>
+              <div class="transaction-meta">{{ tx.transaction_id }} • {{ formatDate(tx.date) }}</div>
+            </div>
+            <div class="transaction-amount">
+              {{ formatCurrency(tx.amount) }}
+            </div>
+            <div class="transaction-status" [class.success]="tx.status === 'completed'" [class.pending]="tx.status === 'pending'">
+              {{ tx.status === 'completed' ? '✅' : (tx.status === 'pending' ? '⏳' : '❌') }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instalments Overview -->
+      <div class="info-card instalments-card" (click)="goToInstalments()">
+        <div class="card-header">
+          <h3>📊 Instalments Overview</h3>
+          <button class="view-all" (click)="$event.stopPropagation(); goToInstalments()">View All →</button>
+        </div>
+        <div class="instalments-stats">
+          <div class="instalment-item">
+            <span class="instalment-label">Active Plans</span>
+            <span class="instalment-value">{{ instalmentsOverview.activePlans }}</span>
+          </div>
+          <div class="instalment-item">
+            <span class="instalment-label">Paid</span>
+            <span class="instalment-value">{{ instalmentsOverview.paid }}</span>
+          </div>
+          <div class="instalment-item">
+            <span class="instalment-label">Overdue</span>
+            <span class="instalment-value overdue">{{ instalmentsOverview.overdue }}</span>
+          </div>
+          <div class="instalment-item">
+            <span class="instalment-label">Completed</span>
+            <span class="instalment-value">{{ instalmentsOverview.completed }}</span>
+          </div>
+        </div>
+        <div class="total-active-amount">
+          <span>Total Active Amount</span>
+          <strong>{{ formatCurrency(instalmentsOverview.totalActiveAmount) }}</strong>
+        </div>
+        <div class="quick-create" (click)="$event.stopPropagation()">
+          <button class="create-plan-btn" (click)="createInstalmentPlan()">
+            + Create New Instalment Plan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settlements and Account Status -->
+    <div class="two-columns">
+      <!-- Settlements -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>💰 Settlements</h3>
+          <button class="view-all" (click)="goToSettlements()">View All Settlements →</button>
+        </div>
+        <div class="settlement-info">
+          <div class="settlement-item">
+            <span class="settlement-label">Next Settlement</span>
+            <span class="settlement-value">{{ settlement.nextSettlement }}</span>
+          </div>
+          <div class="settlement-item">
+            <span class="settlement-label">Estimated Amount</span>
+            <span class="settlement-value amount">{{ formatCurrency(settlement.estimatedAmount) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Status -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>🔐 Account Status</h3>
+          <button class="view-all" (click)="goToSettings()">Settings →</button>
+        </div>
+        <div class="account-status">
+          <div class="status-item">
+            <span class="status-label">KYC Verification</span>
+            <span class="status-value" [class.verified]="accountStatus.kycVerified">
+              {{ accountStatus.kycVerified ? '✅ Verified' : '⏳ Pending' }}
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Payout Account</span>
+            <span class="status-value">{{ accountStatus.payoutAccount }} <button class="edit-link" (click)="goToSettings()">></button></span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Plan</span>
+            <span class="status-value premium">{{ accountStatus.plan }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Member Since</span>
+            <span class="status-value">{{ accountStatus.memberSince }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3>⚡ Quick Actions</h3>
+      <div class="action-buttons">
+        <button class="action-btn primary" (click)="createPaymentLink()">💰 Create Payment Link</button>
+        <button class="action-btn secondary" (click)="createInstalmentPlan()">📅 Create Instalment Plan</button>
+        <button class="action-btn secondary" (click)="downloadReports()">📊 Download Reports</button>
+        <button class="action-btn secondary" (click)="contactSupport()">💬 Contact Support</button>
+      </div>
+    </div>
+  </div>
+</div>

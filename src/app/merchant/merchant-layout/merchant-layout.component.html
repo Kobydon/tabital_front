@@ -1,0 +1,71 @@
+<div class="merchant-layout">
+  <!-- Mobile Sidebar Overlay -->
+  <div class="sidebar-overlay" *ngIf="showMobileSidebar" (click)="closeMobileSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed" [class.mobile-open]="showMobileSidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🏪</span>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed">Tabital Pay</span>
+      </div>
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        {{ isSidebarCollapsed ? '→' : '←' }}
+      </button>
+    </div>
+
+    <div class="merchant-info" *ngIf="!isSidebarCollapsed">
+      <div class="merchant-avatar">{{ merchantAvatar }}</div>
+      <div class="merchant-details">
+        <h4>{{ merchantName }}</h4>
+        <p>{{ merchantEmail }}</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a *ngFor="let item of menuItems"
+         [routerLink]="item.path"
+         routerLinkActive="active"
+         class="nav-item"
+         (click)="closeMobileSidebar()">
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <!-- Top Header -->
+    <header class="top-header">
+      <button class="mobile-menu-btn" (click)="toggleSidebar()">☰</button>
+      <div class="header-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search...">
+      </div>
+      <div class="header-actions">
+        <div class="notifications" routerLink="/merchant/notifications">
+          <span class="bell-icon">🔔</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar">{{ merchantAvatar }}</div>
+          <span class="user-name" *ngIf="!isMobile">{{ merchantName }}</span>
+          <span class="dropdown-icon">▼</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

@@ -9,6 +9,7 @@ import { MerchantsComponent } from './merchants/merchants.component';
 import { AllUsersComponent } from './all-users/all-users.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TransactionsComponent } from './transactions/transactions.component';
+import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 
 
 @NgModule({
@@ -18,7 +19,8 @@ import { TransactionsComponent } from './transactions/transactions.component';
     CustomersComponent,
     MerchantsComponent,
     AllUsersComponent,
-    TransactionsComponent
+    TransactionsComponent,
+    MerchantDetailsComponent
 
   ],
   imports: [

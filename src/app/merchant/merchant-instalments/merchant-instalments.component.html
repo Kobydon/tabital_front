@@ -1,0 +1,372 @@
+<div class="instalments-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">📅</span>
+        Instalment Plans
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ filteredInstalments.length }}</span>
+        <span class="stat-label">Total Plans</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="create-btn" (click)="showCreateModal = true">
+        + Create Instalment Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- Search and Filter Bar -->
+  <div class="filter-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search by Plan ID, name, customer..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">✕</button>
+    </div>
+    <div class="status-filters">
+      <button
+        *ngFor="let status of ['all', 'active', 'completed', 'cancelled', 'overdue']"
+        class="filter-btn"
+        [class.active]="selectedStatus === status"
+        (click)="selectedStatus = status; applyFilters()"
+      >
+        {{ status | titlecase }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading instalment plans...</p>
+  </div>
+
+  <!-- Instalments Grid -->
+  <div *ngIf="!isLoading" class="instalments-grid">
+    <div *ngFor="let plan of filteredInstalments" class="instalment-card">
+      <div class="card-header">
+        <div class="plan-id">{{ plan.plan_id }}</div>
+        <div class="plan-status" [class]="getStatusClass(plan.status)">
+          {{ getStatusIcon(plan.status) }} {{ plan.status }}
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <h3 class="plan-name">{{ plan.plan_name }}</h3>
+        <p class="customer-info">
+          <span>👤 {{ plan.customer_name }}</span>
+          <span>📱 {{ plan.customer_phone }}</span>
+        </p>
+        
+        <div class="plan-stats">
+          <div class="stat">
+            <span class="stat-label">Total Amount</span>
+            <span class="stat-value">{{ formatCurrency(plan.total_amount) }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Paid</span>
+            <span class="stat-value">{{ plan.paid_installments }}/{{ plan.number_of_installments }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Remaining</span>
+            <span class="stat-value">{{ formatCurrency(plan.remaining_amount) }}</span>
+          </div>
+        </div>
+        
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="(plan.paid_installments / plan.number_of_installments) * 100"></div>
+        </div>
+        
+        <div class="plan-dates">
+          <span>📅 Started: {{ formatDate(plan.start_date) }}</span>
+          <span *ngIf="plan.end_date">📅 Ends: {{ formatDate(plan.end_date) }}</span>
+        </div>
+      </div>
+      
+      <div class="card-actions">
+        <button class="action-btn view" (click)="viewDetails(plan)" title="View Details">👁️</button>
+        <button class="action-btn pay" (click)="openPaymentModal(plan)" title="Record Payment">💰</button>
+        <button class="action-btn edit" (click)="openEditModal(plan)" title="Edit">✏️</button>
+        <button class="action-btn delete" (click)="openDeleteModal(plan)" title="Delete">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredInstalments.length === 0" class="empty-state">
+    <div class="empty-icon">📅</div>
+    <p>No instalment plans found</p>
+    <button class="create-btn" (click)="showCreateModal = true">Create Instalment Plan</button>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="modal" *ngIf="showCreateModal" (click)="showCreateModal = false">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Instalment Plan</h3>
+        <button class="close" (click)="showCreateModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="createForm" (ngSubmit)="createInstalment()">
+          <div class="form-section">
+            <h4>Plan Details</h4>
+            <div class="form-group">
+              <label>Plan Name *</label>
+              <input type="text" formControlName="plan_name" placeholder="e.g., iPhone 15 Pro">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea formControlName="description" rows="2" placeholder="Additional details"></textarea>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Customer Information</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" formControlName="customer_name" placeholder="Full name">
+              </div>
+              <div class="form-group">
+                <label>Customer Phone *</label>
+                <input type="tel" formControlName="customer_phone" placeholder="Phone number">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Customer Email</label>
+              <input type="email" formControlName="customer_email" placeholder="Email address">
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Payment Details</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Total Amount (GHS) *</label>
+                <input type="number" step="0.01" formControlName="total_amount" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Down Payment (GHS)</label>
+                <input type="number" step="0.01" formControlName="down_payment" placeholder="0.00">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Number of Installments *</label>
+                <input type="number" formControlName="number_of_installments" placeholder="e.g., 3, 6, 12">
+              </div>
+              <div class="form-group">
+                <label>Installment Amount (GHS) *</label>
+                <input type="number" step="0.01" formControlName="installment_amount" placeholder="0.00">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Frequency *</label>
+                <select formControlName="frequency">
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Start Date *</label>
+                <input type="date" formControlName="start_date">
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showCreateModal = false">Cancel</button>
+            <button type="submit" class="save" [disabled]="createForm.invalid">Create Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal" *ngIf="showEditModal" (click)="showEditModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Edit Instalment Plan</h3>
+        <button class="close" (click)="showEditModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="editForm" (ngSubmit)="updateInstalment()">
+          <div class="form-group">
+            <label>Plan Name</label>
+            <input type="text" formControlName="plan_name">
+          </div>
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" formControlName="customer_name">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer Phone</label>
+              <input type="tel" formControlName="customer_phone">
+            </div>
+            <div class="form-group">
+              <label>Customer Email</label>
+              <input type="email" formControlName="customer_email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select formControlName="status">
+              <option value="active">Active</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showEditModal = false">Cancel</button>
+            <button type="submit" class="save">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" *ngIf="showPaymentModal" (click)="showPaymentModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Record Payment</h3>
+        <button class="close" (click)="showPaymentModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-info">
+          <p><strong>Plan:</strong> {{ selectedInstalment?.plan_name }}</p>
+          <p><strong>Customer:</strong> {{ selectedInstalment?.customer_name }}</p>
+          <p><strong>Next Installment:</strong> #{{ selectedInstalment?.paid_installments + 1 }} of {{ selectedInstalment?.number_of_installments }}</p>
+          <p><strong>Amount Due:</strong> {{ formatCurrency(selectedInstalment?.installment_amount) }}</p>
+        </div>
+        <form [formGroup]="paymentForm" (ngSubmit)="recordPayment()">
+          <div class="form-group">
+            <label>Installment Number *</label>
+            <input type="number" formControlName="installment_number" readonly>
+          </div>
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select formControlName="payment_method">
+              <option value="cash">Cash</option>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Reference</label>
+            <input type="text" formControlName="payment_reference" placeholder="Transaction ID / Reference">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showPaymentModal = false">Cancel</button>
+            <button type="submit" class="save">Record Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal" (click)="showDetailsModal = false">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Instalment Plan Details</h3>
+        <button class="close" (click)="showDetailsModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="details-section" *ngIf="selectedInstalment">
+          <div class="detail-group">
+            <h4>Plan Information</h4>
+            <div class="detail-row"><strong>Plan ID:</strong> <span>{{ selectedInstalment.plan_id }}</span></div>
+            <div class="detail-row"><strong>Plan Name:</strong> <span>{{ selectedInstalment.plan_name }}</span></div>
+            <div class="detail-row"><strong>Status:</strong> <span class="status-badge" [class]="getStatusClass(selectedInstalment.status)">{{ selectedInstalment.status }}</span></div>
+            <div class="detail-row"><strong>Description:</strong> <span>{{ selectedInstalment.description || 'N/A' }}</span></div>
+          </div>
+          
+          <div class="detail-group">
+            <h4>Customer Information</h4>
+            <div class="detail-row"><strong>Name:</strong> <span>{{ selectedInstalment.customer_name }}</span></div>
+            <div class="detail-row"><strong>Phone:</strong> <span>{{ selectedInstalment.customer_phone }}</span></div>
+            <div class="detail-row"><strong>Email:</strong> <span>{{ selectedInstalment.customer_email || 'N/A' }}</span></div>
+          </div>
+          
+          <div class="detail-group">
+            <h4>Financial Summary</h4>
+            <div class="detail-row"><strong>Total Amount:</strong> <span>{{ formatCurrency(selectedInstalment.total_amount) }}</span></div>
+            <div class="detail-row"><strong>Down Payment:</strong> <span>{{ formatCurrency(selectedInstalment.down_payment) }}</span></div>
+            <div class="detail-row"><strong>Remaining:</strong> <span>{{ formatCurrency(selectedInstalment.remaining_amount) }}</span></div>
+            <div class="detail-row"><strong>Installment Amount:</strong> <span>{{ formatCurrency(selectedInstalment.installment_amount) }}</span></div>
+            <div class="detail-row"><strong>Paid:</strong> <span>{{ selectedInstalment.paid_installments }}/{{ selectedInstalment.number_of_installments }}</span></div>
+          </div>
+          
+          <div class="detail-group">
+            <h4>Payment Schedule</h4>
+            <div class="table-wrapper">
+              <table class="payments-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Due Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Paid Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let payment of paymentSchedule">
+                    <td>{{ payment.installment_number }}</td>
+                    <td>{{ formatDate(payment.due_date) }}</td>
+                    <td>{{ formatCurrency(payment.amount) }}</td>
+                    <td>
+                      <span class="payment-status" [class]="getPaymentStatusClass(payment.status)">
+                        {{ payment.status }}
+                      </span>
+                    </td>
+                    <td>{{ formatDate(payment.paid_date) || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-close" (click)="showDetailsModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+    <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Confirm Delete</h3>
+      </div>
+      <div class="modal-body">
+        <div class="delete-icon">⚠️</div>
+        <p>Are you sure you want to delete instalment plan <strong>{{ selectedInstalment?.plan_name }}</strong>?</p>
+        <p class="delete-warning">This action cannot be undone. All payment records will also be deleted.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel" (click)="showDeleteModal = false">Cancel</button>
+        <button class="delete" (click)="deleteInstalment()">Delete Plan</button>
+      </div>
+    </div>
+  </div>
+</div>

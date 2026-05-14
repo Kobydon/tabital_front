@@ -1,0 +1,439 @@
+<div class="merchant-details-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading merchant details...</p>
+  </div>
+
+  <div *ngIf="!isLoading && merchant">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <button class="back-btn" routerLink="/admin/merchants">← Back to Merchants</button>
+        <h1 class="title">Merchant Management</h1>
+        <p class="subtitle">Dashboard / Merchants / Merchant Details</p>
+      </div>
+    </div>
+
+    <!-- Merchant Profile Card -->
+    <div class="merchant-profile">
+      <div class="profile-left">
+        <div class="merchant-avatar">{{ merchant.business_name?.charAt(0) || merchant.owner_name?.charAt(0) || 'M' }}</div>
+        <div class="merchant-info">
+          <h2>{{ merchant.business_name || 'Business Name' }}</h2>
+          <p class="email">{{ merchant.business_email || 'No email provided' }}</p>
+          <p class="phone">{{ merchant.phone || 'No phone provided' }}</p>
+          <p class="type">{{ formatBusinessType(merchant.business_type) }}</p>
+          <p class="merchant-id">Merchant ID: {{ merchant.merchant_id || 'Not assigned' }}</p>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="action-btn disable" (click)="disableMerchant()">🔒 Disable Merchant</button>
+        <button class="action-btn commission" (click)="showCommissionModal = true">💱 Change Commission</button>
+        <button class="action-btn settlement" (click)="showSettlementModal = true">💳 Update Settlement Info</button>
+        <button class="action-btn message" (click)="showMessageModal = true">📧 Send Message</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">📊 Overview</button>
+      <button class="tab-btn" [class.active]="activeTab === 'transactions'" (click)="activeTab = 'transactions'">💸 Transactions</button>
+      <button class="tab-btn" [class.active]="activeTab === 'documents'" (click)="activeTab = 'documents'">📄 Documents</button>
+      <button class="tab-btn" [class.active]="activeTab === 'kyc'" (click)="activeTab = 'kyc'">🔐 KYC</button>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- OVERVIEW TAB -->
+    <!-- ============================================ -->
+    <div class="tab-content" *ngIf="activeTab === 'overview'">
+      <div class="two-columns">
+        <!-- Business Information -->
+        <div class="info-card">
+          <h3>🏢 Business Information</h3>
+          <div class="info-row"><strong>Business Name:</strong> <span>{{ merchant.business_name || 'N/A' }}</span></div>
+          <div class="info-row"><strong>Owner Name:</strong> <span>{{ merchant.owner_name || merchant.full_name || 'N/A' }}</span></div>
+          <div class="info-row"><strong>Registration Number:</strong> <span>{{ merchant.registration_number || 'N/A' }}</span></div>
+          <div class="info-row"><strong>Business Type:</strong> <span>{{ formatBusinessType(merchant.business_type) }}</span></div>
+          <div class="info-row"><strong>Tax ID:</strong> <span>{{ merchant.tax_id || 'N/A' }}</span></div>
+          <div class="info-row"><strong>Website:</strong> <span><a [href]="merchant.website" target="_blank">{{ merchant.website || 'N/A' }}</a></span></div>
+          <div class="info-row"><strong>Business Address:</strong> <span>{{ merchant.business_address || merchant.address || 'N/A' }}</span></div>
+          <div class="info-row"><strong>City:</strong> <span>{{ merchant.city || 'N/A' }}</span></div>
+        </div>
+
+        <!-- KYC & Compliance -->
+        <div class="info-card">
+          <h3>🔐 KYC & Compliance</h3>
+          <div class="info-row">
+            <strong>KYC Status:</strong> 
+            <span class="status-badge" [class]="merchant.kyc_status === 'verified' ? 'status-verified' : (merchant.kyc_status === 'rejected' ? 'status-rejected' : 'status-pending')">
+              {{ merchant.kyc_status === 'verified' ? '✅ Verified' : (merchant.kyc_status === 'rejected' ? '❌ Rejected' : '⏳ Pending') }}
+            </span>
+          </div>
+          <div class="info-row"><strong>Verification Level:</strong> <span>{{ merchant.verification_level || 'Standard' }}</span></div>
+          <div class="info-row"><strong>AML Screening:</strong> <span class="status-passed">{{ merchant.aml_screening || 'Pending' }}</span></div>
+          <div class="info-row"><strong>KYC Completed On:</strong> <span>{{ formatDate(merchant.created_at) }}</span></div>
+          <button class="kyc-btn" (click)="showKycModal = true">View / Update KYC</button>
+        </div>
+      </div>
+
+      <!-- Performance Overview -->
+      <div class="info-card">
+        <h3>📊 Performance Overview</h3>
+        <div class="stats-grid-3">
+          <div class="stat-item"><span class="stat-label">Total Sales (GMV)</span><span class="stat-value">{{ formatCurrency(merchant.total_sales || 0) }}</span></div>
+          <div class="stat-item"><span class="stat-label">Total Products</span><span class="stat-value">{{ merchant.total_products || 0 }}</span></div>
+          <div class="stat-item"><span class="stat-label">Rating</span><span class="stat-value">⭐ {{ merchant.rating || 0 }}/5</span></div>
+          <div class="stat-item"><span class="stat-label">Verified Status</span><span class="stat-value">{{ merchant.verified ? '✅ Verified' : '⏳ Not Verified' }}</span></div>
+        </div>
+      </div>
+
+      <!-- Settlement Overview -->
+      <div class="info-card">
+        <h3>💰 Settlement Overview</h3>
+        <div class="stats-grid-3">
+          <div class="stat-item"><span class="stat-label">Commission Rate (MDR)</span><span class="stat-value">{{ merchant.commission_rate || 2.5 }}%</span></div>
+          <div class="stat-item"><span class="stat-label">Pending Payout</span><span class="stat-value pending">{{ formatCurrency(merchant.pending_payout || 0) }}</span></div>
+          <div class="stat-item"><span class="stat-label">Next Settlement</span><span class="stat-value">{{ formatDate(merchant.next_settlement) || 'Not scheduled' }}</span></div>
+          <!-- <div class="stat-item"><span class="stat-label">Payment Method</span><span class="stat-value">{{ merchant.payment_method || 'N/A' }}</span></div> -->
+          <div class="stat-item"><span class="stat-label">Bank Name</span><span class="stat-value">{{ merchant.bank_name || 'N/A' }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- TRANSACTIONS TAB -->
+    <!-- ============================================ -->
+    <div class="tab-content" *ngIf="activeTab === 'transactions'">
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📋 Recent Transactions</h3>
+          <button class="view-all" (click)="goToTransactions()">View All Transactions →</button>
+        </div>
+        <div class="table-wrapper" *ngIf="recentTransactions && recentTransactions.length > 0; else noTransactions">
+          <table class="transactions-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Plan</th>
+                <th>Product</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Payment Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tx of recentTransactions">
+                <td class="tx-id">{{ tx?.transaction_id || 'TXN-' + tx?.id }}</td>
+                <td class="customer-name">{{ tx?.customer_name || 'N/A' }}</td>
+                <td class="amount">{{ formatCurrency(tx?.amount ?? 0) }}</td>
+                <td>{{ tx?.payment_plan || 'Standard' }}</td>
+                <td>{{ tx?.product_name || 'N/A' }}</td>
+                <td>{{ formatDateTime(tx?.created_at || tx?.transaction_date) }}</td>
+                <td><span class="status-badge" [class]="getStatusClass(tx?.status)">{{ tx?.status || 'pending' }}</span></td>
+                <td>{{ tx?.payment_method || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noTransactions>
+          <div class="empty-state-content">
+            <div class="empty-icon">💸</div>
+            <p>No transactions found for this merchant</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- DOCUMENTS TAB -->
+    <!-- ============================================ -->
+    <div class="tab-content" *ngIf="activeTab === 'documents'">
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📄 Merchant Documents</h3>
+          <button class="upload-btn" (click)="showUploadModal = true">+ Upload Document</button>
+        </div>
+        
+        <!-- Loading Documents -->
+        <div *ngIf="isLoadingDocuments" class="loading-documents">
+          <div class="spinner-small"></div>
+          <p>Loading documents...</p>
+        </div>
+        
+        <!-- Documents List -->
+        <div *ngIf="!isLoadingDocuments && documents && documents.length > 0" class="documents-list">
+          <div class="doc-item" *ngFor="let doc of documents">
+            <div class="doc-icon-wrapper">
+              <span class="doc-icon">{{ getDocumentIcon(doc?.document_type) }}</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">{{ doc?.document_name || getDocumentDisplayName(doc?.document_type) }}</div>
+              <div class="doc-meta">
+                <span class="doc-date">Uploaded {{ formatDate(doc?.created_at) }}</span>
+                <span class="doc-id">• ID: {{ doc?.document_id }}</span>
+                <span class="doc-size" *ngIf="doc?.file_size">• {{ formatFileSize(doc.file_size!) }}</span>
+              </div>
+              <div class="doc-filename" *ngIf="doc?.file_name">
+                <small>File: {{ doc?.file_name }}</small>
+              </div>
+              <div class="doc-rejection" *ngIf="doc?.status === 'rejected' && doc?.rejection_reason">
+                <small class="rejection-reason">Reason: {{ doc?.rejection_reason }}</small>
+              </div>
+            </div>
+            <div class="doc-status">
+              <span class="status-badge" [class]="getStatusClass(doc?.status)">
+                {{ getDocumentStatusText(doc?.status) }}
+              </span>
+            </div>
+            <div class="doc-actions">
+              <button class="action-icon" (click)="viewDocument(doc)" title="View Document">👁️</button>
+              <button *ngIf="doc?.status !== 'verified'" class="action-icon" (click)="verifyDocument(doc)" title="Verify Document">✓</button>
+              <button class="action-icon delete" (click)="deleteDocument(doc)" title="Delete Document">🗑️</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty Documents -->
+        <div *ngIf="!isLoadingDocuments && (!documents || documents.length === 0)" class="empty-state-content">
+          <div class="empty-icon">📄</div>
+          <p>No documents uploaded yet</p>
+          <button class="upload-btn" (click)="showUploadModal = true">Upload First Document</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- KYC TAB -->
+    <!-- ============================================ -->
+    <div class="tab-content" *ngIf="activeTab === 'kyc'">
+      <div class="info-card">
+        <h3>🔐 KYC Information</h3>
+        <div class="info-row"><strong>KYC Status:</strong> 
+          <span class="status-badge" [class]="merchant.kyc_status === 'verified' ? 'status-verified' : (merchant.kyc_status === 'rejected' ? 'status-rejected' : 'status-pending')">
+            {{ merchant.kyc_status === 'verified' ? '✅ Verified' : (merchant.kyc_status === 'rejected' ? '❌ Rejected' : '⏳ Pending') }}
+          </span>
+        </div>
+        <div class="info-row"><strong>Verification Level:</strong> <span>{{ merchant.verification_level || 'Standard' }}</span></div>
+        <div class="info-row"><strong>AML Screening:</strong> <span class="status-passed">{{ merchant.aml_screening || 'Pending' }}</span></div>
+        <div class="info-row"><strong>KYC Completed On:</strong> <span>{{ formatDate(merchant.created_at) || 'Not completed' }}</span></div>
+        <div class="info-row"><strong>Commission Rate:</strong> <span>{{ merchant.commission_rate || 2.5 }}%</span></div>
+        <div class="info-row"><strong>Pending Payout:</strong> <span class="pending">{{ formatCurrency(merchant.pending_payout || 0) }}</span></div>
+        <button class="kyc-btn" (click)="showKycModal = true">Update KYC Information</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MODALS -->
+  <!-- ============================================ -->
+
+  <!-- Commission Modal -->
+  <div class="modal" *ngIf="showCommissionModal" (click)="showCommissionModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Change Commission Rate</h3>
+        <button class="close" (click)="showCommissionModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="commissionForm" (ngSubmit)="updateCommission()">
+          <div class="form-group">
+            <label>Commission Rate (%)</label>
+            <input type="number" step="0.1" formControlName="commissionRate" placeholder="Enter commission rate">
+            <small class="hint">Current rate: {{ merchant?.commission_rate || 2.5 }}%</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showCommissionModal = false">Cancel</button>
+            <button type="submit" class="save" [disabled]="commissionForm.invalid">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settlement Modal -->
+  <div class="modal" *ngIf="showSettlementModal" (click)="showSettlementModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Update Settlement Info</h3>
+        <button class="close" (click)="showSettlementModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="settlementForm" (ngSubmit)="updateSettlementInfo()">
+          <div class="form-group">
+            <label>Pending Payout (GHS)</label>
+            <input type="number" step="0.01" formControlName="pendingPayout" placeholder="Enter pending payout">
+            <small class="hint">Current: {{ formatCurrency(merchant?.pending_payout || 0) }}</small>
+          </div>
+          <div class="form-group">
+            <label>Next Settlement Date</label>
+            <input type="date" formControlName="nextSettlement">
+            <small class="hint">Current: {{ merchant?.next_settlement ? formatDate(merchant?.next_settlement) : 'Not set' }}</small>
+          </div>
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" formControlName="bankName" placeholder="Enter bank name">
+            <small class="hint">Current: {{ merchant?.bank_name || 'Not set' }}</small>
+          </div>
+          <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" formControlName="accountName" placeholder="Enter account name">
+            <small class="hint">Current: {{ merchant?.account_name || 'Not set' }}</small>
+          </div>
+          <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" formControlName="accountNumber" placeholder="Enter account number">
+            <small class="hint">Current: {{ merchant?.account_number || 'Not set' }}</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showSettlementModal = false">Cancel</button>
+            <button type="submit" class="save" [disabled]="settlementForm.invalid">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Modal -->
+  <div class="modal" *ngIf="showMessageModal" (click)="showMessageModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Send Message</h3>
+        <button class="close" (click)="showMessageModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="messageForm" (ngSubmit)="sendMessage()">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" formControlName="subject" placeholder="Enter subject">
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea formControlName="message" rows="4" placeholder="Enter message"></textarea>
+          </div>
+          <div class="checkbox-group">
+            <label><input type="checkbox" formControlName="sendEmail"> Send via Email</label>
+            <label><input type="checkbox" formControlName="sendSms"> Send via SMS</label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showMessageModal = false">Cancel</button>
+            <button type="submit" class="save" [disabled]="messageForm.invalid">Send Message</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC Modal -->
+  <div class="modal" *ngIf="showKycModal" (click)="showKycModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Update KYC Information</h3>
+        <button class="close" (click)="showKycModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="kycForm" (ngSubmit)="updateKyc()">
+          <div class="form-group">
+            <label>KYC Status</label>
+            <select formControlName="kycStatus">
+              <option value="pending">Pending</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <small class="hint">Current: {{ merchant?.kyc_status || 'pending' }}</small>
+          </div>
+          <div class="form-group">
+            <label>Verification Level</label>
+            <select formControlName="verificationLevel">
+              <option value="basic">Basic</option>
+              <option value="standard">Standard</option>
+              <option value="enhanced">Enhanced</option>
+            </select>
+            <small class="hint">Current: {{ merchant?.verification_level || 'standard' }}</small>
+          </div>
+          <div class="form-group">
+            <label>AML Screening</label>
+            <select formControlName="amlScreening">
+              <option value="pending">Pending</option>
+              <option value="passed">Passed</option>
+              <option value="failed">Failed</option>
+            </select>
+            <small class="hint">Current: {{ merchant?.aml_screening || 'pending' }}</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showKycModal = false">Cancel</button>
+            <button type="submit" class="save">Update KYC</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Document Modal -->
+  <div class="modal" *ngIf="showUploadModal" (click)="showUploadModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Upload Document</h3>
+        <button class="close" (click)="showUploadModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="uploadForm" (ngSubmit)="uploadDocument()">
+          <div class="form-group">
+            <label>Document Type *</label>
+            <select formControlName="document_type" required>
+              <option value="">Select document type</option>
+              <option value="business_registration">Business Registration</option>
+              <option value="trade_license">Trade License</option>
+              <option value="bank_proof">Bank Proof</option>
+              <option value="tax_certificate">Tax Certificate</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Document Name *</label>
+            <input type="text" formControlName="document_name" placeholder="Enter document name" required>
+          </div>
+          <div class="form-group">
+            <label>File (Optional)</label>
+            <input type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.png">
+            <small class="hint">Supported formats: PDF, JPG, PNG (Max 5MB)</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showUploadModal = false">Cancel</button>
+            <button type="submit" class="save" [disabled]="uploadForm.invalid">Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verify Document Modal -->
+  <div class="modal" *ngIf="showVerifyModal" (click)="showVerifyModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Verify Document</h3>
+        <button class="close" (click)="showVerifyModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="verifyForm" (ngSubmit)="confirmVerifyDocument()">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status" required>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="form-group" *ngIf="verifyForm.get('status')?.value === 'rejected'">
+            <label>Rejection Reason</label>
+            <textarea formControlName="rejection_reason" rows="3" placeholder="Enter reason for rejection"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel" (click)="showVerifyModal = false">Cancel</button>
+            <button type="submit" class="save">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

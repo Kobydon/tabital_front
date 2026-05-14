@@ -31,6 +31,14 @@ const routes: Routes = [
       import('./admin/admin.module').then(m => m.AdminModule)
   },
 
+  // ===== MERCHANT (PROTECTED) =====
+  {
+    path: 'merchant',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      import('./merchant/merchant.module').then(m => m.MerchantModule)
+  },
+
   // ===== DEFAULT =====
   { path: '', redirectTo: '/login', pathMatch: 'full' },
 
@@ -43,4 +51,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

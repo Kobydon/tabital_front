@@ -1,0 +1,393 @@
+<div class="reports-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">📊</span>
+        Reports & Analytics
+      </h1>
+    </div>
+    <div class="header-right">
+      <button class="export-btn" (click)="exportReport()">
+        📥 Export Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'sales'" (click)="onTabChange('sales')">
+      📈 Sales Report
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'transactions'" (click)="onTabChange('transactions')">
+      💸 Transactions
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'customers'" (click)="onTabChange('customers')">
+      👥 Customers
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'financial'" (click)="onTabChange('financial')">
+      💰 Financial
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'instalments'" (click)="onTabChange('instalments')">
+      📅 Instalments
+    </button>
+  </div>
+
+  <!-- Date Range Filter -->
+  <div class="filter-bar" *ngIf="activeTab !== 'financial' && activeTab !== 'instalments'">
+    <div class="date-range">
+      <div class="date-input">
+        <span class="date-icon">📅</span>
+        <input type="date" [(ngModel)]="dateRangeForm.value.start_date" (change)="onDateRangeChange()">
+      </div>
+      <span class="date-separator">to</span>
+      <div class="date-input">
+        <span class="date-icon">📅</span>
+        <input type="date" [(ngModel)]="dateRangeForm.value.end_date" (change)="onDateRangeChange()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Type Selector (Sales) -->
+  <div class="filter-bar" *ngIf="activeTab === 'sales'">
+    <div class="report-type">
+      <label>Report Type:</label>
+      <select [(ngModel)]="reportType" (change)="onReportTypeChange()">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Year Selector (Financial) -->
+  <div class="filter-bar" *ngIf="activeTab === 'financial'">
+    <div class="report-type">
+      <label>Select Year:</label>
+      <select [(ngModel)]="selectedYear" (change)="onYearChange()">
+        <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading report data...</p>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SALES REPORT -->
+  <!-- ============================================ -->
+  <div *ngIf="activeTab === 'sales' && !isLoading && salesReport">
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon purple">💰</span>
+          <span class="summary-label">Total Sales</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(salesReport.summary?.total_sales || 0) }}</div>
+        <div class="summary-trend" [class.positive]="salesReport.summary?.sales_growth > 0">
+          {{ salesReport.summary?.sales_growth > 0 ? '↑' : '↓' }} {{ Math.abs(salesReport.summary?.sales_growth || 0).toFixed(1) }}%
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon blue">📊</span>
+          <span class="summary-label">Total Transactions</span>
+        </div>
+        <div class="summary-value">{{ salesReport.summary?.total_transactions || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon green">💵</span>
+          <span class="summary-label">Average Order Value</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(salesReport.summary?.average_order_value || 0) }}</div>
+      </div>
+    </div>
+
+    <!-- Sales Chart -->
+    <div class="chart-card">
+      <h3>Sales Overview</h3>
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="data-card" *ngIf="salesReport.top_products?.length > 0">
+      <h3>🏆 Top Selling Products</h3>
+      <div class="top-products-list">
+        <div class="product-item" *ngFor="let product of salesReport.top_products; let i = index">
+          <div class="rank">{{ i + 1 }}</div>
+          <div class="product-name">{{ product.name }}</div>
+          <div class="product-amount">{{ formatCurrency(product.amount) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="data-card" *ngIf="salesReport.payment_methods">
+      <h3>💳 Payment Methods Breakdown</h3>
+      <div class="payment-methods">
+        <div class="method-item" *ngFor="let method of getPaymentMethodsArray(salesReport.payment_methods)">
+          <span class="method-name">{{ method.key | titlecase }}</span>
+          <div class="method-bar">
+            <div class="method-fill" [style.width.%]="getPercentage(method.value, salesReport.summary?.total_sales || 0)"></div>
+          </div>
+          <span class="method-amount">{{ formatCurrency(method.value) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TRANSACTIONS REPORT -->
+  <!-- ============================================ -->
+  <div *ngIf="activeTab === 'transactions' && !isLoading && transactionReport">
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon purple">📊</span>
+          <span class="summary-label">Total Transactions</span>
+        </div>
+        <div class="summary-value">{{ transactionReport.summary?.total_transactions || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon green">✅</span>
+          <span class="summary-label">Completed</span>
+        </div>
+        <div class="summary-value">{{ transactionReport.summary?.completed || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon orange">⏳</span>
+          <span class="summary-label">Pending</span>
+        </div>
+        <div class="summary-value">{{ transactionReport.summary?.pending || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon red">↩️</span>
+          <span class="summary-label">Refunded</span>
+        </div>
+        <div class="summary-value">{{ transactionReport.summary?.refunded || 0 }}</div>
+      </div>
+    </div>
+
+    <!-- Hourly Distribution Chart -->
+    <div class="chart-card">
+      <h3>Hourly Transaction Distribution</h3>
+      <div class="chart-container">
+        <canvas id="transactionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Status Breakdown -->
+    <div class="data-card">
+      <h3>Status Breakdown</h3>
+      <div class="status-breakdown">
+        <div class="status-item" *ngFor="let status of getStatusBreakdownArray(transactionReport.status_breakdown)">
+          <span class="status-name">{{ status.key | titlecase }}</span>
+          <div class="status-bar">
+            <div class="status-fill" [style.width.%]="getPercentage(status.value, transactionReport.summary?.total_transactions || 0)"></div>
+          </div>
+          <span class="status-count">{{ status.value }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CUSTOMERS REPORT -->
+  <!-- ============================================ -->
+  <div *ngIf="activeTab === 'customers' && !isLoading && customerReport">
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon purple">👥</span>
+          <span class="summary-label">Total Customers</span>
+        </div>
+        <div class="summary-value">{{ customerReport.summary?.total_customers || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon blue">🆕</span>
+          <span class="summary-label">New Customers</span>
+        </div>
+        <div class="summary-value">{{ customerReport.summary?.new_customers || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon green">🔄</span>
+          <span class="summary-label">Returning</span>
+        </div>
+        <div class="summary-value">{{ customerReport.summary?.returning_customers || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon orange">💰</span>
+          <span class="summary-label">Avg Customer Value</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(customerReport.summary?.customer_lifetime_value || 0) }}</div>
+      </div>
+    </div>
+
+    <!-- Customer Segments Chart -->
+    <div class="two-columns">
+      <div class="chart-card">
+        <h3>Customer Segments</h3>
+        <div class="chart-container-small">
+          <canvas id="customerChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Customers -->
+      <div class="data-card">
+        <h3>🏆 Top Customers</h3>
+        <div class="top-customers-list">
+          <div class="customer-item" *ngFor="let customer of customerReport.top_customers; let i = index">
+            <div class="rank">{{ i + 1 }}</div>
+            <div class="customer-name">{{ customer.name }}</div>
+            <div class="customer-stats">
+              <span class="spent">{{ formatCurrency(customer.total_spent) }}</span>
+              <span class="transactions">{{ customer.transaction_count }} txns</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FINANCIAL REPORT -->
+  <!-- ============================================ -->
+  <div *ngIf="activeTab === 'financial' && !isLoading && financialReport">
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon purple">💰</span>
+          <span class="summary-label">YTD Sales</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(financialReport.summary?.ytd_sales || 0) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon blue">📊</span>
+          <span class="summary-label">YTD Commission</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(financialReport.summary?.ytd_commission || 0) }}</div>
+        <div class="summary-sub">Rate: {{ financialReport.commission_rate || 0 }}%</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon green">💵</span>
+          <span class="summary-label">YTD Net Income</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(financialReport.summary?.ytd_net_income || 0) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon orange">📈</span>
+          <span class="summary-label">Projected Annual</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(financialReport.summary?.projected_annual || 0) }}</div>
+      </div>
+    </div>
+
+    <!-- Financial Chart -->
+    <div class="chart-card">
+      <h3>Monthly Financial Performance</h3>
+      <div class="chart-container">
+        <canvas id="financialChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Monthly Breakdown Table -->
+    <div class="data-card">
+      <h3>Monthly Breakdown</h3>
+      <div class="table-wrapper">
+        <table class="financial-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Total Sales</th>
+              <th>Transactions</th>
+              <th>Commission</th>
+              <th>Net Income</th>
+              <th>Refunds</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let month of financialReport.monthly_breakdown">
+              <td>{{ month.month }}</td>
+              <td class="amount">{{ formatCurrency(month.total_sales || 0) }}</td>
+              <td>{{ month.transactions || 0 }}</td>
+              <td class="commission">{{ formatCurrency(month.commission || 0) }}</td>
+              <td class="net">{{ formatCurrency(month.net_income || 0) }}</td>
+              <td class="refund">{{ formatCurrency(month.refunds || 0) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- INSTALMENTS REPORT -->
+  <!-- ============================================ -->
+  <div *ngIf="activeTab === 'instalments' && !isLoading && instalmentReport">
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon purple">📅</span>
+          <span class="summary-label">Total Plans</span>
+        </div>
+        <div class="summary-value">{{ instalmentReport.summary?.total_plans || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon blue">✅</span>
+          <span class="summary-label">Active</span>
+        </div>
+        <div class="summary-value">{{ instalmentReport.summary?.active_plans || 0 }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon green">💰</span>
+          <span class="summary-label">Total Value</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(instalmentReport.summary?.total_value || 0) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-icon orange">📊</span>
+          <span class="summary-label">Avg Plan Size</span>
+        </div>
+        <div class="summary-value">{{ formatCurrency(instalmentReport.summary?.average_plan_size || 0) }}</div>
+      </div>
+    </div>
+
+    <!-- Instalment Plan Distribution -->
+    <div class="data-card">
+      <h3>Instalment Plan Distribution</h3>
+      <div class="instalment-distribution">
+        <div class="dist-item" *ngFor="let item of getInstalmentCountsArray(instalmentReport.instalment_counts)">
+          <span class="dist-label">{{ item.key }} Payments</span>
+          <div class="dist-bar">
+            <div class="dist-fill" [style.width.%]="getPercentage(item.value, instalmentReport.summary?.total_plans || 0)"></div>
+          </div>
+          <span class="dist-value">{{ item.value }} plans</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

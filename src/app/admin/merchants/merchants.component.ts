@@ -701,4 +701,9 @@ export class MerchantsComponent implements OnInit {
     }
     alert(message);
   }
+
+  viewMerchantDetail(merchant: Merchant): void {
+  // Navigate to the detailed merchant view page
+  this.router.navigate(['/admin/merchants-details', merchant.id]);
+}
 }

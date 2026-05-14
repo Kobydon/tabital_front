@@ -38,7 +38,7 @@ export interface Merchant {
   created_at: string;
   payment_plan: string | null;
   business_type: string | null;
-  business_reg_number: string | null;
+  registration_number: string | null;
   tax_id: string | null;
   business_address: string | null;
   business_phone: string | null;
@@ -52,6 +52,15 @@ export interface Merchant {
   address: string | null;
   gps: string | null;
   agree: boolean;
+  kyc_status?: string;
+  verification_level?: string;
+  aml_screening?: string;
+  commission_rate?: number;
+  pending_payout?: number;
+  next_settlement?: string;
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
 }
 
 export interface Transaction {
@@ -70,6 +79,7 @@ export interface Transaction {
   payment_method: string;
   payment_status: string;
   payment_reference: string;
+  payment_plan?: string;
   status: string;
   transaction_date: string;
   completion_date: string;
@@ -86,13 +96,9 @@ export interface ApiResponse {
   error?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AdminService {
   private API = 'http://127.0.0.1:5000';
-  // private API = 'https://tabital.onrender.com';
-  
   private readonly TOKEN_KEY = 'access_token';
 
   constructor(private http: HttpClient) {}
@@ -108,26 +114,17 @@ export class AdminService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('API Error:', error);
-    
     let errorMessage = 'An unexpected error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = error.error.message;
-    } else if (error.status === 0) {
-      errorMessage = 'Unable to connect to server. Please check if the backend is running.';
-    } else if (error.status === 401) {
+    if (error.status === 401) {
       errorMessage = 'Session expired. Please login again.';
       localStorage.removeItem(this.TOKEN_KEY);
     } else if (error.status === 403) {
       errorMessage = 'You do not have permission to perform this action.';
     } else if (error.status === 404) {
       errorMessage = 'Resource not found.';
-    } else if (error.status === 500) {
-      errorMessage = 'Server error. Please try again later.';
     } else if (error.error?.message) {
       errorMessage = error.error.message;
     }
-    
     return throwError(() => new Error(errorMessage));
   }
 
@@ -136,26 +133,22 @@ export class AdminService {
   // ============================================
   
   getCustomers(): Observable<Customer[]> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<Customer[]>(`${this.API}/admin/customers`, { headers })
+    return this.http.get<Customer[]>(`${this.API}/admin/customers`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   getCustomer(id: number): Observable<Customer> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<Customer>(`${this.API}/admin/customers/${id}`, { headers })
+    return this.http.get<Customer>(`${this.API}/admin/customers/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  updateCustomer(id: number, customerData: Partial<Customer>): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.put<ApiResponse>(`${this.API}/admin/customers/${id}`, customerData, { headers })
+  updateCustomer(id: number, data: Partial<Customer>): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/customers/${id}`, data, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   deleteCustomer(id: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.delete<ApiResponse>(`${this.API}/admin/customers/${id}`, { headers })
+    return this.http.delete<ApiResponse>(`${this.API}/admin/customers/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
@@ -164,38 +157,47 @@ export class AdminService {
   // ============================================
   
   getMerchants(): Observable<Merchant[]> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<Merchant[]>(`${this.API}/admin/merchants`, { headers })
+    return this.http.get<Merchant[]>(`${this.API}/admin/merchants`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   getMerchant(id: number): Observable<Merchant> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<Merchant>(`${this.API}/admin/merchants/${id}`, { headers })
+    return this.http.get<Merchant>(`${this.API}/admin/merchants/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  updateMerchant(id: number, merchantData: Partial<Merchant>): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.put<ApiResponse>(`${this.API}/admin/merchants/${id}`, merchantData, { headers })
+  updateMerchant(id: number, data: Partial<Merchant>): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/merchants/${id}`, data, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   deleteMerchant(id: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.delete<ApiResponse>(`${this.API}/admin/merchants/${id}`, { headers })
+    return this.http.delete<ApiResponse>(`${this.API}/admin/merchants/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   verifyMerchant(id: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.post<ApiResponse>(`${this.API}/admin/merchants/verify/${id}`, {}, { headers })
+    return this.http.post<ApiResponse>(`${this.API}/admin/merchants/verify/${id}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  updateMerchantKYC(id: number, data: any): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/merchants/${id}/kyc`, data, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  updateMerchantCommission(id: number, data: any): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/merchants/${id}/commission`, data, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  updateMerchantSettlement(id: number, data: any): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/merchants/${id}/settlement`, data, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   getMerchantStats(): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<any>(`${this.API}/admin/merchants/stats`, { headers })
+    return this.http.get<any>(`${this.API}/admin/merchants/stats`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
@@ -203,66 +205,37 @@ export class AdminService {
   // TRANSACTION ENDPOINTS
   // ============================================
   
-  /**
-   * Get all transactions with optional filters
-   * @param filters - Optional filters (status, payment_status, start_date, end_date, search, type)
-   */
   getTransactions(filters?: any): Observable<Transaction[]> {
     let url = `${this.API}/transactions`;
     if (filters) {
       const params = new URLSearchParams();
       Object.keys(filters).forEach(key => {
-        if (filters[key]) {
-          params.append(key, filters[key]);
-        }
+        if (filters[key]) params.append(key, filters[key]);
       });
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
     }
-    const headers = this.getAuthHeaders();
-    return this.http.get<Transaction[]>(url, { headers })
+    return this.http.get<Transaction[]>(url, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  /**
-   * Create a new transaction
-   * @param transactionData - Transaction data (merchant_id, product_name, amount, etc.)
-   */
-  createTransaction(transactionData: any): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.post<ApiResponse>(`${this.API}/transactions/create`, transactionData, { headers })
+  createTransaction(data: any): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.API}/transactions/create`, data, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  /**
-   * Update transaction status
-   * @param transactionId - Transaction ID
-   * @param data - Update data (status, payment_status, delivery_status, etc.)
-   */
-  updateTransactionStatus(transactionId: number, data: any): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.put<ApiResponse>(`${this.API}/transactions/${transactionId}/status`, data, { headers })
+  updateTransactionStatus(id: number, data: any): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/transactions/${id}/status`, data, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  /**
-   * Get transaction statistics
-   */
   getTransactionStats(): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<any>(`${this.API}/transactions/stats`, { headers })
+    return this.http.get<any>(`${this.API}/transactions/stats`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  /**
-   * Delete a transaction (Admin only)
-   * @param transactionId - Transaction ID
-   */
-  deleteTransaction(transactionId: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.delete<ApiResponse>(`${this.API}/transactions/${transactionId}`, { headers })
+  deleteTransaction(id: number): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.API}/transactions/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
@@ -271,46 +244,77 @@ export class AdminService {
   // ============================================
   
   getPendingUsers(): Observable<Customer[]> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<Customer[]>(`${this.API}/admin/pending-users`, { headers })
+    return this.http.get<Customer[]>(`${this.API}/admin/pending-users`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
+  
   approveUser(id: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.post<ApiResponse>(`${this.API}/admin/approve/${id}`, {}, { headers })
+    return this.http.post<ApiResponse>(`${this.API}/admin/approve/${id}`, {}, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   rejectUser(id: number): Observable<ApiResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.post<ApiResponse>(`${this.API}/admin/reject/${id}`, {}, { headers })
+    return this.http.post<ApiResponse>(`${this.API}/admin/reject/${id}`, {}, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   getStats(): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.get<any>(`${this.API}/admin/stats`, { headers })
+    return this.http.get<any>(`${this.API}/admin/stats`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   // ============================================
-  // AUTHENTICATION METHODS
+  // AUTHENTICATION
   // ============================================
   
-  setAuthToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
+  setAuthToken(token: string): void { localStorage.setItem(this.TOKEN_KEY, token); }
+  clearAuthToken(): void { localStorage.removeItem(this.TOKEN_KEY); }
+  isAuthenticated(): boolean { return !!localStorage.getItem(this.TOKEN_KEY); }
+  getToken(): string | null { return localStorage.getItem(this.TOKEN_KEY); }
 
-  clearAuthToken(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-  }
 
-  isAuthenticated(): boolean {
-    return !!localStorage.getItem(this.TOKEN_KEY);
-  }
+  // Add to AdminService class
 
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
+// ============================================
+// DOCUMENT ENDPOINTS
+// ============================================
+
+getMerchantDocuments(merchantId: number): Observable<any[]> {
+  const headers = this.getAuthHeaders();
+  return this.http.get<any[]>(`${this.API}/admin/merchants/${merchantId}/documents`, { headers })
+    .pipe(catchError(this.handleError.bind(this)));
 }
+
+uploadDocument(merchantId: number, documentData: any): Observable<ApiResponse> {
+  const headers = this.getAuthHeaders();
+  return this.http.post<ApiResponse>(`${this.API}/admin/merchants/${merchantId}/documents/upload`, documentData, { headers })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+verifyDocument(documentId: number, data: any): Observable<ApiResponse> {
+  const headers = this.getAuthHeaders();
+  return this.http.put<ApiResponse>(`${this.API}/admin/documents/${documentId}/verify`, data, { headers })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+deleteDocument(documentId: number): Observable<ApiResponse> {
+  const headers = this.getAuthHeaders();
+  return this.http.delete<ApiResponse>(`${this.API}/admin/documents/${documentId}`, { headers })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+
+getCurrentUser(): Observable<Merchant> {
+  return this.http.get<Merchant>(
+    `${this.API}/admin/get_current_user`,
+    {
+      headers: this.getAuthHeaders()
+    }
+  ).pipe(
+    catchError(this.handleError.bind(this))
+  );
+}
+}
+
+

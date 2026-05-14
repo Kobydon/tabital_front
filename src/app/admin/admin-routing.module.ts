@@ -6,6 +6,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { CustomersComponent } from './customers/customers.component';
 import { MerchantsComponent } from './merchants/merchants.component';
 import { TransactionsComponent } from './transactions/transactions.component';
+import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 
 const routes: Routes = [
   {
@@ -21,7 +22,8 @@ const routes: Routes = [
       { path: 'merchants', component: MerchantsComponent },  // Replace with actual component
       { path: 'settings', component: DashboardComponent }  ,// Replace with actual component
       {path: 'customers', component: CustomersComponent },  // Replace with actual component
-        {path: 'transactions', component: TransactionsComponent }  // Replace with actual component
+        {path: 'transactions', component: TransactionsComponent } , // Replace with actual component
+          {path: 'merchants-details/:id', component: MerchantDetailsComponent }  // Replace with actual component
     ]
   }
 ];
