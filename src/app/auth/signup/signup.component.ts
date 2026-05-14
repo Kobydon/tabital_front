@@ -34,6 +34,17 @@ export class SignupComponent implements OnInit {
     this.setupConditionalValidators();
   }
 
+  // Custom validator for password matching
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
+    
+    if (password && confirmPassword && password.value !== confirmPassword.value) {
+      return { passwordMismatch: true };
+    }
+    return null;
+  }
+
   createCustomerForm(): FormGroup {
     return this.fb.group({
       full_name: ['', [Validators.required, Validators.minLength(2)]],
@@ -54,8 +65,9 @@ export class SignupComponent implements OnInit {
       ref_phone: ['', [Validators.required, Validators.pattern('^[0-9]{10,15}$')]],
       ref_relationship: ['', Validators.required],
       agree: [false, Validators.requiredTrue],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
   }
 
   createMerchantForm(): FormGroup {
@@ -100,8 +112,9 @@ export class SignupComponent implements OnInit {
       
       // Account Security
       agree: [false, Validators.requiredTrue],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
   }
 
   setupConditionalValidators() {
@@ -166,6 +179,11 @@ export class SignupComponent implements OnInit {
     return isValid ? null : { invalidUrl: true };
   }
 
+  // Helper method to check if passwords match
+  hasPasswordMismatch(form: FormGroup): boolean {
+    return form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched;
+  }
+
   switchTab(tab: string) {
     this.activeTab = tab;
     this.isLoading = false;
@@ -186,6 +204,9 @@ export class SignupComponent implements OnInit {
       ...this.customerForm.value,
       role: 'customer'
     };
+    
+    // Remove confirmPassword before sending to API
+    delete customerData.confirmPassword;
 
     this.auth.register(customerData).subscribe({
       next: (res: any) => {
@@ -216,6 +237,9 @@ export class SignupComponent implements OnInit {
       ...this.merchantForm.value,
       role: 'merchant'
     };
+    
+    // Remove confirmPassword before sending to API
+    delete merchantData.confirmPassword;
 
     this.auth.register(merchantData).subscribe({
       next: (res: any) => {
@@ -258,6 +282,9 @@ export class SignupComponent implements OnInit {
           errors.push(`${key}: ${JSON.stringify(control.errors)}`);
         }
       });
+      if (this.customerForm.errors?.['passwordMismatch']) {
+        errors.push('passwordMismatch: Passwords do not match');
+      }
     } else if (this.merchantForm) {
       Object.keys(this.merchantForm.controls).forEach(key => {
         const control = this.merchantForm.get(key);
@@ -265,6 +292,9 @@ export class SignupComponent implements OnInit {
           errors.push(`${key}: ${JSON.stringify(control.errors)}`);
         }
       });
+      if (this.merchantForm.errors?.['passwordMismatch']) {
+        errors.push('passwordMismatch: Passwords do not match');
+      }
     }
     return errors;
   }
