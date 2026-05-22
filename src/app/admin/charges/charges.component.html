@@ -1,0 +1,342 @@
+<div class="charges-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">⚙️</span>
+        System Charges & Settings
+      </h1>
+      <p class="subtitle">Configure installment parameters, fees, and charges for the Tabital system</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-reset" (click)="resetToDefault()">
+        <i class="fas fa-undo-alt"></i> Reset to Default
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert success">
+    <i class="fas fa-check-circle"></i> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert error">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading settings...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="settings-content">
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-btn" [class.active]="activeTab === 'general'" (click)="switchTab('general')">
+        <i class="fas fa-sliders-h"></i> General Charges
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'installments'" (click)="switchTab('installments')">
+        <i class="fas fa-calendar-alt"></i> Installment Options
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'history'" (click)="switchTab('history')">
+        <i class="fas fa-history"></i> Change History
+      </button>
+    </div>
+
+    <!-- General Charges Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'general'">
+      <div class="settings-grid">
+        <!-- Left Column - Percentage Settings -->
+        <div class="settings-card">
+          <h3><i class="fas fa-percent"></i> Percentage Charges</h3>
+          
+          <div class="setting-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Down Payment Percentage</label>
+                <p class="setting-desc">Percentage of product price paid upfront (Default: 40%)</p>
+                <div class="formula-hint">
+                  <span class="variable">D = P × 40%</span>
+                </div>
+              </div>
+              <div class="setting-control">
+                <div class="percentage-input">
+                  <input type="number" formControlName="down_payment_percentage" min="0" max="100" step="1">
+                  <span class="percentage-symbol">%</span>
+                </div>
+                <div class="preview-value">
+                  Example: ₵1,000 → ₵{{ (1000 * (generalForm.value.down_payment_percentage || 40) / 100) | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Merchant Fee Percentage</label>
+                <p class="setting-desc">Fee deducted from merchant payout (Default: 10%)</p>
+                <div class="formula-hint">
+                  <span class="variable">MF = P × 10%</span>
+                </div>
+              </div>
+              <div class="setting-control">
+                <div class="percentage-input">
+                  <input type="number" formControlName="merchant_fee_percentage" min="0" max="100" step="0.5">
+                  <span class="percentage-symbol">%</span>
+                </div>
+                <div class="preview-value">
+                  Merchant receives: ₵{{ (1000 - (1000 * (generalForm.value.merchant_fee_percentage || 10) / 100)) | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Late Fee Percentage</label>
+                <p class="setting-desc">Penalty for overdue payments (Default: 10%)</p>
+                <div class="formula-hint">
+                  <span class="variable">LF = O × 10%</span>
+                </div>
+              </div>
+              <div class="setting-control">
+                <div class="percentage-input">
+                  <input type="number" formControlName="late_fee_percentage" min="0" max="100" step="0.5">
+                  <span class="percentage-symbol">%</span>
+                </div>
+                <div class="preview-value">
+                  Late fee on ₵800: ₵{{ (800 * (generalForm.value.late_fee_percentage || 10) / 100) | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Fixed Charges -->
+        <div class="settings-card">
+          <h3><i class="fas fa-coins"></i> Fixed Charges & Rules</h3>
+          
+          <div class="setting-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Service Fee (GHS)</label>
+                <p class="setting-desc">Additional fee added to customer total (Default: ₵0)</p>
+                <div class="formula-hint">
+                  <span class="variable">Total = P + F</span>
+                </div>
+              </div>
+              <div class="setting-control">
+                <div class="currency-input">
+                  <span class="currency-symbol">₵</span>
+                  <input type="number" formControlName="service_fee" min="0" step="1">
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Late Fee Grace Period</label>
+                <p class="setting-desc">Days after due date before late fee applies (Default: 3 days)</p>
+              </div>
+              <div class="setting-control">
+                <div class="number-input">
+                  <input type="number" formControlName="late_fee_grace_period_days" min="0" max="30" step="1">
+                  <span class="unit">days</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview Calculator -->
+            <div class="preview-card">
+              <h4><i class="fas fa-calculator"></i> Live Preview</h4>
+              <div class="preview-details">
+                <div class="preview-row">
+                  <span>Product Price:</span>
+                  <strong>₵1,000.00</strong>
+                </div>
+                <div class="preview-row">
+                  <span>Down Payment ({{ generalForm.value.down_payment_percentage || 40 }}%):</span>
+                  <strong>₵{{ (1000 * (generalForm.value.down_payment_percentage || 40) / 100) | number:'1.2-2' }}</strong>
+                </div>
+                <div class="preview-row">
+                  <span>Merchant Fee ({{ generalForm.value.merchant_fee_percentage || 10 }}%):</span>
+                  <strong>₵{{ (1000 * (generalForm.value.merchant_fee_percentage || 10) / 100) | number:'1.2-2' }}</strong>
+                </div>
+                <div class="preview-row">
+                  <span>Merchant Payout:</span>
+                  <strong>₵{{ (1000 - (1000 * (generalForm.value.merchant_fee_percentage || 10) / 100)) | number:'1.2-2' }}</strong>
+                </div>
+                <div class="preview-row total">
+                  <span>Customer Total Payable:</span>
+                  <strong>₵{{ (1000 + (generalForm.value.service_fee || 0)) | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Installment Limits -->
+      <div class="limits-card">
+        <h3><i class="fas fa-chart-line"></i> Installment Limits</h3>
+        <div class="limits-grid">
+          <div class="limit-item">
+            <label>Minimum Installments</label>
+            <div class="limit-control">
+              <input type="number" formControlName="min_installments" min="2" max="6">
+              <span class="unit">months</span>
+            </div>
+            <small>Minimum allowed installment period</small>
+          </div>
+          <div class="limit-item">
+            <label>Maximum Installments</label>
+            <div class="limit-control">
+              <input type="number" formControlName="max_installments" min="6" max="48">
+              <span class="unit">months</span>
+            </div>
+            <small>Maximum allowed installment period</small>
+          </div>
+          <div class="limit-item">
+            <label>Default Installments</label>
+            <div class="limit-control">
+              <input type="number" formControlName="default_installments" min="2" [max]="installmentForm.value.max_installments">
+              <span class="unit">months</span>
+            </div>
+            <small>Pre-selected installment period</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="resetToDefault()">
+          <i class="fas fa-undo-alt"></i> Reset to Default
+        </button>
+        <button class="btn-primary" (click)="saveGeneralSettings()" [disabled]="isSaving">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSaving"></i>
+          {{ isSaving ? 'Saving...' : 'Save All Changes' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Installment Options Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'installments'">
+      <div class="installments-header">
+        <h3><i class="fas fa-calendar-alt"></i> Available Installment Plans</h3>
+        <p class="section-desc">Configure which installment periods are available to customers</p>
+      </div>
+
+      <div class="installments-grid">
+        <div class="installment-option-card" *ngFor="let option of installmentOptions">
+          <div class="option-header">
+            <div class="option-period">
+              <span class="months">{{ option.months }}</span>
+              <span class="period">Months</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="option.is_active">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="option-details">
+            <div class="detail-item">
+              <span class="label">Label:</span>
+              <span class="value">{{ option.label }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Interest Rate:</span>
+              <div class="interest-control">
+                <input type="number" [value]="option.interest_rate" (change)="updateInterestRate(option, $event)" step="0.5" min="0" max="100" [disabled]="!option.is_active">
+                <span class="percentage">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="option-preview" *ngIf="option.is_active">
+            <div class="preview-text">
+              For ₵1,000 → {{ option.months }} payments of ₵{{ (1000 / option.months * (1 + option.interest_rate / 100)) | number:'1.2-2' }}/month
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" (click)="saveInstallmentOptions()" [disabled]="isSaving">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSaving"></i>
+          {{ isSaving ? 'Saving...' : 'Save Installment Options' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'history'">
+      <div class="history-header">
+        <h3><i class="fas fa-history"></i> Change History</h3>
+        <p class="section-desc">Track all changes made to system charges and settings</p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item" *ngFor="let log of activityLog; let i = index">
+          <div class="timeline-marker">
+            <div class="marker-dot"></div>
+            <div class="marker-line" *ngIf="i < activityLog.length - 1"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="action">{{ log.action }}</span>
+              <span class="date">{{ log.created_at | date:'medium' }}</span>
+            </div>
+            <div class="timeline-details">
+              <p>{{ log.description }}</p>
+              <div class="changes" *ngIf="log.changes">
+                <div class="change-item" *ngFor="let change of log.changes">
+                  <span class="field">{{ change.field }}:</span>
+                  <span class="old-value">{{ change.old_value }}</span>
+                  <i class="fas fa-arrow-right"></i>
+                  <span class="new-value">{{ change.new_value }}</span>
+                </div>
+              </div>
+              <div class="user-info">
+                <i class="fas fa-user"></i> {{ log.updated_by }}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="activityLog.length === 0" class="empty-history">
+          <i class="fas fa-history"></i>
+          <p>No change history available</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formula Reference Card -->
+  <div class="formula-reference">
+    <h4><i class="fas fa-book"></i> Tabital Installment Formulas</h4>
+    <div class="formulas-grid">
+      <div class="formula">
+        <span class="formula-name">Down Payment (D)</span>
+        <code>D = P × 40%</code>
+      </div>
+      <div class="formula">
+        <span class="formula-name">Remaining Balance (B)</span>
+        <code>B = P - D + F</code>
+      </div>
+      <div class="formula">
+        <span class="formula-name">Installment Amount (I)</span>
+        <code>I = B / (N - 1)</code>
+      </div>
+      <div class="formula">
+        <span class="formula-name">Late Fee (LF)</span>
+        <code>LF = O × 10%</code>
+      </div>
+      <div class="formula">
+        <span class="formula-name">Merchant Payout</span>
+        <code>MP = P - (P × 10%)</code>
+      </div>
+      <div class="formula">
+        <span class="formula-name">Total Payable</span>
+        <code>Total = P + F + LF</code>
+      </div>
+    </div>
+  </div>
+</div>

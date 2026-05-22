@@ -1,0 +1,268 @@
+<div class="orders-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">📦</span>
+        My Orders
+      </h1>
+      <div class="stats-badge" *ngIf="orders.length > 0">
+        <span class="stat-count">{{ orders.length }}</span>
+        <span class="stat-label">Total Orders</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="shop-btn" routerLink="/customer/shop">
+        <i class="fas fa-shopping-cart"></i> Continue Shopping
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="filterByTab('all')">
+      <i class="fas fa-list"></i> All Orders
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="filterByTab('pending')">
+      <i class="fas fa-clock"></i> Pending Approval
+      <span class="badge" *ngIf="getPendingCount() > 0">{{ getPendingCount() }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'approved'" (click)="filterByTab('approved')">
+      <i class="fas fa-check-circle"></i> Approved
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'completed'" (click)="filterByTab('completed')">
+      <i class="fas fa-truck"></i> Completed
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your orders...</p>
+  </div>
+
+  <!-- Orders List -->
+  <div class="orders-list" *ngIf="!isLoading && filteredOrders.length > 0">
+    <div class="order-card" *ngFor="let order of filteredOrders" (click)="viewOrderDetails(order)">
+      <!-- Order Header -->
+      <div class="order-header">
+        <div class="order-info">
+          <span class="order-id">Order #{{ order.order_id }}</span>
+          <span class="order-date">{{ formatDate(order.created_at) }}</span>
+        </div>
+        <div class="order-status">
+          <span class="status-badge" [class]="getStatusClass(order.status)">
+            {{ getStatusIcon(order.status) }} {{ order.status | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Order Content -->
+      <div class="order-content">
+        <div class="product-image" *ngIf="order.product_image">
+          <img [src]="order.product_image" [alt]="order.product_name">
+        </div>
+        <div class="product-image" *ngIf="!order.product_image">
+          <div class="no-image">
+            <i class="fas fa-image"></i>
+          </div>
+        </div>
+        
+        <div class="product-details">
+          <h3>{{ order.product_name }}</h3>
+          <p class="merchant">
+            <i class="fas fa-store"></i> {{ order.merchant_name }}
+          </p>
+          <div class="price-info">
+            <span class="price">{{ formatCurrency(order.product_price) }}</span>
+            <span class="quantity">Qty: {{ order.quantity }}</span>
+          </div>
+        </div>
+
+        <div class="order-summary">
+          <div class="summary-item">
+            <span class="label">Total Payable:</span>
+            <span class="value">{{ formatCurrency(order.total_payable) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Down Payment:</span>
+            <span class="value down">{{ formatCurrency(order.down_payment_amount) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Monthly:</span>
+            <span class="value">{{ formatCurrency(order.installment_amount) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Footer -->
+      <div class="order-footer">
+        <div class="delivery-info" *ngIf="order.delivery_status">
+          <i class="fas fa-truck"></i>
+          <span>Delivery: {{ order.delivery_status | titlecase }}</span>
+        </div>
+        <div class="admin-note" *ngIf="order.admin_notes && order.status === 'rejected'">
+          <i class="fas fa-comment"></i>
+          <span>Note: {{ order.admin_notes }}</span>
+        </div>
+        <button class="view-btn" (click)="$event.stopPropagation(); viewOrderDetails(order)">
+          View Details <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredOrders.length === 0" class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h3>No orders found</h3>
+    <p *ngIf="activeTab === 'all'">You haven't placed any orders yet</p>
+    <p *ngIf="activeTab !== 'all'">No {{ activeTab }} orders found</p>
+    <button routerLink="/customer/shop" class="shop-now-btn">
+      <i class="fas fa-shopping-cart"></i> Shop Now
+    </button>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div class="modal" *ngIf="showOrderModal" (click)="closeModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-receipt"></i> Order Details</h2>
+        <button class="close" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body" *ngIf="selectedOrder">
+        <!-- Order Status Bar -->
+        <div class="order-progress">
+          <div class="progress-step" [class.completed]="selectedOrder.status !== 'pending'">
+            <div class="step-icon">📝</div>
+            <div class="step-label">Order Placed</div>
+            <div class="step-date">{{ formatDate(selectedOrder.created_at) }}</div>
+          </div>
+          <div class="progress-line" [class.completed]="selectedOrder.status === 'approved' || selectedOrder.status === 'completed'"></div>
+          <div class="progress-step" [class.completed]="selectedOrder.status === 'approved' || selectedOrder.status === 'completed'">
+            <div class="step-icon">✅</div>
+            <div class="step-label">Approved</div>
+            <div class="step-date">{{ formatDate(selectedOrder.approved_at) }}</div>
+          </div>
+          <div class="progress-line" [class.completed]="selectedOrder.status === 'completed'"></div>
+          <div class="progress-step" [class.completed]="selectedOrder.status === 'completed'">
+            <div class="step-icon">🚚</div>
+            <div class="step-label">Delivered</div>
+            <div class="step-date" *ngIf="selectedOrder.status === 'completed'">{{ formatDate(selectedOrder.created_at) }}</div>
+          </div>
+        </div>
+
+        <!-- Order Information -->
+        <div class="detail-section">
+          <h3><i class="fas fa-info-circle"></i> Order Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Order ID:</span>
+              <span class="value">{{ selectedOrder.order_id }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Status:</span>
+              <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
+                {{ getStatusIcon(selectedOrder.status) }} {{ selectedOrder.status | titlecase }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="label">Placed On:</span>
+              <span class="value">{{ formatDate(selectedOrder.created_at) }}</span>
+            </div>
+            <div class="info-item" *ngIf="selectedOrder.approved_at">
+              <span class="label">Approved On:</span>
+              <span class="value">{{ formatDate(selectedOrder.approved_at) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Information -->
+        <div class="detail-section">
+          <h3><i class="fas fa-box"></i> Product Information</h3>
+          <div class="product-detail">
+            <div class="product-image" *ngIf="selectedOrder.product_image">
+              <img [src]="selectedOrder.product_image" [alt]="selectedOrder.product_name">
+            </div>
+            <div class="product-info">
+              <h4>{{ selectedOrder.product_name }}</h4>
+              <p class="merchant">{{ selectedOrder.merchant_name }}</p>
+              <div class="price-breakdown">
+                <div class="price-row">
+                  <span>Unit Price:</span>
+                  <strong>{{ formatCurrency(selectedOrder.product_price) }}</strong>
+                </div>
+                <div class="price-row">
+                  <span>Quantity:</span>
+                  <strong>{{ selectedOrder.quantity }}</strong>
+                </div>
+                <div class="price-row total">
+                  <span>Total Amount:</span>
+                  <strong>{{ formatCurrency(selectedOrder.total_payable) }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Schedule -->
+        <div class="detail-section">
+          <h3><i class="fas fa-calendar-alt"></i> Payment Schedule</h3>
+          <div class="payment-schedule">
+            <div class="schedule-header">
+              <span>Installment</span>
+              <span>Amount</span>
+              <span>Due Date</span>
+              <span>Status</span>
+            </div>
+            <div class="schedule-row" *ngFor="let payment of selectedOrder.payment_schedule; let i = index">
+              <span>Installment {{ payment.installment_number }}</span>
+              <span class="amount">{{ formatCurrency(payment.amount) }}</span>
+              <span>{{ payment.installment_number === 1 ? 'Now' : formatDate(payment.due_date) }}</span>
+              <span class="payment-status" [class]="payment.status">
+                {{ payment.installment_number === 1 ? (selectedOrder.status === 'approved' ? 'Paid' : 'Pending') : 'Pending' }}
+              </span>
+            </div>
+          </div>
+          <div class="payment-note" *ngIf="selectedOrder.status === 'approved'">
+            <i class="fas fa-info-circle"></i>
+            Your down payment has been processed. Remaining installments will be charged monthly.
+          </div>
+        </div>
+
+        <!-- Delivery Information -->
+        <div class="detail-section" *ngIf="selectedOrder && selectedOrder.delivery_address">
+          <h3><i class="fas fa-truck"></i> Delivery Information</h3>
+          <div class="delivery-details">
+            <div class="address">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ selectedOrder!.delivery_address }}</span>
+            </div>
+            <div class="delivery-status" *ngIf="selectedOrder.delivery_status">
+              <span class="label">Delivery Status:</span>
+              <span class="value">{{ selectedOrder.delivery_status | titlecase }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Notes (if rejected) -->
+        <div class="detail-section" *ngIf="selectedOrder.status === 'rejected' && selectedOrder.admin_notes">
+          <h3><i class="fas fa-comment"></i> Admin Note</h3>
+          <div class="admin-note">
+            <p>{{ selectedOrder.admin_notes }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Close</button>
+        <button *ngIf="selectedOrder?.status === 'approved'" class="btn-primary" (click)="trackOrder(selectedOrder!)">
+          <i class="fas fa-map-marked-alt"></i> Track Order
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

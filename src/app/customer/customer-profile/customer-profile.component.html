@@ -1,0 +1,330 @@
+<div class="profile-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">👤</span>
+        My Profile
+      </h1>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert success">
+    <i class="fas fa-check-circle"></i> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert error">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading profile...</p>
+  </div>
+
+  <div *ngIf="!isLoading && customerProfile" class="profile-content">
+    <!-- Profile Header Card -->
+    <div class="profile-header-card">
+      <div class="profile-avatar">
+        <div class="avatar-circle">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="avatar-info">
+          <h2>{{ customerProfile.full_name || customerProfile.business_name || 'Customer' }}</h2>
+          <p class="member-since">Member since {{ formatDateOnly(customerProfile.created_at) }}</p>
+        </div>
+      </div>
+      <div class="kyc-status-badge" [class]="getKYCStatusClass()">
+        <span class="status-icon">{{ getKYCStatusIcon() }}</span>
+        <span class="status-text">{{ getKYCStatusText() }}</span>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-btn" [class.active]="activeTab === 'profile'" (click)="switchTab('profile')">
+        <i class="fas fa-user"></i> Profile Information
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'security'" (click)="switchTab('security')">
+        <i class="fas fa-lock"></i> Security
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'kyc'" (click)="switchTab('kyc')">
+        <i class="fas fa-id-card"></i> KYC Verification
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'activity'" (click)="switchTab('activity')">
+        <i class="fas fa-history"></i> Activity Log
+      </button>
+    </div>
+
+    <!-- Profile Information Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'profile'">
+      <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+        <div class="form-section">
+          <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" formControlName="full_name" placeholder="Enter your full name">
+              <small *ngIf="profileForm.get('full_name')?.invalid && profileForm.get('full_name')?.touched" class="error">
+                Full name is required
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input type="email" formControlName="email" placeholder="Enter your email">
+              <small *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" class="error">
+                Valid email is required
+              </small>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" formControlName="phone" placeholder="Enter your phone number">
+              <small *ngIf="profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched" class="error">
+                Phone number is required
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Business Name (Optional)</label>
+              <input type="text" formControlName="business_name" placeholder="Enter business name">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-map-marker-alt"></i> Address Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" formControlName="city" placeholder="Enter your city">
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" formControlName="address" placeholder="Enter your address">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>GPS Location</label>
+              <input type="text" formControlName="gps" placeholder="e.g., GA-123-4567">
+            </div>
+            <div class="form-group">
+              <label>Income Range</label>
+              <select formControlName="income_range">
+                <option value="">Select income range</option>
+                <option value="0-1000">Below GHS 1,000</option>
+                <option value="1000-3000">GHS 1,000 - 3,000</option>
+                <option value="3000-5000">GHS 3,000 - 5,000</option>
+                <option value="5000-10000">GHS 5,000 - 10,000</option>
+                <option value="10000+">Above GHS 10,000</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="profileForm.invalid || isUpdating">
+            <i class="fas fa-spinner fa-spin" *ngIf="isUpdating"></i>
+            {{ isUpdating ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Security Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'security'">
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="form-section">
+          <h3><i class="fas fa-key"></i> Change Password</h3>
+          
+          <div class="form-group">
+            <label>Current Password</label>
+            <div class="password-input">
+              <input [type]="showCurrentPassword ? 'text' : 'password'" formControlName="current_password" placeholder="Enter current password">
+              <button type="button" class="toggle-password" (click)="showCurrentPassword = !showCurrentPassword">
+                <i class="fas" [class.fa-eye]="showCurrentPassword" [class.fa-eye-slash]="!showCurrentPassword"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>New Password</label>
+              <div class="password-input">
+                <input [type]="showNewPassword ? 'text' : 'password'" formControlName="new_password" placeholder="Enter new password">
+                <button type="button" class="toggle-password" (click)="showNewPassword = !showNewPassword">
+                  <i class="fas" [class.fa-eye]="showNewPassword" [class.fa-eye-slash]="!showNewPassword"></i>
+                </button>
+              </div>
+              <small>Minimum 6 characters</small>
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <div class="password-input">
+                <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirm_password" placeholder="Confirm new password">
+                <button type="button" class="toggle-password" (click)="showConfirmPassword = !showConfirmPassword">
+                  <i class="fas" [class.fa-eye]="showConfirmPassword" [class.fa-eye-slash]="!showConfirmPassword"></i>
+                </button>
+              </div>
+              <small *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirm_password')?.touched" class="error">
+                Passwords do not match
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="passwordForm.invalid || isChangingPassword">
+            <i class="fas fa-spinner fa-spin" *ngIf="isChangingPassword"></i>
+            {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="info-card">
+        <h4><i class="fas fa-shield-alt"></i> Security Tips</h4>
+        <ul>
+          <li>Use a strong password with at least 8 characters</li>
+          <li>Include numbers, symbols, and both uppercase and lowercase letters</li>
+          <li>Never share your password with anyone</li>
+          <li>Enable two-factor authentication for extra security</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- KYC Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'kyc'">
+      <div class="kyc-info" *ngIf="kycStatus.status === 'pending'">
+        <i class="fas fa-clock"></i>
+        <h3>KYC Verification in Progress</h3>
+        <p>Your documents are being reviewed. This usually takes 24-48 hours.</p>
+      </div>
+      
+      <div class="kyc-info verified" *ngIf="kycStatus.status === 'verified'">
+        <i class="fas fa-check-circle"></i>
+        <h3>KYC Verified</h3>
+        <p>Your identity has been verified. You now have access to all features.</p>
+        <div class="verification-details" *ngIf="kycStatus.verified_at">
+          <small>Verified on: {{ formatDateOnly(kycStatus.verified_at) }}</small>
+        </div>
+      </div>
+      
+      <div class="kyc-info rejected" *ngIf="kycStatus.status === 'rejected'">
+        <i class="fas fa-times-circle"></i>
+        <h3>KYC Verification Failed</h3>
+        <p>{{ kycStatus.rejection_reason || 'Your documents were rejected. Please submit valid documents.' }}</p>
+      </div>
+
+      <div class="form-section" *ngIf="kycStatus.status !== 'verified'">
+        <h3><i class="fas fa-id-card"></i> Submit KYC Documents</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>ID Type *</label>
+            <select formControlName="id_type">
+              <option value="">Select ID type</option>
+              <option value="national_id">National ID Card</option>
+              <option value="voter_id">Voter ID Card</option>
+              <option value="drivers_license">Driver's License</option>
+              <option value="passport">Passport</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ID Number *</label>
+            <input type="text" formControlName="id_number" placeholder="Enter ID number">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date of Birth *</label>
+            <input type="date" formControlName="date_of_birth">
+          </div>
+          <div class="form-group">
+            <label>Nationality *</label>
+            <select formControlName="nationality">
+              <option value="">Select nationality</option>
+              <option value="ghana">Ghanaian</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="documents-section">
+          <h4>Required Documents</h4>
+          
+          <div class="document-upload">
+            <div class="upload-card" *ngFor="let doc of selectedFiles">
+              <div class="upload-header">
+                <span class="doc-type">
+                  <i class="fas" [class.fa-id-card]="doc.type === 'national_id'"
+                     [class.fa-camera]="doc.type === 'passport_photo'"
+                     [class.fa-home]="doc.type === 'proof_of_address'"></i>
+                  {{ doc.type === 'national_id' ? 'National ID' : doc.type === 'passport_photo' ? 'Passport Photo' : 'Proof of Address' }}
+                </span>
+                <span class="required">Required</span>
+              </div>
+              
+              <div *ngIf="!doc.file" class="upload-area">
+                <input type="file" [id]="'file_' + doc.type" (change)="onFileSelected($event, doc.type)" accept="image/*,.pdf" hidden #fileInput>
+                <button type="button" class="upload-btn" (click)="fileInput.click()">
+                  <i class="fas fa-cloud-upload-alt"></i> Choose File
+                </button>
+                <p class="file-hint">JPG, PNG or PDF (max 5MB)</p>
+              </div>
+              
+              <div *ngIf="doc.file" class="file-preview">
+                <span class="file-icon">{{ getFileIcon(doc.file.type) }}</span>
+                <span class="file-name">{{ doc.file.name }}</span>
+                <button type="button" class="remove-file" (click)="removeFile(doc.type)">
+                  <i class="fas fa-times-circle"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-primary" (click)="submitKYC()" [disabled]="!isFormComplete() || isUploadingKYC">
+            <i class="fas fa-spinner fa-spin" *ngIf="isUploadingKYC"></i>
+            {{ isUploadingKYC ? 'Uploading...' : 'Submit for Verification' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'activity'">
+      <div class="activity-timeline">
+        <div class="activity-item" *ngFor="let log of activityLogs; let i = index; let isLast = last">
+          <div class="activity-marker">
+            <div class="marker-dot"></div>
+            <div class="marker-line" *ngIf="!isLast"></div>
+          </div>
+          <div class="activity-content">
+            <div class="activity-header">
+              <span class="activity-icon">
+                <i class="fas" [class.fa-sign-in-alt]="log.action === 'Login'"
+                   [class.fa-user-edit]="log.action === 'Profile Update'"
+                   [class.fa-key]="log.action === 'Password Change'"></i>
+              </span>
+              <span class="activity-action">{{ log.action }}</span>
+              <span class="activity-date">{{ formatDate(log.created_at) }}</span>
+            </div>
+            <p class="activity-description">{{ log.description }}</p>
+            <small class="activity-ip">IP: {{ log.ip_address }}</small>
+          </div>
+        </div>
+        
+        <div *ngIf="activityLogs.length === 0" class="empty-activity">
+          <i class="fas fa-history"></i>
+          <p>No activity logs available</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

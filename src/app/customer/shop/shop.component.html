@@ -1,0 +1,386 @@
+<div class="shop-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🛒</span>
+        Shop with Installment Plans
+      </h1>
+      <p class="subtitle">Buy now, pay over time with flexible payment plans</p>
+    </div>
+    <div class="header-right">
+      <button class="orders-btn" routerLink="/customer/orders">
+        <i class="fas fa-box"></i> My Orders
+      </button>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="categories-section">
+    <div class="categories-header">
+      <h2><i class="fas fa-tags"></i> Categories</h2>
+    </div>
+    <div class="categories-grid">
+      <button 
+        class="category-card"
+        [class.active]="selectedCategory === ''"
+        (click)="filterByCategory('')">
+        <span class="category-icon">📋</span>
+        <span class="category-name">All</span>
+      </button>
+      <button 
+        *ngFor="let cat of categories"
+        class="category-card"
+        [class.active]="selectedCategory === cat"
+        (click)="filterByCategory(cat)">
+        <span class="category-icon">{{ getCategoryIcon(cat) }}</span>
+        <span class="category-name">{{ cat }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="filter-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        placeholder="Search products..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="filter-stats">
+      <span>{{ filteredProducts.length }} products found</span>
+      <button *ngIf="searchTerm || selectedCategory" class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid" *ngIf="!isLoading && filteredProducts.length > 0">
+    <div class="product-card" *ngFor="let product of filteredProducts">
+      <div class="product-image">
+        <img 
+          *ngIf="product.main_image" 
+          [src]="product.main_image" 
+          [alt]="product.name"
+          onerror="this.src='assets/default-product.png'">
+        <div *ngIf="!product.main_image" class="no-image">
+          <i class="fas fa-image"></i>
+        </div>
+        <div class="stock-badge" [class]="getStockClass(product.stock_quantity)">
+          {{ getStockStatus(product.stock_quantity) }}
+        </div>
+      </div>
+      
+      <div class="product-info">
+        <h3>{{ product.name }}</h3>
+        <p class="product-description">{{ product.description | slice:0:60 }}...</p>
+        
+        <div class="product-price">
+          <span class="current-price">{{ formatCurrency(product.price) }}</span>
+        </div>
+        
+        <div class="product-meta">
+          <span class="meta-item">
+            <i class="fas fa-tag"></i> {{ product.category }}
+          </span>
+          <span class="meta-item" *ngIf="product.brand">
+            <i class="fas fa-building"></i> {{ product.brand }}
+          </span>
+        </div>
+        
+        <div class="installment-teaser">
+          <i class="fas fa-calendar-alt"></i>
+          From {{ formatCurrency(product.price * 0.6 / 3) }}/month
+        </div>
+        
+        <button class="btn-view" (click)="viewProduct(product)" [disabled]="product.stock_quantity <= 0">
+          {{ product.stock_quantity > 0 ? 'View & Buy' : 'Out of Stock' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredProducts.length === 0" class="empty-state">
+    <div class="empty-icon">🛍️</div>
+    <h3>No products found</h3>
+    <p>Try adjusting your filters or search criteria</p>
+    <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+      <i class="fas fa-chevron-left"></i> Previous
+    </button>
+    <div class="page-numbers">
+      <button
+        *ngFor="let page of getPageNumbers()"
+        class="page-number"
+        [class.active]="currentPage === page"
+        (click)="changePage(page)">
+        {{ page }}
+      </button>
+    </div>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Product Details Modal -->
+  <div class="modal" *ngIf="showProductModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-info-circle"></i> Product Details</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedProduct">
+        <div class="product-detail">
+          <div class="detail-image">
+            <img *ngIf="selectedProduct.main_image" [src]="selectedProduct.main_image" [alt]="selectedProduct.name">
+            <div *ngIf="!selectedProduct.main_image" class="no-image-large">
+              <i class="fas fa-image"></i>
+            </div>
+          </div>
+          <div class="detail-info">
+            <h3>{{ selectedProduct.name }}</h3>
+            <p class="detail-description">{{ selectedProduct.description }}</p>
+            
+            <div class="detail-price">
+              <span class="label">Cash Price:</span>
+              <span class="value">{{ formatCurrency(selectedProduct.price) }}</span>
+            </div>
+            
+            <div class="detail-meta">
+              <span><i class="fas fa-tag"></i> {{ selectedProduct.category }}</span>
+              <span *ngIf="selectedProduct.brand"><i class="fas fa-building"></i> {{ selectedProduct.brand }}</span>
+              <span *ngIf="selectedProduct.model"><i class="fas fa-microchip"></i> {{ selectedProduct.model }}</span>
+            </div>
+            
+            <div class="stock-info" [class]="getStockClass(selectedProduct.stock_quantity)">
+              <i class="fas" [class.fa-check-circle]="selectedProduct.stock_quantity > 0" [class.fa-times-circle]="selectedProduct.stock_quantity <= 0"></i>
+              {{ getStockStatus(selectedProduct.stock_quantity) }}
+            </div>
+
+            <div class="quantity-selector">
+              <label>Quantity:</label>
+              <div class="quantity-control">
+                <button type="button" (click)="updateQuantity('decrease')" [disabled]="purchaseForm.value.quantity <= 1">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <input type="number" formControlName="quantity" (change)="updateQuantity()" min="1" [max]="selectedProduct.stock_quantity">
+                <button type="button" (click)="updateQuantity('increase')" [disabled]="purchaseForm.value.quantity >= selectedProduct.stock_quantity">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Installment Plans Section -->
+        <div class="installment-section">
+          <h3><i class="fas fa-calendar-alt"></i> Choose Your Installment Plan</h3>
+          <div class="installment-options">
+            <button 
+              *ngFor="let option of installmentOptions"
+              class="installment-btn"
+              [class.active]="purchaseForm.get('selected_installments')?.value === option.months"
+              (click)="selectInstallment(option.months)">
+              <span class="months">{{ option.months }}</span>
+              <span class="period">Months</span>
+            </button>
+          </div>
+
+          <!-- Calculation Display -->
+          <div *ngIf="calculation" class="calculation-preview">
+            <div class="calculation-header">
+              <h4>Payment Breakdown</h4>
+              <span class="formula-note" *ngIf="calculation.down_payment.percentage > 0">{{ calculation.down_payment.percentage }}% Down Payment Required</span>
+              <span class="formula-note" *ngIf="calculation.down_payment.percentage === 0">Full Payment Due in 1 Month</span>
+            </div>
+            
+            <div class="calculation-grid">
+              <div class="calc-item down-payment" *ngIf="calculation.down_payment.amount > 0">
+                <span class="calc-label">Down Payment ({{ calculation.down_payment.percentage }}%)</span>
+                <span class="calc-value">{{ formatCurrency(calculation.down_payment.amount) }}</span>
+              </div>
+              <div class="calc-item">
+                <span class="calc-label">Monthly Installment</span>
+                <span class="calc-value">{{ formatCurrency(calculation.installment_details.installment_amount) }}</span>
+              </div>
+              <div class="calc-item">
+                <span class="calc-label">Number of Payments</span>
+                <span class="calc-value">{{ calculation.installment_details.total_installments }} payments</span>
+              </div>
+              <div class="calc-item total">
+                <span class="calc-label">Total Payable</span>
+                <span class="calc-value">{{ formatCurrency(calculation.totals.total_payable) }}</span>
+              </div>
+            </div>
+
+            <!-- Payment Schedule Preview -->
+            <div class="payment-schedule-preview" *ngIf="calculation.payment_schedule">
+              <h4><i class="fas fa-calendar-alt"></i> Payment Schedule</h4>
+              <div class="schedule-table">
+                <div class="schedule-header">
+                  <span>Installment</span>
+                  <span>Amount</span>
+                  <span>Due Date</span>
+                  <span>Status</span>
+                </div>
+                <div class="schedule-row" *ngFor="let payment of calculation.payment_schedule">
+                  <span>Installment {{ payment.installment_number }}</span>
+                  <span class="amount">{{ formatCurrency(payment.amount) }}</span>
+                  <span>{{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Now' : formatDate(payment.due_date) }}</span>
+                  <span class="payment-status-badge" [class]="payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'status-due' : 'status-pending'">
+                    {{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Due Now' : 'Pending' }}
+                  </span>
+                </div>
+              </div>
+              <div class="payment-note">
+                <i class="fas fa-info-circle"></i>
+                <span *ngIf="calculation.down_payment.amount > 0">
+                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} will be charged now.
+                  Remaining installments will be due monthly.
+                </span>
+                <span *ngIf="calculation.down_payment.amount === 0">
+                  Full payment of {{ formatCurrency(calculation.installment_details.installment_amount) }} will be charged after 1 month.
+                </span>
+              </div>
+            </div>
+
+            <!-- Formula Explanation (Only for 2+ months) -->
+            <div class="formula-box" *ngIf="calculation.down_payment.percentage > 0">
+              <h5>How it's calculated</h5>
+              <div class="formula-steps">
+                <div class="step">
+                  <span class="step-num">1</span>
+                  <div>
+                    <strong>Down Payment ({{ calculation.down_payment.percentage }}%)</strong>
+                    <p>{{ formatCurrency(calculation.product_price) }} × {{ calculation.down_payment.percentage }}% = {{ formatCurrency(calculation.down_payment.amount) }}</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-num">2</span>
+                  <div>
+                    <strong>Remaining Balance</strong>
+                    <p>{{ formatCurrency(calculation.product_price) }} - {{ formatCurrency(calculation.down_payment.amount) }} = {{ formatCurrency(calculation.remaining_balance) }}</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-num">3</span>
+                  <div>
+                    <strong>Monthly Installment</strong>
+                    <p>{{ formatCurrency(calculation.remaining_balance) }} ÷ {{ calculation.installment_details.remaining_installments }} = {{ formatCurrency(calculation.installment_details.installment_amount) }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-checkout" (click)="openCheckout()">
+              <i class="fas fa-shopping-cart"></i> Proceed to Checkout
+            </button>
+          </div>
+
+          <div *ngIf="isCalculating" class="calculating">
+            <div class="spinner-small"></div>
+            <p>Calculating your payment plan...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal" *ngIf="showCheckoutModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-credit-card"></i> Checkout</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedProduct && calculation">
+        <div class="checkout-summary">
+          <div class="summary-product">
+            <h4>{{ selectedProduct.name }}</h4>
+            <p>Price: {{ formatCurrency(selectedProduct.price) }} × {{ purchaseForm.value.quantity }} = {{ formatCurrency(calculation.product_price) }}</p>
+          </div>
+          
+          <div class="summary-breakdown">
+            <div class="breakdown-row" *ngIf="calculation.down_payment.amount > 0">
+              <span>Down Payment ({{ calculation.down_payment.percentage }}%):</span>
+              <strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong>
+            </div>
+            <div class="breakdown-row">
+              <span>Installment Amount:</span>
+              <strong>{{ formatCurrency(calculation.installment_details.installment_amount) }}/month</strong>
+            </div>
+            <div class="breakdown-row">
+              <span>Number of Installments:</span>
+              <strong>{{ calculation.installment_details.total_installments }} payments</strong>
+            </div>
+            <div class="breakdown-row total">
+              <span>Total Payable:</span>
+              <strong>{{ formatCurrency(calculation.totals.total_payable) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="purchaseForm">
+          <div class="form-group">
+            <label>Delivery Address *</label>
+            <textarea formControlName="delivery_address" rows="3" placeholder="Enter your delivery address"></textarea>
+            <small *ngIf="purchaseForm.get('delivery_address')?.invalid && purchaseForm.get('delivery_address')?.touched" class="error">
+              Delivery address is required (minimum 10 characters)
+            </small>
+          </div>
+
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" formControlName="agree_terms">
+              I agree to the <a href="#" target="_blank">Terms and Conditions</a>
+            </label>
+            <small *ngIf="purchaseForm.get('agree_terms')?.invalid && purchaseForm.get('agree_terms')?.touched" class="error">
+              You must agree to the terms
+            </small>
+          </div>
+
+          <div class="payment-note">
+            <i class="fas fa-info-circle"></i>
+            <span *ngIf="calculation.down_payment.amount > 0">
+              You will be charged the down payment amount of {{ formatCurrency(calculation.down_payment.amount) }} now.
+              The remaining installments will be charged monthly after admin approval.
+            </span>
+            <span *ngIf="calculation.down_payment.amount === 0">
+              You will be charged the full amount of {{ formatCurrency(calculation.installment_details.installment_amount) }} after 1 month.
+            </span>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="button" class="btn-primary" (click)="placeOrder()" [disabled]="purchaseForm.invalid || isPurchasing">
+              <i class="fas fa-spinner fa-spin" *ngIf="isPurchasing"></i>
+              {{ isPurchasing ? 'Processing...' : 'Place Order' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

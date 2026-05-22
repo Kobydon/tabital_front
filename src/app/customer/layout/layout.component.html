@@ -1,0 +1,190 @@
+<!-- src/app/customer/layout/layout.component.html -->
+<div class="customer-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
+    <button class="toggle-btn" (click)="toggleSidebar()">
+      <i class="fas" [class.fa-chevron-left]="!isSidebarCollapsed" [class.fa-chevron-right]="isSidebarCollapsed"></i>
+    </button>
+
+    <div class="logo">
+      <div class="logo-icon">
+        <i class="fas fa-hand-holding-usd"></i>
+      </div>
+      <div class="logo-text" *ngIf="!isSidebarCollapsed">
+        <h2>Tabital Pay</h2>
+        <p>Customer Portal</p>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <!-- Dashboard -->
+      <a [routerLink]="'/customer/dashboard'" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <i class="fas fa-tachometer-alt icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Dashboard</span>
+      </a>
+      
+      <!-- My Orders -->
+      <a [routerLink]="'/customer/orders'" routerLinkActive="active">
+        <i class="fas fa-shopping-bag icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">My Orders</span>
+      </a>
+
+      <!-- My Payments -->
+      <a [routerLink]="'/customer/payments'" routerLinkActive="active">
+        <i class="fas fa-credit-card icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">My Payments</span>
+      </a>
+
+      <!-- Instalments -->
+      <a [routerLink]="'/customer/instalments'" routerLinkActive="active">
+        <i class="fas fa-calendar-alt icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Instalments</span>
+      </a>
+
+      <!-- Transactions -->
+      <a [routerLink]="'/customer/transactions'" routerLinkActive="active">
+        <i class="fas fa-exchange-alt icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Transactions</span>
+      </a>
+
+      <!-- Plans / Shop -->
+      <a [routerLink]="'/customer/plans'" routerLinkActive="active">
+        <i class="fas fa-shopping-cart icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Plans</span>
+      </a>
+
+      <!-- Account Dropdown -->
+      <div class="nav-dropdown">
+        <div class="dropdown-trigger" (click)="toggleAccountDropdown()" [class.active]="accountDropdownOpen">
+          <i class="fas fa-user-circle icon"></i>
+          <span class="label" *ngIf="!isSidebarCollapsed">Account</span>
+          <i class="fas fa-chevron-down dropdown-icon" *ngIf="!isSidebarCollapsed"></i>
+        </div>
+        <div class="dropdown-menu" [class.show]="accountDropdownOpen && !isSidebarCollapsed">
+          <a [routerLink]="'/customer/profile'" routerLinkActive="active">
+            <i class="fas fa-id-card icon"></i>
+            <span>My Profile</span>
+          </a>
+          <a [routerLink]="'/customer/settings'" routerLinkActive="active">
+            <i class="fas fa-cog icon"></i>
+            <span>Settings</span>
+          </a>
+          <a [routerLink]="'/customer/notifications'" routerLinkActive="active">
+            <i class="fas fa-bell icon"></i>
+            <span>Notifications</span>
+            <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Support Dropdown -->
+      <div class="nav-dropdown">
+        <div class="dropdown-trigger" (click)="toggleSupportDropdown()" [class.active]="supportDropdownOpen">
+          <i class="fas fa-headset icon"></i>
+          <span class="label" *ngIf="!isSidebarCollapsed">Support</span>
+          <i class="fas fa-chevron-down dropdown-icon" *ngIf="!isSidebarCollapsed"></i>
+        </div>
+        <div class="dropdown-menu" [class.show]="supportDropdownOpen && !isSidebarCollapsed">
+          <a href="mailto:info@tabitalpay.com" target="_blank">
+            <i class="fas fa-life-ring icon"></i>
+            <span>Help Center</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <a [routerLink]="'/customer/documents'" routerLinkActive="active">
+        <i class="fas fa-file-alt icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Documents</span>
+      </a>
+    </nav>
+
+    <!-- User Profile -->
+    <div class="user-profile" (click)="toggleUserMenu()">
+      <div class="avatar">
+        <i class="fas fa-user-circle" style="font-size: 40px; color: #f9a826;"></i>
+      </div>
+      <div class="user-info" *ngIf="!isSidebarCollapsed">
+        <h4>{{ customerProfile?.full_name || 'John Doe' }}</h4>
+        <p>{{ customerProfile?.email || 'customer@tabital.com' }}</p>
+      </div>
+    </div>
+
+    <!-- User Menu Dropdown -->
+    <div class="user-menu" [class.show]="userMenuOpen">
+      <a [routerLink]="'/customer/profile'">
+        <i class="fas fa-user icon"></i>
+        <span>My Profile</span>
+      </a>
+      <a [routerLink]="'/customer/settings'">
+        <i class="fas fa-cog icon"></i>
+        <span>Settings</span>
+      </a>
+      <hr>
+      <button class="logout-btn" (click)="logout()">
+        <i class="fas fa-sign-out-alt icon"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <div class="header">
+      <div class="header-left">
+        <h1>{{ currentPageTitle }}</h1>
+        <p class="subtitle">Welcome back, {{ customerProfile?.full_name || 'Customer' }}!</p>
+      </div>
+      <div class="header-right">
+        <div class="search-bar">
+          <i class="fas fa-search icon"></i>
+          <input type="text" placeholder="Search...">
+        </div>
+        <div class="notifications" (click)="toggleNotifications()">
+          <i class="fas fa-bell icon"></i>
+          <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Dropdown - Fixed with slice pipe -->
+<div class="notification-dropdown" [class.show]="showNotifications" (click)="$event.stopPropagation()">
+  <div class="dropdown-header">
+    <h4>Notifications</h4>
+    <button class="mark-all" (click)="markAllAsRead()" *ngIf="unreadCount > 0">Mark all as read</button>
+  </div>
+  <div class="notification-list">
+    <div *ngFor="let notification of notifications | slice:0:5" 
+         class="notification-item" 
+         [class.unread]="!notification.read">
+      <div class="notification-icon">
+        <i class="fas" [class.fa-credit-card]="notification.type === 'payment'"
+           [class.fa-check-circle]="notification.type === 'success'"
+           [class.fa-exclamation-circle]="notification.type === 'warning'"
+           [class.fa-gift]="notification.type === 'referral'"
+           [class.fa-shopping-bag]="notification.type === 'order'"
+           [class.fa-id-card]="notification.type === 'kyc'"></i>
+      </div>
+      <div class="notification-content">
+        <p class="notification-title">{{ notification.title || notification.message }}</p>
+        <p class="notification-message" *ngIf="notification.title && notification.message !== notification.title">
+          {{ notification.message }}
+        </p>
+        <small>{{ formatNotificationTime(notification.created_at) }}</small>
+      </div>
+    </div>
+    <div *ngIf="notifications.length === 0" class="empty-notifications">
+      <i class="fas fa-bell-slash"></i>
+      <p>No notifications</p>
+    </div>
+    <div class="dropdown-footer" *ngIf="notifications.length > 0">
+      <a routerLink="/customer/notifications" (click)="showNotifications = false">View all notifications</a>
+    </div>
+  </div>
+</div>

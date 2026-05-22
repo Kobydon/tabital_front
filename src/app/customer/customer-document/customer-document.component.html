@@ -1,0 +1,179 @@
+<div class="document-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🪪</span>
+        KYC Verification
+      </h1>
+      <div class="status-badge" [class]="getKYCStatusClass()">
+        <span class="status-icon">{{ getKYCStatusIcon() }}</span>
+        <span class="status-text">{{ getKYCStatusText() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Progress -->
+  <div class="verification-progress">
+    <div class="progress-steps">
+      <div class="step" *ngFor="let step of verificationSteps; let i = index">
+        <div class="step-circle" [class.completed]="step.completed">
+          <span *ngIf="!step.completed">{{ step.step }}</span>
+          <i class="fas fa-check" *ngIf="step.completed"></i>
+        </div>
+        <div class="step-info">
+          <div class="step-name">{{ step.name }}</div>
+          <div class="step-icon">{{ step.icon }}</div>
+        </div>
+        <div class="step-line" *ngIf="i < verificationSteps.length - 1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button class="tab-btn" [class.active]="activeTab === 'upload'" (click)="switchTab('upload')">
+      <i class="fas fa-cloud-upload-alt"></i> Upload Documents
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'history'" (click)="switchTab('history')">
+      <i class="fas fa-history"></i> Document History
+    </button>
+  </div>
+
+  <!-- Upload Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'upload'">
+    <div class="upload-section">
+      <div class="info-card">
+        <i class="fas fa-info-circle"></i>
+        <div class="info-content">
+          <h4>Ghana Card Verification Required</h4>
+          <p>Please upload clear photos of both the front and back of your Ghana Card for identity verification.</p>
+          <ul>
+            <li>Make sure the card is fully visible</li>
+            <li>Ensure good lighting with no glare</li>
+            <li>All text and numbers must be readable</li>
+            <li>File size should be less than 5MB</li>
+            <li>Accepted formats: JPG, PNG, WEBP</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="upload-grid">
+        <!-- Front of Ghana Card -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">🪪</span>
+            <h3>Ghana Card (Front)</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="frontImageInput.click()" *ngIf="!frontImagePreview">
+            <input type="file" #frontImageInput (change)="onFrontImageSelected($event)" accept="image/*" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload front side</p>
+            <small>JPG, PNG or WEBP (max 5MB)</small>
+          </div>
+          
+          <div class="image-preview" *ngIf="frontImagePreview">
+            <img [src]="frontImagePreview" alt="Front of Ghana Card">
+            <button class="remove-btn" (click)="removeFrontImage()">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Back of Ghana Card -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">🪪</span>
+            <h3>Ghana Card (Back)</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="backImageInput.click()" *ngIf="!backImagePreview">
+            <input type="file" #backImageInput (change)="onBackImageSelected($event)" accept="image/*" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload back side</p>
+            <small>JPG, PNG or WEBP (max 5MB)</small>
+          </div>
+          
+          <div class="image-preview" *ngIf="backImagePreview">
+            <img [src]="backImagePreview" alt="Back of Ghana Card">
+            <button class="remove-btn" (click)="removeBackImage()">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Additional Notes (Optional)</label>
+        <textarea formControlName="notes" rows="3" placeholder="Any additional information..."></textarea>
+      </div>
+
+      <div class="upload-actions">
+        <button class="btn-secondary" (click)="resetForm()" *ngIf="frontImagePreview || backImagePreview">
+          <i class="fas fa-undo-alt"></i> Reset
+        </button>
+        <button class="btn-primary" (click)="uploadDocuments()" 
+                [disabled]="!frontImagePreview || !backImagePreview || isUploading">
+          <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+          {{ isUploading ? 'Uploading...' : 'Submit for Verification' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'history'">
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading document history...</p>
+    </div>
+
+    <div class="documents-list" *ngIf="!isLoading && documents.length > 0">
+      <div class="document-card" *ngFor="let doc of documents">
+        <div class="document-icon">
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="document-info">
+          <div class="document-name">{{ doc.document_name }}</div>
+          <div class="document-date">Uploaded: {{ formatDate(doc.uploaded_at) }}</div>
+        </div>
+        <div class="document-status">
+          <span class="status-badge" [class]="getStatusClass(doc.status)">
+            {{ getStatusIcon(doc.status) }} {{ getStatusText(doc.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
+      <div class="empty-icon">📄</div>
+      <h3>No documents found</h3>
+      <p>You haven't uploaded any documents yet</p>
+      <button class="btn-primary" (click)="switchTab('upload')">Upload Documents</button>
+    </div>
+  </div>
+
+  <!-- KYC Status Card -->
+  <div class="kyc-status-card" *ngIf="kycStatus && kycStatus.status === 'rejected'">
+    <div class="status-icon warning">⚠️</div>
+    <div class="status-content">
+      <h4>Verification Failed</h4>
+      <p>{{ kycStatus.rejection_reason || 'Your documents were rejected. Please upload clear, valid documents.' }}</p>
+      <button class="btn-retry" (click)="switchTab('upload')">Upload Again</button>
+    </div>
+  </div>
+
+  <div class="kyc-status-card success" *ngIf="kycStatus && kycStatus.status === 'verified'">
+    <div class="status-icon">✅</div>
+    <div class="status-content">
+      <h4>Verification Complete!</h4>
+      <p>Your identity has been verified. You now have full access to all features.</p>
+      <div class="verified-date" *ngIf="kycStatus.verified_at">
+        <i class="fas fa-calendar-check"></i> Verified on {{ formatDate(kycStatus.verified_at) }}
+      </div>
+    </div>
+  </div>
+</div>

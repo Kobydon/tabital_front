@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { LayoutComponent } from './layout/layout.component';
+ import { LayoutComponent } from './layout/layout.component';
 import { AdminRoutingModule } from './admin-routing.module';
 import { CustomersComponent } from './customers/customers.component';
 import { MerchantsComponent } from './merchants/merchants.component';
@@ -10,6 +10,9 @@ import { AllUsersComponent } from './all-users/all-users.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TransactionsComponent } from './transactions/transactions.component';
 import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
+import { ChargesComponent } from './charges/charges.component';
+import { AdminOrdersComponent } from './orders/orders.component';
+// import { OrdersComponent } from './orders/orders.component';
 
 
 @NgModule({
@@ -20,12 +23,14 @@ import { MerchantDetailsComponent } from './merchant-details/merchant-details.co
     MerchantsComponent,
     AllUsersComponent,
     TransactionsComponent,
-    MerchantDetailsComponent
+    MerchantDetailsComponent,
+    ChargesComponent,
+    AdminOrdersComponent
 
   ],
   imports: [
     CommonModule,ReactiveFormsModule,FormsModule,
-    RouterModule,
+    RouterModule,DecimalPipe,
     AdminRoutingModule  // ✅ This is correct
   ],
   exports: [

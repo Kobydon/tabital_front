@@ -7,6 +7,8 @@ import { CustomersComponent } from './customers/customers.component';
 import { MerchantsComponent } from './merchants/merchants.component';
 import { TransactionsComponent } from './transactions/transactions.component';
 import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
+import { ChargesComponent } from './charges/charges.component';
+import { AdminOrdersComponent } from './orders/orders.component';
 
 const routes: Routes = [
   {
@@ -23,7 +25,9 @@ const routes: Routes = [
       { path: 'settings', component: DashboardComponent }  ,// Replace with actual component
       {path: 'customers', component: CustomersComponent },  // Replace with actual component
         {path: 'transactions', component: TransactionsComponent } , // Replace with actual component
-          {path: 'merchants-details/:id', component: MerchantDetailsComponent }  // Replace with actual component
+          {path: 'merchants-details/:id', component: MerchantDetailsComponent } , // Replace with actual component
+           {path: 'charges', component: ChargesComponent } , 
+               {path: 'orders', component: AdminOrdersComponent } , 
     ]
   }
 ];

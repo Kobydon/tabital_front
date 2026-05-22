@@ -315,6 +315,66 @@ getCurrentUser(): Observable<Merchant> {
     catchError(this.handleError.bind(this))
   );
 }
+// admin.service.ts - Add these methods
+
+// Get charge settings
+
+// Update installment options
+updateInstallmentOptions(options: any[]): Observable<any> {
+  return this.http.put(`${this.API}/admin/settings/installments`, { options }, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// admin.service.ts - Add these methods
+
+// Get charge settings
+getChargeSettings(): Observable<any> {
+  return this.http.get(`${this.API}/admin/settings/charges`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Update charge settings
+updateChargeSettings(settings: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/settings/charges`, settings, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// admin.service.ts - Add these methods
+
+// Get admin orders
+getAdminOrders(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/orders`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Approve order
+approveOrder(orderId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/orders/${orderId}/approve`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Reject order
+rejectOrder(orderId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/orders/${orderId}/reject`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Export admin orders
+exportAdminOrders(): Observable<Blob> {
+  return this.http.get(`${this.API}/admin/orders/export`, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
 }
 
 

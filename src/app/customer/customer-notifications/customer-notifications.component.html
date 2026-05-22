@@ -1,0 +1,268 @@
+<div class="notifications-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🔔</span>
+        Notifications
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ stats.unread }}</span>
+        <span class="stat-label">Unread</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="clear-btn" (click)="clearAll()" *ngIf="notifications.length > 0">
+        <i class="fas fa-trash-alt"></i> Clear All
+      </button>
+      <button class="mark-all-btn" (click)="markAllAsRead()" *ngIf="stats.unread > 0">
+        <i class="fas fa-check-double"></i> Mark All as Read
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <div class="filter-group">
+      <label>Status</label>
+      <div class="status-filters">
+        <button
+          *ngFor="let option of filterOptions"
+          class="filter-btn"
+          [class.active]="selectedFilter === option.value"
+          (click)="filterByStatus(option.value)">
+          <span class="filter-icon">{{ option.icon }}</span>
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Type</label>
+      <div class="type-filters">
+        <button
+          *ngFor="let option of typeOptions"
+          class="filter-btn"
+          [class.active]="selectedType === option.value"
+          (click)="filterByType(option.value)">
+          <span class="filter-icon">{{ option.icon }}</span>
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button *ngIf="selectedFilter !== 'all' || selectedType !== 'all'" 
+              class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading notifications...</p>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="notifications-list" *ngIf="!isLoading && filteredNotifications.length > 0">
+    <div 
+      *ngFor="let notification of filteredNotifications"
+      class="notification-item"
+      [class.unread]="!notification.read"
+      (click)="viewNotificationDetails(notification)">
+      
+      <div class="notification-icon" [style.backgroundColor]="getTypeColor(notification.type)">
+        <span class="icon">{{ getTypeIcon(notification.type) }}</span>
+      </div>
+      
+      <div class="notification-content">
+        <div class="notification-header">
+          <h3 class="notification-title">{{ notification.title }}</h3>
+          <span class="notification-time">{{ formatDate(notification.created_at) }}</span>
+        </div>
+        <p class="notification-message">{{ notification.message }}</p>
+        <div class="notification-footer">
+          <span class="notification-type" [style.color]="getTypeColor(notification.type)">
+            {{ notification.type | titlecase }}
+          </span>
+          <button class="delete-btn" (click)="$event.stopPropagation(); deleteNotification(notification)">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="unread-dot" *ngIf="!notification.read"></div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredNotifications.length === 0" class="empty-state">
+    <div class="empty-icon">🔔</div>
+    <h3>No notifications</h3>
+    <p>You're all caught up! No new notifications at the moment.</p>
+    <button *ngIf="selectedFilter !== 'all' || selectedType !== 'all'" 
+            class="reset-btn" (click)="resetFilters()">
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+      <i class="fas fa-chevron-left"></i> Previous
+    </button>
+    <div class="page-numbers">
+      <button
+        *ngFor="let page of getPageNumbers()"
+        class="page-number"
+        [class.active]="currentPage === page"
+        (click)="changePage(page)">
+        {{ page }}
+      </button>
+    </div>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Notification Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-bell"></i> Notification Details</h2>
+        <button class="close" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedNotification">
+        <div class="detail-icon" [style.backgroundColor]="getTypeColor(selectedNotification.type)">
+          <span class="icon">{{ getTypeIcon(selectedNotification.type) }}</span>
+        </div>
+        <h3 class="detail-title">{{ selectedNotification.title }}</h3>
+        <p class="detail-message">{{ selectedNotification.message }}</p>
+        <div class="detail-meta">
+          <div class="meta-item">
+            <span class="label">Type:</span>
+            <span class="value" [style.color]="getTypeColor(selectedNotification.type)">
+              {{ selectedNotification.type | titlecase }}
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Received:</span>
+            <span class="value">{{ formatDate(selectedNotification.created_at) }}</span>
+          </div>
+          <div class="meta-item" *ngIf="selectedNotification.link">
+            <span class="label">Related Link:</span>
+            <a [routerLink]="selectedNotification.link" class="value link" (click)="closeModal()">
+              View Details →
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Close</button>
+        <button *ngIf="selectedNotification?.link" 
+                class="btn-primary" 
+                [routerLink]="selectedNotification?.link" 
+                (click)="closeModal()">
+          Go to Related Page
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Section -->
+  <div class="settings-section">
+    <div class="settings-header">
+      <h2><i class="fas fa-cog"></i> Notification Settings</h2>
+      <p>Choose how you want to receive notifications</p>
+    </div>
+    
+    <form [formGroup]="settingsForm">
+      <!-- Notification Channels -->
+      <div class="settings-card">
+        <h3><i class="fas fa-bell"></i> Notification Channels</h3>
+        <div class="settings-grid">
+          <div class="setting-item" *ngFor="let channel of channelOptions">
+            <div class="setting-info">
+              <i class="fas" [class.fa-envelope]="channel.value === 'email_notifications'"
+                 [class.fa-mobile-alt]="channel.value === 'sms_notifications'"
+                 [class.fa-bell]="channel.value === 'push_notifications'"></i>
+              <span>{{ channel.label }}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [formControlName]="channel.value">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert Types -->
+      <div class="settings-card">
+        <h3><i class="fas fa-chart-line"></i> Alert Types</h3>
+        <div class="settings-grid">
+          <div class="setting-item" *ngFor="let alert of alertOptions">
+            <div class="setting-info">
+              <i class="fas" [class.fa-exchange-alt]="alert.value === 'transaction_alerts'"
+                 [class.fa-money-bill-wave]="alert.value === 'settlement_alerts'"
+                 [class.fa-gavel]="alert.value === 'dispute_alerts'"></i>
+              <span>{{ alert.label }}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [formControlName]="alert.value">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marketing Communications -->
+      <div class="settings-card">
+        <h3><i class="fas fa-mail-bulk"></i> Marketing Communications</h3>
+        <div class="settings-grid">
+          <div class="setting-item" *ngFor="let marketing of marketingOptions">
+            <div class="setting-info">
+              <i class="fas" [class.fa-tag]="marketing.value === 'promotional_emails'"
+                 [class.fa-newspaper]="marketing.value === 'newsletter'"></i>
+              <span>{{ marketing.label }}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [formControlName]="marketing.value">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports -->
+      <div class="settings-card">
+        <h3><i class="fas fa-chart-simple"></i> Reports</h3>
+        <div class="settings-grid">
+          <div class="setting-item" *ngFor="let report of reportOptions">
+            <div class="setting-info">
+              <i class="fas" [class.fa-sun]="report.value === 'daily_summary'"
+                 [class.fa-calendar-week]="report.value === 'weekly_report'"></i>
+              <span>{{ report.label }}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [formControlName]="report.value">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button type="button" class="btn-secondary" (click)="resetSettings()">
+          <i class="fas fa-undo-alt"></i> Reset to Default
+        </button>
+        <button type="button" class="btn-primary" (click)="saveSettings()">
+          <i class="fas fa-save"></i> Save Settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

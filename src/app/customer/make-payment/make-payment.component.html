@@ -1,0 +1,89 @@
+<!-- src/app/customer/components/make-payment/make-payment.component.html -->
+<div class="make-payment-container">
+  <div class="payment-card">
+    <div class="payment-header">
+      <button class="back-btn" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1>Make Payment</h1>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading payment details...</p>
+    </div>
+
+    <div *ngIf="!isLoading" class="payment-content">
+      <!-- Plan Summary -->
+      <div class="plan-summary">
+        <h3>{{ planName || 'Instalment Plan' }}</h3>
+        <div class="summary-details">
+          <div class="detail-row">
+            <span>Amount Due:</span>
+            <strong>{{ formatCurrency(amount || 0) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Form -->
+      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+        <div class="form-group">
+          <label>Payment Amount (GHS) *</label>
+          <div class="amount-input">
+            <span class="currency">₵</span>
+            <input type="number" step="0.01" formControlName="amount" placeholder="0.00">
+          </div>
+          <small *ngIf="paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched" class="error">
+            Please enter a valid amount
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method *</label>
+          <div class="payment-methods">
+            <div 
+              *ngFor="let method of paymentMethods"
+              class="method-card"
+              [class.active]="paymentForm.get('payment_method')?.value === method.value"
+              (click)="paymentForm.patchValue({ payment_method: method.value })">
+              <div class="method-icon">{{ method.icon }}</div>
+              <div class="method-info">
+                <div class="method-name">{{ method.label }}</div>
+                <div class="method-desc">{{ method.description }}</div>
+              </div>
+              <div class="method-radio">
+                <div class="radio-circle" [class.selected]="paymentForm.get('payment_method')?.value === method.value"></div>
+              </div>
+            </div>
+          </div>
+          <small *ngIf="paymentForm.get('payment_method')?.invalid && paymentForm.get('payment_method')?.touched" class="error">
+            Please select a payment method
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Reference (Optional)</label>
+          <input type="text" formControlName="payment_reference" placeholder="Enter transaction reference number">
+        </div>
+
+        <div class="form-group">
+          <label>Notes (Optional)</label>
+          <textarea formControlName="notes" rows="3" placeholder="Any additional notes for this payment"></textarea>
+        </div>
+
+        <div class="payment-note">
+          <i class="fas fa-info-circle"></i>
+          <span>Your payment will be processed immediately. A receipt will be sent to your email.</span>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isProcessing">
+            <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+            {{ isProcessing ? 'Processing...' : 'Pay Now' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

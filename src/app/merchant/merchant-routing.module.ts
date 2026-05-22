@@ -14,6 +14,9 @@ import { MerchantSettingsComponent } from './merchant-settings/merchant-settings
 import { MerchantNotificationsComponent } from './merchant-notifications/merchant-notifications.component';
 import { MerchantSupportComponent } from './merchant-support/merchant-support.component';
 import { RoleGuard } from '../role.guard';
+import { ProductComponent } from './product/product.component';
+import { MerchantOrdersComponent } from './merchant-order/merchant-order.component';
+import { MerchantDocumentComponent } from './merchant-document/merchant-document.component';
 
 const routes: Routes = [
   {
@@ -33,6 +36,9 @@ const routes: Routes = [
       { path: 'settings', component: MerchantSettingsComponent, data: { title: 'Settings' } },
       { path: 'notifications', component: MerchantNotificationsComponent, data: { title: 'Notifications' } },
       { path: 'support', component: MerchantSupportComponent, data: { title: 'Support' } },
+       { path: 'products', component: ProductComponent, data: { title: 'Products' } },
+        { path: 'orders', component: MerchantOrdersComponent, data: { title: 'Orders' } },
+          { path: 'documents', component: MerchantDocumentComponent, data: { title: 'Documents' } }
       
     ]
   }

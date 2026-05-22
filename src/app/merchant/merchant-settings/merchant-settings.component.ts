@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
-// import { MerchantService } from '../services/merchant.service';
 
 @Component({
   selector: 'app-merchant-settings',
@@ -11,6 +10,7 @@ import { MerchantService } from 'src/app/merchant.service';
 export class MerchantSettingsComponent implements OnInit {
   activeTab = 'profile';
   isLoading = false;
+  isSavingNotifications = false;
   
   // Profile Form
   profileForm: FormGroup;
@@ -22,7 +22,18 @@ export class MerchantSettingsComponent implements OnInit {
   paymentForm: FormGroup;
   
   // Notification Settings
-  notificationSettings: any = {};
+  notificationSettings = {
+    email_notifications: true,
+    sms_notifications: true,
+    push_notifications: true,
+    transaction_alerts: true,
+    settlement_alerts: true,
+    dispute_alerts: true,
+    promotional_emails: false,
+    newsletter: false,
+    daily_summary: true,
+    weekly_report: true
+  };
   
   // Preferences
   preferences: any = {};
@@ -75,7 +86,7 @@ export class MerchantSettingsComponent implements OnInit {
       current_password: ['', Validators.required],
       new_password: ['', [Validators.required, Validators.minLength(6)]],
       confirm_password: ['', Validators.required]
-    }, { validator: this.passwordMatchValidator });
+    }, { validators: this.passwordMatchValidator });
     
     this.paymentForm = this.fb.group({
       payment_method: [''],
@@ -99,9 +110,20 @@ export class MerchantSettingsComponent implements OnInit {
     this.loadActivityLog();
   }
 
-  passwordMatchValidator(g: FormGroup) {
-    return g.get('new_password')?.value === g.get('confirm_password')?.value
-      ? null : { mismatch: true };
+  // Custom validator for password matching
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const newPassword = control.get('new_password');
+    const confirmPassword = control.get('confirm_password');
+    
+    if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
+      return { mismatch: true };
+    }
+    return null;
+  }
+
+  // Helper method to check if passwords mismatch
+  hasPasswordMismatch(): boolean {
+    return this.passwordForm.errors?.['mismatch'] && this.passwordForm.get('confirm_password')?.touched;
   }
 
   loadProfile() {
@@ -189,25 +211,37 @@ export class MerchantSettingsComponent implements OnInit {
   loadNotificationSettings() {
     this.merchantService.getNotificationSettings().subscribe({
       next: (data) => {
-        this.notificationSettings = data;
+        this.notificationSettings = {
+          email_notifications: data.email_notifications ?? true,
+          sms_notifications: data.sms_notifications ?? true,
+          push_notifications: data.push_notifications ?? true,
+          transaction_alerts: data.transaction_alerts ?? true,
+          settlement_alerts: data.settlement_alerts ?? true,
+          dispute_alerts: data.dispute_alerts ?? true,
+          promotional_emails: data.promotional_emails ?? false,
+          newsletter: data.newsletter ?? false,
+          daily_summary: data.daily_summary ?? true,
+          weekly_report: data.weekly_report ?? true
+        };
       },
       error: (error) => {
         console.error('Error loading notification settings:', error);
+        // Keep default values if error
       }
     });
   }
 
   updateNotificationSettings() {
-    this.isLoading = true;
+    this.isSavingNotifications = true;
     this.merchantService.updateNotificationSettings(this.notificationSettings).subscribe({
       next: () => {
         alert('Notification settings updated successfully');
-        this.isLoading = false;
+        this.isSavingNotifications = false;
       },
       error: (error) => {
         console.error('Error updating notification settings:', error);
         alert('Failed to update notification settings');
-        this.isLoading = false;
+        this.isSavingNotifications = false;
       }
     });
   }

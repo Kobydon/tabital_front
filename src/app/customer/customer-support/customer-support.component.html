@@ -1,0 +1,287 @@
+<div class="support-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🎧</span>
+        Customer Support
+      </h1>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button class="tab-btn" [class.active]="activeTab === 'tickets'" (click)="activeTab = 'tickets'">
+      <i class="fas fa-ticket-alt"></i> My Tickets
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'new'" (click)="activeTab = 'new'">
+      <i class="fas fa-plus-circle"></i> New Ticket
+    </button>
+  </div>
+
+  <!-- My Tickets Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'tickets'">
+    <!-- Filters -->
+    <div class="filter-section">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by ticket ID, subject..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Status</label>
+          <div class="status-filters">
+            <button
+              *ngFor="let option of statusOptions"
+              class="filter-btn"
+              [class.active]="selectedStatus === option.value"
+              (click)="filterByStatus(option.value)">
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>Priority</label>
+          <div class="priority-filters">
+            <button
+              *ngFor="let option of priorityOptions"
+              class="priority-btn"
+              [class.active]="selectedPriority === option.value"
+              (click)="filterByPriority(option.value)">
+              <span class="priority-dot" [style.backgroundColor]="option.color"></span>
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button *ngIf="searchTerm || selectedStatus !== 'all' || selectedPriority !== 'all'" 
+                  class="reset-btn" (click)="resetFilters()">
+            <i class="fas fa-undo-alt"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading tickets...</p>
+    </div>
+
+    <!-- Tickets List -->
+    <div class="tickets-list" *ngIf="!isLoading && filteredTickets.length > 0">
+      <div class="ticket-card" *ngFor="let ticket of filteredTickets" (click)="viewTicketDetails(ticket)">
+        <div class="ticket-header">
+          <div class="ticket-info">
+            <span class="ticket-id">{{ ticket.ticket_id }}</span>
+            <span class="ticket-subject">{{ ticket.subject }}</span>
+          </div>
+          <div class="ticket-badges">
+            <span class="status-badge" [class]="getStatusClass(ticket.status)">
+              {{ getStatusIcon(ticket.status) }} {{ ticket.status | titlecase }}
+            </span>
+            <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+              {{ ticket.priority | titlecase }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="ticket-body">
+          <p class="ticket-message">{{ ticket.message | slice:0:100 }}...</p>
+          <div class="ticket-meta">
+            <span class="meta-item">
+              <i class="fas fa-tag"></i> {{ ticket.category | titlecase }}
+            </span>
+            <span class="meta-item">
+              <i class="fas fa-calendar"></i> {{ formatDate(ticket.created_at) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="ticket-actions">
+          <button class="btn-reply" (click)="$event.stopPropagation(); openReplyModal(ticket)">
+            <i class="fas fa-reply"></i> Reply
+          </button>
+          <button class="btn-close" (click)="$event.stopPropagation(); closeTicket(ticket)" *ngIf="ticket.status !== 'closed' && ticket.status !== 'resolved'">
+            <i class="fas fa-times"></i> Close Ticket
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && filteredTickets.length === 0" class="empty-state">
+      <div class="empty-icon">🎫</div>
+      <h3>No tickets found</h3>
+      <p>Create a new support ticket to get help</p>
+      <button class="btn-primary" (click)="activeTab = 'new'">Create New Ticket</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)">
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- New Ticket Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'new'">
+    <div class="form-section">
+      <h3><i class="fas fa-plus-circle"></i> Create New Support Ticket</h3>
+      <p class="section-desc">Fill out the form below and we'll get back to you as soon as possible</p>
+      
+      <form [formGroup]="ticketForm" (ngSubmit)="createTicket()">
+        <div class="form-group">
+          <label>Subject *</label>
+          <input type="text" formControlName="subject" placeholder="Brief description of your issue">
+          <small *ngIf="ticketForm.get('subject')?.invalid && ticketForm.get('subject')?.touched" class="error">
+            Subject is required (minimum 5 characters)
+          </small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select formControlName="category">
+              <option value="">Select category</option>
+              <option *ngFor="let cat of categories" [value]="cat.value">
+                {{ cat.icon }} {{ cat.label }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority *</label>
+            <select formControlName="priority">
+              <option value="low">Low - General inquiry</option>
+              <option value="medium">Medium - Minor issue</option>
+              <option value="high">High - Major issue</option>
+              <option value="urgent">Urgent - Critical issue</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Message *</label>
+          <textarea formControlName="message" rows="6" placeholder="Please provide detailed information about your issue"></textarea>
+          <small *ngIf="ticketForm.get('message')?.invalid && ticketForm.get('message')?.touched" class="error">
+            Message is required (minimum 20 characters)
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="activeTab = 'tickets'">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="ticketForm.invalid">
+            <i class="fas fa-paper-plane"></i> Submit Ticket
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ticket Details Modal -->
+  <div class="modal" *ngIf="showTicketModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-ticket-alt"></i> Ticket Details</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedTicket">
+        <div class="ticket-detail-header">
+          <div class="detail-id">
+            <span class="label">Ticket ID:</span>
+            <strong>{{ selectedTicket.ticket_id }}</strong>
+          </div>
+          <div class="detail-badges">
+            <span class="status-badge" [class]="getStatusClass(selectedTicket.status)">
+              {{ getStatusIcon(selectedTicket.status) }} {{ selectedTicket.status | titlecase }}
+            </span>
+            <span class="priority-badge" [class]="getPriorityClass(selectedTicket.priority)">
+              {{ selectedTicket.priority | titlecase }}
+            </span>
+          </div>
+        </div>
+
+        <div class="ticket-detail-subject">
+          <h3>{{ selectedTicket.subject }}</h3>
+          <div class="detail-meta">
+            <span><i class="fas fa-tag"></i> {{ selectedTicket.category | titlecase }}</span>
+            <span><i class="fas fa-calendar"></i> Created: {{ formatDate(selectedTicket.created_at) }}</span>
+          </div>
+        </div>
+
+        <div class="ticket-detail-message">
+          <div class="message-bubble customer">
+            <p>{{ selectedTicket.message }}</p>
+            <small>{{ formatDate(selectedTicket.created_at) }}</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openReplyModal(selectedTicket!)" *ngIf="selectedTicket?.status !== 'closed'">
+          <i class="fas fa-reply"></i> Reply
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reply Modal -->
+  <div class="modal" *ngIf="showReplyModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-reply"></i> Reply to Ticket</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedTicket">
+        <div class="reply-info">
+          <p><strong>Ticket:</strong> {{ selectedTicket.ticket_id }} - {{ selectedTicket.subject }}</p>
+        </div>
+        
+        <form [formGroup]="replyForm" (ngSubmit)="sendReply()">
+          <div class="form-group">
+            <label>Your Message *</label>
+            <textarea formControlName="message" rows="5" placeholder="Type your reply here..."></textarea>
+            <small *ngIf="replyForm.get('message')?.invalid && replyForm.get('message')?.touched" class="error">
+              Message is required (minimum 10 characters)
+            </small>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="replyForm.invalid">
+              <i class="fas fa-paper-plane"></i> Send Reply
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -17,6 +17,10 @@ import { MerchantReportsComponent } from './merchant-reports/merchant-reports.co
 import { MerchantSettingsComponent } from './merchant-settings/merchant-settings.component';
 import { MerchantNotificationsComponent } from './merchant-notifications/merchant-notifications.component';
 import { MerchantSupportComponent } from './merchant-support/merchant-support.component';
+import { ProductComponent } from './product/product.component';
+import { MerchantOrdersComponent } from './merchant-order/merchant-order.component';
+import { MerchantDocumentComponent } from './merchant-document/merchant-document.component';
+// import { MerchantOrderComponent } from './merchant-order/merchant-order.component';
 
 
 @NgModule({
@@ -31,7 +35,10 @@ import { MerchantSupportComponent } from './merchant-support/merchant-support.co
     MerchantReportsComponent,
     MerchantSettingsComponent,
     MerchantNotificationsComponent,
-    MerchantSupportComponent
+    MerchantSupportComponent,
+    ProductComponent,
+    MerchantOrdersComponent,
+    MerchantDocumentComponent
   ],
   imports: [
     CommonModule,

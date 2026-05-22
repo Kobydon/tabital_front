@@ -1,0 +1,366 @@
+<div class="plans-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <!-- <h1 class="title">
+        <span class="icon">🛒</span>
+        Shop with Instalment Plans
+      </h1> -->
+      <p class="subtitle">Buy now, pay over time with flexible payment plans</p>
+    </div>
+  </div>
+
+  <!-- Featured Products Banner -->
+  <div class="featured-section" *ngIf="featuredProducts.length > 0">
+    <div class="featured-header">
+      <h2><i class="fas fa-star"></i> Featured Products</h2>
+      <a (click)="applyFilters()" class="view-all">View All →</a>
+    </div>
+    <div class="featured-grid">
+      <div class="featured-card" *ngFor="let product of featuredProducts">
+        <div class="featured-badge" *ngIf="product.is_new">NEW</div>
+        <div class="featured-badge popular" *ngIf="product.is_popular">POPULAR</div>
+        <div class="featured-image">
+          <i class="fas fa-shopping-bag"></i>
+        </div>
+        <div class="featured-info">
+          <h3>{{ product.name }}</h3>
+          <p>{{ product.description | slice:0:60 }}...</p>
+          <div class="price">{{ formatCurrency(product.price) }}</div>
+          <div class="merchant">
+            <span class="stars">{{ getStars(product.merchant_rating).join('') }}</span>
+            <span>{{ product.merchant_name }}</span>
+          </div>
+          <button class="btn-view" (click)="viewProductDetails(product)">View Details</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="categories-section">
+    <div class="categories-header">
+      <h2><i class="fas fa-tags"></i> Shop by Category</h2>
+    </div>
+    <div class="categories-grid">
+      <button 
+        *ngFor="let category of categories"
+        class="category-card"
+        [class.active]="selectedCategory === category.id"
+        (click)="filterByCategory(category.id)">
+        <span class="category-icon">{{ category.icon }}</span>
+        <span class="category-name">{{ category.name }}</span>
+        <span class="category-count">{{ category.count }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Products Section -->
+  <div class="products-section">
+    <div class="products-header">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search products..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="sort-options">
+        <label>Sort by:</label>
+        <div class="sort-buttons">
+          <button class="sort-btn" [class.active]="sortBy === 'popular'" (click)="changeSort('popular')">
+            <i class="fas fa-fire"></i> Popular
+          </button>
+          <button class="sort-btn" [class.active]="sortBy === 'price_low'" (click)="changeSort('price_low')">
+            <i class="fas fa-arrow-up"></i> Price: Low to High
+          </button>
+          <button class="sort-btn" [class.active]="sortBy === 'price_high'" (click)="changeSort('price_high')">
+            <i class="fas fa-arrow-down"></i> Price: High to Low
+          </button>
+          <button class="sort-btn" [class.active]="sortBy === 'newest'" (click)="changeSort('newest')">
+            <i class="fas fa-clock"></i> Newest
+          </button>
+        </div>
+      </div>
+      
+      <div class="filter-stats">
+        <span>Showing {{ filteredProducts.length }} of {{ totalItems }} products</span>
+        <button *ngIf="searchTerm || selectedCategory !== 'all' || sortBy !== 'popular'" 
+                class="reset-btn" (click)="resetFilters()">
+          <i class="fas fa-undo-alt"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading products...</p>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid" *ngIf="!isLoading && filteredProducts.length > 0">
+      <div class="product-card" *ngFor="let product of filteredProducts">
+        <div class="product-badge" *ngIf="product.is_new">New</div>
+        <div class="product-badge popular" *ngIf="product.is_popular">Popular</div>
+        
+        <div class="product-image">
+          <i class="fas fa-box-open"></i>
+        </div>
+        
+        <div class="product-info">
+          <h3>{{ product.name }}</h3>
+          <p class="description">{{ product.description | slice:0:80 }}...</p>
+          
+          <div class="price-row">
+            <span class="original-price">{{ formatCurrency(product.price) }}</span>
+            <span class="instalment-price">
+              From {{ formatCurrency(product.instalment_options[0]?.monthly_payment || 0) }}/month
+            </span>
+          </div>
+          
+          <div class="merchant-info">
+            <span class="stars">{{ getStars(product.merchant_rating).join('') }}</span>
+            <span class="merchant-name">{{ product.merchant_name }}</span>
+          </div>
+          
+          <div class="term-options">
+            <button 
+              *ngFor="let option of product.instalment_options.slice(0, 3)"
+              class="term-btn"
+              (click)="openApplyModal(product, option.term)">
+              {{ option.term }} months
+            </button>
+          </div>
+          
+          <div class="product-actions">
+            <button class="btn-details" (click)="viewProductDetails(product)">
+              <i class="fas fa-info-circle"></i> Details
+            </button>
+            <button class="btn-apply" (click)="openApplyModal(product)">
+              <i class="fas fa-credit-card"></i> Apply Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && filteredProducts.length === 0" class="empty-state">
+      <div class="empty-icon">🛍️</div>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters or search criteria</p>
+      <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Product Details Modal -->
+  <div class="modal" *ngIf="showProductModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-info-circle"></i> Product Details</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedProduct">
+        <div class="product-detail">
+          <div class="detail-image">
+            <i class="fas fa-shopping-bag"></i>
+          </div>
+          <div class="detail-info">
+            <h3>{{ selectedProduct.name }}</h3>
+            <p class="detail-description">{{ selectedProduct.description }}</p>
+            
+            <div class="detail-price">
+              <span class="label">Cash Price:</span>
+              <span class="value">{{ formatCurrency(selectedProduct.price) }}</span>
+            </div>
+            
+            <div class="merchant-detail">
+              <span class="label">Merchant:</span>
+              <span class="value">{{ selectedProduct.merchant_name }}</span>
+              <span class="stars">{{ getStars(selectedProduct.merchant_rating).join('') }}</span>
+            </div>
+            
+            <div class="instalment-plans">
+              <h4>Available Instalment Plans</h4>
+              <div class="plan-options">
+                <div class="plan-card" *ngFor="let option of selectedProduct.instalment_options">
+                  <div class="plan-term">{{ option.term }} Months</div>
+                  <div class="plan-details">
+                    <div>Down Payment: {{ option.down_payment_percentage }}%</div>
+                    <div>Monthly: {{ formatCurrency(option.monthly_payment) }}</div>
+                    <div>Total: {{ formatCurrency(option.total_amount) }}</div>
+                    <div>Interest: {{ formatCurrency(option.total_interest) }}</div>
+                  </div>
+                  <button class="btn-select" (click)="openApplyModal(selectedProduct, option.term)">
+                    Select Plan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openApplyModal(selectedProduct!)" *ngIf="selectedProduct">
+          Apply for Instalment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Modal -->
+  <div class="modal" *ngIf="showApplyModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-file-alt"></i> Apply for Instalment Plan</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedProduct">
+        <div class="application-summary">
+          <h3>{{ selectedProduct.name }}</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span>Product Price:</span>
+              <strong>{{ formatCurrency(selectedProduct.price) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>Term:</span>
+              <strong>{{ applicationForm.get('term')?.value }} months</strong>
+            </div>
+            <div class="summary-item">
+              <span>Down Payment (10%):</span>
+              <strong>{{ formatCurrency(selectedProduct.price * 0.1) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>Monthly Payment:</span>
+              <strong id="monthlyPayment">{{ formatCurrency(selectedProduct.instalment_options[0]?.monthly_payment || 0) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="applicationForm" (ngSubmit)="submitApplication()">
+          <div class="form-group">
+            <label>Select Term *</label>
+            <div class="term-selector">
+              <button
+                *ngFor="let term of termOptions"
+                type="button"
+                class="term-select-btn"
+                [class.active]="applicationForm.get('term')?.value === term.value"
+                (click)="applicationForm.patchValue({ term: term.value }); updateMonthlyPayment(selectedProduct, term.value)">
+                {{ term.label }}
+                <span class="interest">{{ term.interest }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Down Payment Amount (GHS) *</label>
+            <input type="number" formControlName="down_payment" readonly>
+            <small>Minimum 10% down payment required</small>
+          </div>
+
+          <div class="form-group">
+            <label>Monthly Income (GHS) *</label>
+            <input type="number" formControlName="monthly_income" placeholder="Enter your monthly income">
+          </div>
+
+          <div class="form-group">
+            <label>Employment Status *</label>
+            <select formControlName="employment_status">
+              <option value="">Select employment status</option>
+              <option value="employed">Employed (Full-time)</option>
+              <option value="self_employed">Self Employed</option>
+              <option value="business_owner">Business Owner</option>
+              <option value="contract">Contract Worker</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>ID Type *</label>
+              <select formControlName="id_type">
+                <option value="">Select ID type</option>
+                <option value="national_id">National ID</option>
+                <option value="voter_id">Voter ID</option>
+                <option value="drivers_license">Driver's License</option>
+                <option value="passport">Passport</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ID Number *</label>
+              <input type="text" formControlName="id_number" placeholder="Enter ID number">
+            </div>
+          </div>
+
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" formControlName="agree_terms">
+              I agree to the <a href="#" target="_blank">Terms and Conditions</a> and confirm that all information provided is accurate
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="applicationForm.invalid || isApplying">
+              <i class="fas fa-spinner fa-spin" *ngIf="isApplying"></i>
+              {{ isApplying ? 'Submitting...' : 'Submit Application' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal" *ngIf="showSuccessModal" (click)="closeModals()">
+    <div class="modal-content success" (click)="$event.stopPropagation()">
+      <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2>Application Submitted!</h2>
+      <p>Your instalment plan application has been submitted successfully.</p>
+      <p>We will review your application and get back to you within 24-48 hours.</p>
+      <div class="modal-actions">
+        <button class="btn-primary" (click)="closeModals(); router.navigate(['/customer/instalments'])">
+          Track Application
+        </button>
+        <button class="btn-secondary" (click)="closeModals()">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

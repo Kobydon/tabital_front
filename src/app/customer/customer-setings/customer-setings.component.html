@@ -1,0 +1,459 @@
+<div class="settings-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">⚙️</span>
+        Settings
+      </h1>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert success">
+    <i class="fas fa-check-circle"></i> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert error">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading settings...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="settings-content">
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications')">
+        <i class="fas fa-bell"></i> Notifications
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'preferences'" (click)="switchTab('preferences')">
+        <i class="fas fa-sliders-h"></i> Preferences
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'billing'" (click)="switchTab('billing')">
+        <i class="fas fa-credit-card"></i> Billing
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'api'" (click)="switchTab('api')">
+        <i class="fas fa-code"></i> API Access
+      </button>
+    </div>
+
+    <!-- Notifications Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'notifications'">
+      <div class="form-section">
+        <h3><i class="fas fa-bell"></i> Notification Channels</h3>
+        <p class="section-desc">Choose how you want to receive notifications</p>
+        
+        <form [formGroup]="notificationForm">
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-envelope"></i>
+                  <span class="setting-title">Email Notifications</span>
+                </div>
+                <p class="setting-desc">Receive notifications via email</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="email_notifications">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-mobile-alt"></i>
+                  <span class="setting-title">SMS Notifications</span>
+                </div>
+                <p class="setting-desc">Receive notifications via SMS</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="sms_notifications">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-bell"></i>
+                  <span class="setting-title">Push Notifications</span>
+                </div>
+                <p class="setting-desc">Receive push notifications in your browser</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="push_notifications">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-chart-line"></i> Alert Types</h3>
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-exchange-alt"></i>
+                  <span class="setting-title">Transaction Alerts</span>
+                </div>
+                <p class="setting-desc">Get notified about your transactions</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="transaction_alerts">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-money-bill-wave"></i>
+                  <span class="setting-title">Settlement Alerts</span>
+                </div>
+                <p class="setting-desc">Get notified about settlements and payouts</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="settlement_alerts">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-gavel"></i>
+                  <span class="setting-title">Dispute Alerts</span>
+                </div>
+                <p class="setting-desc">Get notified about disputes and resolutions</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="dispute_alerts">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-mail-bulk"></i> Marketing Communications</h3>
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-tag"></i>
+                  <span class="setting-title">Promotional Emails</span>
+                </div>
+                <p class="setting-desc">Receive offers and promotions via email</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="promotional_emails">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-newspaper"></i>
+                  <span class="setting-title">Newsletter</span>
+                </div>
+                <p class="setting-desc">Subscribe to our monthly newsletter</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="newsletter">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-chart-simple"></i> Reports</h3>
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-sun"></i>
+                  <span class="setting-title">Daily Summary</span>
+                </div>
+                <p class="setting-desc">Receive daily activity summary</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="daily_summary">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-header">
+                  <i class="fas fa-calendar-week"></i>
+                  <span class="setting-title">Weekly Report</span>
+                </div>
+                <p class="setting-desc">Receive detailed weekly performance report</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="weekly_report">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="resetToDefault()">
+              <i class="fas fa-undo-alt"></i> Reset to Default
+            </button>
+            <button type="button" class="btn-primary" (click)="saveNotificationSettings()" [disabled]="isSavingNotifications">
+              <i class="fas fa-spinner fa-spin" *ngIf="isSavingNotifications"></i>
+              {{ isSavingNotifications ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Preferences Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'preferences'">
+      <div class="form-section">
+        <h3><i class="fas fa-globe"></i> Regional Settings</h3>
+        <p class="section-desc">Customize your experience based on your preferences</p>
+        
+        <form [formGroup]="preferencesForm">
+          <div class="settings-card">
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-language"></i>
+                  <span class="preference-title">Language</span>
+                </div>
+                <p class="preference-desc">Select your preferred language</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="language" class="styled-select">
+                  <option *ngFor="let lang of languageOptions" [value]="lang.value">
+                    {{ lang.flag }} {{ lang.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-clock"></i>
+                  <span class="preference-title">Time Zone</span>
+                </div>
+                <p class="preference-desc">Select your local time zone</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="timezone" class="styled-select">
+                  <option *ngFor="let tz of timezoneOptions" [value]="tz.value">
+                    {{ tz.label }} ({{ tz.offset }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-money-bill"></i>
+                  <span class="preference-title">Currency</span>
+                </div>
+                <p class="preference-desc">Select your preferred currency</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="currency" class="styled-select">
+                  <option *ngFor="let curr of currencyOptions" [value]="curr.value">
+                    {{ curr.symbol }} {{ curr.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span class="preference-title">Date Format</span>
+                </div>
+                <p class="preference-desc">Select how dates should be displayed</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="date_format" class="styled-select">
+                  <option *ngFor="let df of dateFormatOptions" [value]="df.value">
+                    {{ df.label }} ({{ df.example }})
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-desktop"></i> Display Settings</h3>
+          <div class="settings-card">
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-columns"></i>
+                  <span class="preference-title">Dashboard Layout</span>
+                </div>
+                <p class="preference-desc">Choose your preferred dashboard layout</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="dashboard_layout" class="styled-select">
+                  <option value="default">Default Grid</option>
+                  <option value="compact">Compact View</option>
+                  <option value="detailed">Detailed View</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <div class="preference-header">
+                  <i class="fas fa-list-ul"></i>
+                  <span class="preference-title">Items Per Page</span>
+                </div>
+                <p class="preference-desc">Number of items to show per page</p>
+              </div>
+              <div class="preference-control">
+                <select formControlName="items_per_page" class="styled-select">
+                  <option *ngFor="let num of itemsPerPageOptions" [value]="num">
+                    {{ num }} items
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-primary" (click)="savePreferences()" [disabled]="isSavingPreferences">
+              <i class="fas fa-spinner fa-spin" *ngIf="isSavingPreferences"></i>
+              {{ isSavingPreferences ? 'Saving...' : 'Save Preferences' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Billing Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'billing'">
+      <div class="form-section">
+        <h3><i class="fas fa-credit-card"></i> Billing Information</h3>
+        
+        <div class="billing-card">
+          <div class="billing-header">
+            <i class="fas fa-file-invoice"></i>
+            <h4>Payment Methods</h4>
+          </div>
+          <div class="billing-content">
+            <div class="payment-method">
+              <div class="method-info">
+                <i class="fas fa-mobile-alt"></i>
+                <div>
+                  <strong>Mobile Money</strong>
+                  <p>+233 XX XXX XXXX</p>
+                </div>
+              </div>
+              <button class="btn-outline-sm">Edit</button>
+            </div>
+            <div class="payment-method">
+              <div class="method-info">
+                <i class="fas fa-university"></i>
+                <div>
+                  <strong>Bank Account</strong>
+                  <p>XXXX-XXXX-XXXX-1234</p>
+                </div>
+              </div>
+              <button class="btn-outline-sm">Edit</button>
+            </div>
+            <button class="btn-add">+ Add Payment Method</button>
+          </div>
+        </div>
+
+        <div class="billing-card">
+          <div class="billing-header">
+            <i class="fas fa-receipt"></i>
+            <h4>Billing History</h4>
+          </div>
+          <div class="billing-content">
+            <div class="invoice-item">
+              <div class="invoice-info">
+                <span class="invoice-id">INV-2024-001</span>
+                <span class="invoice-date">{{ formatDate('2024-05-15') }}</span>
+              </div>
+              <div class="invoice-amount">GHS 250.00</div>
+              <button class="btn-download">Download</button>
+            </div>
+            <div class="invoice-item">
+              <div class="invoice-info">
+                <span class="invoice-id">INV-2024-002</span>
+                <span class="invoice-date">{{ formatDate('2024-04-15') }}</span>
+              </div>
+              <div class="invoice-amount">GHS 250.00</div>
+              <button class="btn-download">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Access Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'api'">
+      <div class="form-section">
+        <h3><i class="fas fa-key"></i> API Access</h3>
+        <p class="section-desc">Manage your API keys for third-party integrations</p>
+        
+        <div class="api-card">
+          <div class="api-header">
+            <i class="fas fa-lock"></i>
+            <h4>API Keys</h4>
+          </div>
+          <div class="api-content">
+            <div class="api-key-item">
+              <div class="key-info">
+                <span class="key-name">Production API Key</span>
+                <span class="key-value">pk_live_••••••••••••••••</span>
+              </div>
+              <div class="key-actions">
+                <button class="btn-copy" (click)="copyToClipboard('pk_live_••••••••••••••••')">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button class="btn-regenerate">Regenerate</button>
+              </div>
+            </div>
+            <div class="api-key-item">
+              <div class="key-info">
+                <span class="key-name">Test API Key</span>
+                <span class="key-value">pk_test_••••••••••••••••</span>
+              </div>
+              <div class="key-actions">
+                <button class="btn-copy" (click)="copyToClipboard('pk_test_••••••••••••••••')">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button class="btn-regenerate">Regenerate</button>
+              </div>
+            </div>
+            <button class="btn-primary">Generate New API Key</button>
+          </div>
+        </div>
+
+        <div class="api-card">
+          <div class="api-header">
+            <i class="fas fa-plug"></i>
+            <h4>Webhooks</h4>
+          </div>
+          <div class="api-content">
+            <div class="webhook-item">
+              <div class="webhook-info">
+                <span class="webhook-url">https://api.yourdomain.com/webhook</span>
+                <span class="webhook-status active">Active</span>
+              </div>
+              <button class="btn-outline-sm">Configure</button>
+            </div>
+            <button class="btn-add">+ Add Webhook Endpoint</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

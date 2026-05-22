@@ -87,6 +87,8 @@ export class MerchantInstalmentsComponent implements OnInit {
     if (this.selectedStatus !== 'all') {
       filtered = filtered.filter(i => i.status === this.selectedStatus);
     }
+
+    
     
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();

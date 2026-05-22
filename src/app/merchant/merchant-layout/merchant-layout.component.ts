@@ -40,26 +40,36 @@ export class MerchantLayoutComponent implements OnInit {
       icon: '📊',
       label: 'Dashboard'
     },
+     {
+      path: '/merchant/products',
+      icon: '📦',
+      label: 'Products'
+    },
+    {
+      path: '/merchant/orders',
+      icon: '🛒',
+      label: 'Orders'
+    },
     {
       path: '/merchant/transactions',
       icon: '💸',
       label: 'Transactions'
     },
-    {
-      path: '/merchant/instalments',
-      icon: '📅',
-      label: 'Instalments'
-    },
+    // {
+    //   path: '/merchant/instalments',
+    //   icon: '📅',
+    //   label: 'Instalments'
+    // },
     {
       path: '/merchant/customers',
       icon: '👥',
       label: 'Customers'
     },
-    {
-      path: '/merchant/settlements',
-      icon: '💰',
-      label: 'Settlements'
-    },
+    // {
+    //   path: '/merchant/settlements',
+    //   icon: '💰',
+    //   label: 'Settlements'
+    // },
     {
       path: '/merchant/disputes',
       icon: '⚠️',
@@ -70,21 +80,28 @@ export class MerchantLayoutComponent implements OnInit {
       icon: '📈',
       label: 'Reports'
     },
+
+     {
+      path: '/merchant/documents',
+      icon: '📄',
+      label: 'Documents'
+    },
     {
       path: '/merchant/settings',
       icon: '⚙️',
       label: 'Account Settings'
     },
-    {
-      path: '/merchant/notifications',
-      icon: '🔔',
-      label: 'Notifications'
-    },
+    // {
+    //   path: '/merchant/notifications',
+    //   icon: '🔔',
+    //   label: 'Notifications'
+    // },
     {
       path: '/merchant/support',
       icon: '💬',
       label: 'Support'
-    }
+    },
+    
   ];
 
   constructor(

@@ -68,7 +68,7 @@ export class LoginComponent {
             // ============================================
 
             if (user?.role === 'customer') {
-              this.router.navigate(['/customer']);
+              this.router.navigate(['/customer/dashboard']);
 
             } else if (user?.role === 'merchant') {
               this.router.navigate(['/merchant/dashboard']);

@@ -1,0 +1,253 @@
+<div class="transactions-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="stats-badge">
+        <span class="stat-count">{{ totalItems }}</span>
+        <span class="stat-label">Total Payments</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="export-btn" (click)="exportTransactions()">
+        <i class="fas fa-download"></i> Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon purple">💰</span>
+        <span class="stat-label">Total Paid</span>
+      </div>
+      <div class="stat-value">{{ formatCurrency(stats.total_paid) }}</div>
+      <div class="stat-sub">Overall payments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon blue">📊</span>
+        <span class="stat-label">This Week</span>
+      </div>
+      <div class="stat-value">{{ formatCurrency(stats.this_week.total) }}</div>
+      <div class="stat-sub">{{ stats.this_week.count }} payments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon green">📈</span>
+        <span class="stat-label">This Month</span>
+      </div>
+      <div class="stat-value">{{ formatCurrency(stats.this_month.total) }}</div>
+      <div class="stat-sub">{{ stats.this_month.count }} payments</div>
+    </div>
+  </div>
+
+  <!-- Search and Filter Bar -->
+  <div class="filter-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search by Payment ID, Plan Name..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">✕</button>
+    </div>
+
+    <div class="filter-actions">
+      <div class="filter-group">
+        <label>Status</label>
+        <div class="status-filters">
+          <button
+            *ngFor="let option of statusOptions"
+            class="filter-btn"
+            [class.active]="selectedStatus === option.value"
+            (click)="selectedStatus = option.value; applyFilters()"
+          >
+            <span class="filter-icon">{{ option.icon }}</span>
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="date-range">
+        <div class="date-input">
+          <span class="date-icon">📅</span>
+          <input type="date" [(ngModel)]="startDate" (change)="applyFilters()" placeholder="Start Date">
+        </div>
+        <span class="date-separator">to</span>
+        <div class="date-input">
+          <span class="date-icon">📅</span>
+          <input type="date" [(ngModel)]="endDate" (change)="applyFilters()" placeholder="End Date">
+        </div>
+      </div>
+
+      <div class="filter-actions-buttons">
+        <button *ngIf="searchTerm || selectedStatus !== 'all' || startDate || endDate" 
+                class="reset-btn" (click)="resetFilters()">
+          <i class="fas fa-undo-alt"></i> Reset Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading payment history...</p>
+  </div>
+
+  <!-- Payments Table -->
+  <div class="table-wrapper" *ngIf="!isLoading && filteredTransactions.length > 0">
+    <table class="payments-table">
+      <thead>
+        <tr>
+          <th>Payment ID</th>
+          <th>Date</th>
+          <th>Plan Name</th>
+          <th>Merchant</th>
+          <th>Installment</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tx of filteredTransactions">
+          <td class="payment-id">
+            <span class="id-badge">{{ tx.payment_id }}</span>
+          </td>
+          <td class="date-cell">{{ formatDate(tx.paid_date) }}</td>
+          <td class="plan-info">
+            <div class="plan-name">{{ tx.plan_name }}</div>
+          </td>
+          <td class="merchant-info">
+            <div class="merchant-name">{{ tx.merchant_name }}</div>
+          </td>
+          <td class="installment-num">Installment {{ tx.installment_number }}</td>
+          <td class="amount">{{ formatCurrency(tx.amount) }}</td>
+          <td>
+            <span class="method-badge">
+              {{ getPaymentMethodIcon(tx.payment_method) }} {{ tx.payment_method | titlecase }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge status-paid">
+              ✅ Paid
+            </span>
+          </td>
+          <td class="actions">
+            <button class="action-icon view" (click)="viewTransactionDetails(tx)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="action-icon download" (click)="downloadReceipt(tx)" title="Download Receipt">
+              <i class="fas fa-download"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredTransactions.length === 0" class="empty-state">
+    <div class="empty-icon">💸</div>
+    <h3>No payment history found</h3>
+    <p>Your payment history will appear here once you make a payment</p>
+    <button routerLink="/customer/shop" class="btn-primary">Shop Now</button>
+  </div>
+
+  <!-- Payment Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-receipt"></i> Payment Details
+        </h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div *ngIf="selectedTransaction" class="modal-body">
+        <div class="detail-section">
+          <div class="detail-group">
+            <h3>Payment Information</h3>
+            <div class="detail-grid">
+              <div class="detail-row">
+                <strong>Payment ID:</strong>
+                <span>{{ selectedTransaction.payment_id }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Date Paid:</strong>
+                <span>{{ formatDate(selectedTransaction.paid_date) }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Amount:</strong>
+                <span class="amount">{{ formatCurrency(selectedTransaction.amount) }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Payment Method:</strong>
+                <span>{{ selectedTransaction.payment_method | titlecase }}</span>
+              </div>
+              <div class="detail-row" *ngIf="selectedTransaction.payment_reference">
+                <strong>Reference:</strong>
+                <span>{{ selectedTransaction.payment_reference }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-group">
+            <h3>Instalment Plan Information</h3>
+            <div class="detail-grid">
+              <div class="detail-row">
+                <strong>Plan Name:</strong>
+                <span>{{ selectedTransaction.plan_name }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Merchant:</strong>
+                <span>{{ selectedTransaction.merchant_name }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Installment Number:</strong>
+                <span>{{ selectedTransaction.installment_number }}</span>
+              </div>
+              <div class="detail-row">
+                <strong>Due Date:</strong>
+                <span>{{ formatDate(selectedTransaction.due_date) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="downloadReceipt(selectedTransaction!)">
+          <i class="fas fa-download"></i> Download Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

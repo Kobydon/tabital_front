@@ -1,0 +1,476 @@
+.settings-container {
+  padding: 24px;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+// Header
+.header {
+  margin-bottom: 24px;
+  
+  .title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #1a1a2e;
+    
+    .icon {
+      font-size: 32px;
+    }
+  }
+}
+
+// Alerts
+.alert {
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  i {
+    font-size: 18px;
+  }
+  
+  &.success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+  }
+  
+  &.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+  }
+}
+
+// Loading
+.loading-container {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 20px;
+  
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  
+  p {
+    color: #6c757d;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Tab Navigation
+.tab-navigation {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  
+  .tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    i {
+      font-size: 16px;
+    }
+    
+    &:hover {
+      background: #f8f9fa;
+      color: #667eea;
+    }
+    
+    &.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.form-section {
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1a1a2e;
+    
+    i {
+      color: #667eea;
+    }
+  }
+  
+  .section-desc {
+    color: #6c757d;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+}
+
+// Settings Cards
+.settings-card {
+  background: #f8f9fa;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  
+  .setting-item, .preference-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .setting-info, .preference-info {
+      flex: 1;
+      
+      .setting-header, .preference-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+        
+        i {
+          font-size: 18px;
+          color: #667eea;
+        }
+        
+        .setting-title, .preference-title {
+          font-weight: 600;
+          font-size: 15px;
+          color: #1a1a2e;
+        }
+      }
+      
+      .setting-desc, .preference-desc {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+      }
+    }
+    
+    .preference-control {
+      min-width: 200px;
+      
+      .styled-select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+        }
+      }
+    }
+  }
+}
+
+// Toggle Switch
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 26px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .toggle-slider {
+      background: #28a745;
+    }
+    
+    &:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+  }
+  
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #dc3545;
+    transition: 0.3s;
+    border-radius: 34px;
+    
+    &:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+// Buttons
+.btn-primary, .btn-secondary {
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #6c757d;
+  
+  &:hover {
+    background: #e9ecef;
+  }
+}
+
+.btn-outline-sm {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: #667eea;
+    color: #667eea;
+  }
+}
+
+.btn-add {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 12px;
+  color: #667eea;
+  font-weight: 500;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+  }
+}
+
+.btn-download, .btn-copy, .btn-regenerate {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+}
+
+.btn-copy {
+  margin-right: 8px;
+}
+
+// Billing Section
+.billing-card, .api-card {
+  background: #f8f9fa;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  
+  .billing-header, .api-header {
+    padding: 16px 20px;
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    i {
+      font-size: 18px;
+      color: #667eea;
+    }
+    
+    h4 {
+      margin: 0;
+      font-size: 16px;
+    }
+  }
+  
+  .billing-content, .api-content {
+    padding: 20px;
+  }
+}
+
+.payment-method, .invoice-item, .api-key-item, .webhook-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .method-info, .invoice-info, .key-info, .webhook-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    
+    i {
+      font-size: 20px;
+      color: #667eea;
+    }
+    
+    .invoice-id, .key-name, .webhook-url {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .invoice-date, .key-value {
+      font-size: 12px;
+      color: #6c757d;
+    }
+    
+    .webhook-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      
+      &.active {
+        background: #d4edda;
+        color: #155724;
+      }
+    }
+  }
+  
+  .invoice-amount {
+    font-weight: 600;
+    color: #28a745;
+    margin-right: 12px;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 16px;
+  }
+  
+  .setting-item, .preference-item {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start !important;
+  }
+  
+  .preference-control {
+    width: 100%;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  .payment-method, .invoice-item, .api-key-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start !important;
+  }
+  
+  .method-info, .invoice-info, .key-info {
+    width: 100%;
+  }
+}

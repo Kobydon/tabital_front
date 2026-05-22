@@ -1,0 +1,268 @@
+<div class="document-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">🏢</span>
+        Merchant Verification
+      </h1>
+      <div class="status-badge" [class]="getKYCStatusClass()">
+        <span class="status-icon">{{ getKYCStatusIcon() }}</span>
+        <span class="status-text">{{ getKYCStatusText() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Progress -->
+  <div class="verification-progress">
+    <div class="progress-steps">
+      <div class="step" *ngFor="let step of verificationSteps; let i = index">
+        <div class="step-circle" [class.completed]="step.completed">
+          <span *ngIf="!step.completed">{{ step.step }}</span>
+          <i class="fas fa-check" *ngIf="step.completed"></i>
+        </div>
+        <div class="step-info">
+          <div class="step-name">{{ step.name }}</div>
+          <div class="step-icon">{{ step.icon }}</div>
+        </div>
+        <div class="step-line" *ngIf="i < verificationSteps.length - 1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button class="tab-btn" [class.active]="activeTab === 'upload'" (click)="switchTab('upload')">
+      <i class="fas fa-cloud-upload-alt"></i> Upload Documents
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'history'" (click)="switchTab('history')">
+      <i class="fas fa-history"></i> Document History
+    </button>
+  </div>
+
+  <!-- Upload Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'upload'">
+    <!-- Info Card -->
+    <div class="info-card">
+      <i class="fas fa-info-circle"></i>
+      <div class="info-content">
+        <h4>Merchant Verification Required</h4>
+        <p>Please upload the following documents to verify your business account. This process helps us ensure compliance and security.</p>
+        <ul>
+          <li>Business Registration Certificate (Certificate of incorporation)</li>
+          <li>Tax Identification Document (TIN or VAT Certificate)</li>
+          <li>Bank Account Details with supporting document (Bank statement or confirmation letter)</li>
+          <li>All documents must be clear and readable</li>
+          <li>File size should be less than 5MB per document</li>
+          <li>Accepted formats: JPG, PNG, WEBP, PDF</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bank Account Details Section -->
+    <div class="bank-details-section">
+      <h3><i class="fas fa-university"></i> Bank Account Details</h3>
+      <div class="bank-form">
+        <form [formGroup]="bankDetailsForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bank Name *</label>
+              <input type="text" formControlName="bank_name" placeholder="e.g., GCB Bank, Stanbic Bank">
+            </div>
+            <div class="form-group">
+              <label>Account Name *</label>
+              <input type="text" formControlName="account_name" placeholder="Business account name">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Account Number *</label>
+              <input type="text" formControlName="account_number" placeholder="Account number">
+            </div>
+            <div class="form-group">
+              <label>Branch Name</label>
+              <input type="text" formControlName="branch_name" placeholder="Bank branch">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Swift/BIC Code</label>
+              <input type="text" formControlName="swift_code" placeholder="Swift code for international transfers">
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Document Upload Section -->
+    <div class="upload-section">
+      <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
+      
+      <div class="upload-grid">
+        <!-- Business Registration -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">🏢</span>
+            <h3>Business Registration Certificate</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="businessInput.click()" *ngIf="!businessRegistrationPreview">
+            <input type="file" #businessInput (change)="onFileSelected($event, 'business_registration')" accept="image/*,.pdf" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload registration certificate</p>
+            <small>Certificate of incorporation or business registration</small>
+          </div>
+          
+          <div class="file-preview" *ngIf="businessRegistrationPreview">
+            <div class="preview-info">
+              <i class="fas fa-file-pdf" *ngIf="businessRegistrationFile?.type === 'application/pdf'"></i>
+              <img *ngIf="businessRegistrationFile?.type?.startsWith('image/')" [src]="businessRegistrationPreview" alt="Preview">
+              <div class="file-details">
+                <span class="file-name">{{ businessRegistrationFile?.name }}</span>
+                <span class="file-size">{{ (businessRegistrationFile?.size || 0) / 1024 | number:'1.0-0' }} KB</span>
+              </div>
+            </div>
+            <button class="remove-btn" (click)="removeFile('business_registration')">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tax Document -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">📊</span>
+            <h3>Tax Document (TIN/VAT)</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="taxInput.click()" *ngIf="!taxDocumentPreview">
+            <input type="file" #taxInput (change)="onFileSelected($event, 'tax_document')" accept="image/*,.pdf" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload tax document</p>
+            <small>TIN certificate or VAT registration</small>
+          </div>
+          
+          <div class="file-preview" *ngIf="taxDocumentPreview">
+            <div class="preview-info">
+              <i class="fas fa-file-pdf" *ngIf="taxDocumentFile?.type === 'application/pdf'"></i>
+              <img *ngIf="taxDocumentFile?.type?.startsWith('image/')" [src]="taxDocumentPreview" alt="Preview">
+              <div class="file-details">
+                <span class="file-name">{{ taxDocumentFile?.name }}</span>
+                <span class="file-size">{{ (taxDocumentFile?.size || 0) / 1024 | number:'1.0-0' }} KB</span>
+              </div>
+            </div>
+            <button class="remove-btn" (click)="removeFile('tax_document')">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bank Statement -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">🏦</span>
+            <h3>Bank Account Proof</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="bankInput.click()" *ngIf="!bankStatementPreview">
+            <input type="file" #bankInput (change)="onFileSelected($event, 'bank_statement')" accept="image/*,.pdf" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload bank statement</p>
+            <small>Bank statement or account confirmation letter</small>
+          </div>
+          
+          <div class="file-preview" *ngIf="bankStatementPreview">
+            <div class="preview-info">
+              <i class="fas fa-file-pdf" *ngIf="bankStatementFile?.type === 'application/pdf'"></i>
+              <img *ngIf="bankStatementFile?.type?.startsWith('image/')" [src]="bankStatementPreview" alt="Preview">
+              <div class="file-details">
+                <span class="file-name">{{ bankStatementFile?.name }}</span>
+                <span class="file-size">{{ (bankStatementFile?.size || 0) / 1024 | number:'1.0-0' }} KB</span>
+              </div>
+            </div>
+            <button class="remove-btn" (click)="removeFile('bank_statement')">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Additional Notes (Optional)</label>
+        <textarea formControlName="notes" rows="3" placeholder="Any additional information..."></textarea>
+      </div>
+
+      <div class="upload-actions">
+        <button class="btn-secondary" (click)="resetForm()" *ngIf="businessRegistrationPreview || taxDocumentPreview || bankStatementPreview">
+          <i class="fas fa-undo-alt"></i> Reset
+        </button>
+        <button class="btn-save" (click)="saveBankDetails()" [disabled]="bankDetailsForm.invalid">
+          <i class="fas fa-save"></i> Save Bank Details
+        </button>
+        <button class="btn-primary" (click)="uploadDocuments()" 
+                [disabled]="!isFormComplete() || isUploading">
+          <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+          {{ isUploading ? 'Uploading...' : 'Submit for Verification' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'history'">
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading document history...</p>
+    </div>
+
+    <div class="documents-list" *ngIf="!isLoading && documents.length > 0">
+      <div class="document-card" *ngFor="let doc of documents">
+        <div class="document-icon">
+          <i class="fas" [class.fa-building]="doc.document_type === 'business_registration'"
+             [class.fa-file-invoice]="doc.document_type === 'tax_document'"
+             [class.fa-university]="doc.document_type === 'bank_statement'"></i>
+        </div>
+        <div class="document-info">
+          <div class="document-name">{{ doc.document_name }}</div>
+          <div class="document-date">Uploaded: {{ formatDate(doc.uploaded_at) }}</div>
+        </div>
+        <div class="document-status">
+          <span class="status-badge" [class]="getStatusClass(doc.status)">
+            {{ getStatusIcon(doc.status) }} {{ getStatusText(doc.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
+      <div class="empty-icon">📄</div>
+      <h3>No documents found</h3>
+      <p>You haven't uploaded any verification documents yet</p>
+      <button class="btn-primary" (click)="switchTab('upload')">Upload Documents</button>
+    </div>
+  </div>
+
+  <!-- KYC Status Card -->
+  <div class="kyc-status-card" *ngIf="kycStatus && kycStatus.status === 'rejected'">
+    <div class="status-icon warning">⚠️</div>
+    <div class="status-content">
+      <h4>Verification Failed</h4>
+      <p>{{ kycStatus.rejection_reason || 'Your documents were rejected. Please upload clear, valid documents.' }}</p>
+      <button class="btn-retry" (click)="switchTab('upload')">Upload Again</button>
+    </div>
+  </div>
+
+  <div class="kyc-status-card success" *ngIf="kycStatus && kycStatus.status === 'verified'">
+    <div class="status-icon">✅</div>
+    <div class="status-content">
+      <h4>Verification Complete!</h4>
+      <p>Your business has been verified. You now have full access to all merchant features.</p>
+      <div class="verified-date" *ngIf="kycStatus.verified_at">
+        <i class="fas fa-calendar-check"></i> Verified on {{ formatDate(kycStatus.verified_at) }}
+      </div>
+    </div>
+  </div>
+</div>

@@ -39,6 +39,13 @@ const routes: Routes = [
       import('./merchant/merchant.module').then(m => m.MerchantModule)
   },
 
+   {
+    path: 'customer',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      import('./customer/customer.module').then(m => m.CustomerModule)
+  },
+
   // ===== DEFAULT =====
   { path: '', redirectTo: '/login', pathMatch: 'full' },
 

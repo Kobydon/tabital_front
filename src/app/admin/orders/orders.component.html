@@ -1,0 +1,394 @@
+<div class="admin-orders-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">📋</span>
+        Order Management
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ stats.pending_orders }}</span>
+        <span class="stat-label">Pending Approval</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="export-btn" (click)="exportOrders()">
+        <i class="fas fa-download"></i> Export Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">📦</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.total_orders }}</span>
+        <span class="stat-label">Total Orders</span>
+      </div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.pending_orders }}</span>
+        <span class="stat-label">Pending</span>
+      </div>
+    </div>
+    <div class="stat-card approved">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.approved_orders }}</span>
+        <span class="stat-label">Approved</span>
+      </div>
+    </div>
+    <div class="stat-card rejected">
+      <div class="stat-icon">❌</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.rejected_orders }}</span>
+        <span class="stat-label">Rejected</span>
+      </div>
+    </div>
+    <div class="stat-card completed">
+      <div class="stat-icon">🎉</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.completed_orders }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="filterByTab('all')">
+      <i class="fas fa-list"></i> All Orders
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="filterByTab('pending')">
+      <i class="fas fa-clock"></i> Pending
+      <span class="badge" *ngIf="stats.pending_orders > 0">{{ stats.pending_orders }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'approved'" (click)="filterByTab('approved')">
+      <i class="fas fa-check-circle"></i> Approved
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'rejected'" (click)="filterByTab('rejected')">
+      <i class="fas fa-times-circle"></i> Rejected
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'completed'" (click)="filterByTab('completed')">
+      <i class="fas fa-truck"></i> Completed
+    </button>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="filter-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        placeholder="Search by order ID, customer, merchant, product..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="applyFilters()"
+      />
+      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="filter-actions">
+      <button *ngIf="searchTerm || activeTab !== 'all'" class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading orders...</p>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="table-wrapper" *ngIf="!isLoading && filteredOrders.length > 0">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Merchant</th>
+          <th>Product</th>
+          <th>Amount</th>
+          <th>Installment</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of filteredOrders">
+          <td class="order-id">{{ order.order_id }}</td>
+          <td class="customer-info">
+            <div class="customer-name">{{ order.customer_name }}</div>
+            <div class="customer-phone">{{ order.customer_phone }}</div>
+          </td>
+          <td class="merchant-info">
+            <div class="merchant-name">{{ order.merchant_name }}</div>
+          </td>
+          <td class="product-info">
+            <div class="product-name">{{ order.product_name }}</div>
+            <div class="product-price">{{ formatCurrency(order.product_price) }}</div>
+          </td>
+          <td class="amount">{{ formatCurrency(order.total_payable) }}</td>
+          <td class="installment">
+            {{ formatCurrency(order.installment_amount) }}/month<br>
+            <small>{{ order.number_of_installments }} months</small>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(order.status)">
+              {{ getStatusIcon(order.status) }} {{ order.status | titlecase }}
+            </span>
+          </td>
+          <td>{{ formatDate(order.created_at) }}</td>
+          <td class="actions">
+            <button class="action-icon view" (click)="viewOrderDetails(order)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button *ngIf="order.status === 'pending'" class="action-icon approve" (click)="openApproveModal(order)" title="Approve">
+              <i class="fas fa-check-circle"></i>
+            </button>
+            <button *ngIf="order.status === 'pending'" class="action-icon reject" (click)="openRejectModal(order)" title="Reject">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="currentPage === page"
+          (click)="changePage(page)">
+          {{ page }}
+        </button>
+      </div>
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredOrders.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No orders found</h3>
+    <p>Orders from customers will appear here</p>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div class="modal" *ngIf="showOrderModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-receipt"></i> Order Details</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedOrder">
+        <!-- Order Header -->
+        <div class="order-header">
+          <div class="order-id-section">
+            <span class="label">Order ID:</span>
+            <strong>{{ selectedOrder.order_id }}</strong>
+          </div>
+          <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
+            {{ getStatusIcon(selectedOrder.status) }} {{ selectedOrder.status | titlecase }}
+          </span>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="detail-section">
+          <h3><i class="fas fa-user"></i> Customer Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Name:</span>
+              <span class="value">{{ selectedOrder.customer_name }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone:</span>
+              <span class="value">{{ selectedOrder.customer_phone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant Information -->
+        <div class="detail-section">
+          <h3><i class="fas fa-store"></i> Merchant Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Merchant:</span>
+              <span class="value">{{ selectedOrder.merchant_name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Information -->
+        <div class="detail-section">
+          <h3><i class="fas fa-box"></i> Product Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Product:</span>
+              <span class="value">{{ selectedOrder.product_name }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Quantity:</span>
+              <span class="value">{{ selectedOrder.quantity }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Unit Price:</span>
+              <span class="value">{{ formatCurrency(selectedOrder.product_price) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Breakdown -->
+        <div class="detail-section">
+          <h3><i class="fas fa-credit-card"></i> Payment Breakdown</h3>
+          <div class="payment-breakdown">
+            <div class="breakdown-row">
+              <span>Total Payable:</span>
+              <strong>{{ formatCurrency(selectedOrder.total_payable) }}</strong>
+            </div>
+            <div class="breakdown-row">
+              <span>Down Payment (40%):</span>
+              <strong>{{ formatCurrency(selectedOrder.down_payment_amount) }}</strong>
+            </div>
+            <div class="breakdown-row">
+              <span>Monthly Installment:</span>
+              <strong>{{ formatCurrency(selectedOrder.installment_amount) }} for {{ selectedOrder.number_of_installments - 1 }} months</strong>
+            </div>
+            <div class="breakdown-row total">
+              <span>Platform Fee (10%):</span>
+              <strong>{{ formatCurrency(selectedOrder.total_payable * 0.1) }}</strong>
+            </div>
+            <div class="breakdown-row total">
+              <span>Merchant Payout:</span>
+              <strong>{{ formatCurrency(selectedOrder.total_payable * 0.9) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="detail-section">
+          <h3><i class="fas fa-map-marker-alt"></i> Delivery Address</h3>
+          <div class="address-box">
+            <p>{{ selectedOrder.delivery_address }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button *ngIf="selectedOrder?.status === 'pending'" class="btn-approve" (click)="openApproveModal(selectedOrder!)">
+          <i class="fas fa-check"></i> Approve Order
+        </button>
+        <button *ngIf="selectedOrder?.status === 'pending'" class="btn-reject" (click)="openRejectModal(selectedOrder!)">
+          <i class="fas fa-times"></i> Reject Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approve Order Modal -->
+  <div class="modal" *ngIf="showApproveModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-check-circle"></i> Approve Order</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedOrder">
+        <div class="order-summary">
+          <p><strong>Order:</strong> {{ selectedOrder.order_id }}</p>
+          <p><strong>Customer:</strong> {{ selectedOrder.customer_name }}</p>
+          <p><strong>Product:</strong> {{ selectedOrder.product_name }}</p>
+          <p><strong>Total Amount:</strong> {{ formatCurrency(selectedOrder.total_payable) }}</p>
+        </div>
+
+        <form [formGroup]="approveForm" (ngSubmit)="approveOrder()">
+          <div class="form-group">
+            <label>Admin Notes (Optional)</label>
+            <textarea formControlName="admin_notes" rows="3" placeholder="Add any notes about this approval"></textarea>
+          </div>
+
+          <div class="approval-info">
+            <i class="fas fa-info-circle"></i>
+            <span>Approving this order will:</span>
+            <ul>
+              <li>Notify the merchant about the approved order</li>
+              <li>Create a transaction record</li>
+              <li>Customer will see order as approved</li>
+            </ul>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-approve" [disabled]="isProcessing">
+              <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+              {{ isProcessing ? 'Processing...' : 'Confirm Approval' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Order Modal -->
+  <div class="modal" *ngIf="showRejectModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-times-circle"></i> Reject Order</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedOrder">
+        <div class="order-summary">
+          <p><strong>Order:</strong> {{ selectedOrder.order_id }}</p>
+          <p><strong>Customer:</strong> {{ selectedOrder.customer_name }}</p>
+          <p><strong>Product:</strong> {{ selectedOrder.product_name }}</p>
+        </div>
+
+        <form [formGroup]="rejectForm" (ngSubmit)="rejectOrder()">
+          <div class="form-group">
+            <label>Reason for Rejection *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Please provide a reason for rejecting this order"></textarea>
+            <small *ngIf="rejectForm.get('reason')?.invalid && rejectForm.get('reason')?.touched" class="error">
+              Reason is required (minimum 10 characters)
+            </small>
+          </div>
+
+          <div class="rejection-info">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Rejecting this order will:</span>
+            <ul>
+              <li>Notify the customer about the rejection</li>
+              <li>Order will be cancelled</li>
+              <li>No payment will be processed</li>
+            </ul>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-reject" [disabled]="rejectForm.invalid || isProcessing">
+              <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+              {{ isProcessing ? 'Processing...' : 'Confirm Rejection' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,283 @@
+<div class="instalments-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1 class="title">
+        <span class="icon">📅</span>
+        My Instalment Plans
+      </h1>
+      <div class="stats-badge">
+        <span class="stat-count">{{ stats.active_plans }}</span>
+        <span class="stat-label">Active Plans</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon active">✅</span>
+        <span class="stat-label">Active Plans</span>
+      </div>
+      <div class="stat-value">{{ stats.active_plans }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon paid">💰</span>
+        <span class="stat-label">Total Paid</span>
+      </div>
+      <div class="stat-value">{{ formatCurrency(stats.total_paid) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon outstanding">📊</span>
+        <span class="stat-label">Outstanding</span>
+      </div>
+      <div class="stat-value">{{ formatCurrency(stats.total_outstanding) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-icon upcoming">⏳</span>
+        <span class="stat-label">Upcoming</span>
+      </div>
+      <div class="stat-value">{{ stats.upcoming_payments }}</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <div class="filter-group">
+      <label>Status</label>
+      <div class="status-filters">
+        <button
+          *ngFor="let option of statusOptions"
+          class="filter-btn"
+          [class.active]="selectedStatus === option.value"
+          (click)="filterByStatus(option.value)">
+          <span class="filter-icon">{{ option.icon }}</span>
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your instalment plans...</p>
+  </div>
+
+  <!-- Instalments List -->
+  <div class="instalments-list" *ngIf="!isLoading && filteredInstalments.length > 0">
+    <div class="instalment-card" *ngFor="let plan of filteredInstalments">
+      <div class="card-header">
+        <div class="plan-info">
+          <h3>{{ plan.plan_name }}</h3>
+          <p class="merchant">{{ plan.merchant_name }}</p>
+        </div>
+        <div class="plan-status">
+          <span class="status-badge" [class]="getStatusClass(plan.status)">
+            {{ getStatusIcon(plan.status) }} {{ plan.status | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-section">
+        <div class="progress-label">
+          <span>Payment Progress</span>
+          <span>{{ getProgressPercentage(plan) | number:'1.0-0' }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" 
+               [style.width.%]="getProgressPercentage(plan)"
+               [style.backgroundColor]="getProgressColor(getProgressPercentage(plan))"></div>
+        </div>
+        <div class="progress-stats">
+          <span>Paid: {{ formatCurrency(plan.paid_amount) }}</span>
+          <span>Remaining: {{ formatCurrency(plan.remaining_amount) }}</span>
+        </div>
+      </div>
+
+      <div class="plan-details">
+        <div class="detail-row">
+          <span class="label">Plan ID:</span>
+          <span class="value">{{ plan.plan_id }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Installments:</span>
+          <span class="value">{{ plan.paid_installments }} / {{ plan.total_installments }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Amount:</span>
+          <span class="value">{{ formatCurrency(plan.installment_amount) }} / {{ plan.frequency }}</span>
+        </div>
+      </div>
+
+      <div class="plan-actions">
+        <button class="btn-outline" (click)="viewInstalmentDetails(plan)">
+          <i class="fas fa-eye"></i> View Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredInstalments.length === 0" class="empty-state">
+    <div class="empty-icon">📅</div>
+    <h3>No instalment plans found</h3>
+    <p>You don't have any active instalment plans yet</p>
+    <button routerLink="/customer/shop" class="btn-primary">
+      <i class="fas fa-shopping-cart"></i> Shop Now
+    </button>
+  </div>
+
+  <!-- Instalment Details Modal with Payment Schedule -->
+  <div class="modal" *ngIf="showDetailsModal" (click)="closeModals()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-calendar-alt"></i> Payment Schedule</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedInstalment">
+        <div class="plan-summary">
+          <h3>{{ selectedInstalment.plan_name }}</h3>
+          <p class="merchant">{{ selectedInstalment.merchant_name }}</p>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span>Total Amount:</span>
+              <strong>{{ formatCurrency(selectedInstalment.total_amount) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>Paid:</span>
+              <strong class="paid">{{ formatCurrency(selectedInstalment.paid_amount) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>Remaining:</span>
+              <strong class="remaining">{{ formatCurrency(selectedInstalment.remaining_amount) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Schedule Table -->
+        <div class="payment-schedule-section">
+          <h4><i class="fas fa-list"></i> Payment Schedule</h4>
+          <div class="schedule-table">
+            <div class="schedule-header">
+              <span>Installment</span>
+              <span>Amount</span>
+              <span>Due Date</span>
+              <span>Status</span>
+              <span>Paid Date</span>
+              <span>Action</span>
+            </div>
+            <div class="schedule-row" *ngFor="let payment of selectedInstalment.payment_schedule">
+              <span class="installment-num">Installment {{ payment.installment_number }}</span>
+              <span class="amount">{{ formatCurrency(payment.amount) }}</span>
+              <span [class.overdue]="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0">
+                {{ formatDate(payment.due_date) }}
+                <span *ngIf="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0" class="overdue-badge">Overdue</span>
+              </span>
+              <span>
+                <span class="payment-status" [class]="getPaymentStatusClass(payment.status)">
+                  {{ getPaymentStatusIcon(payment.status) }} {{ payment.status | titlecase }}
+                </span>
+              </span>
+              <span>
+                <span *ngIf="payment.paid_date">{{ formatDate(payment.paid_date) }}</span>
+                <span *ngIf="!payment.paid_date">-</span>
+              </span>
+              <span>
+                <button *ngIf="payment.status === 'pending'" 
+                        class="btn-pay" 
+                        (click)="openPaymentModal(payment, selectedInstalment)">
+                  <i class="fas fa-credit-card"></i> Pay Now
+                </button>
+                <button *ngIf="payment.status === 'paid'" 
+                        class="btn-receipt" 
+                        (click)="downloadReceipt(payment, selectedInstalment)">
+                  <i class="fas fa-download"></i> Receipt
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Make Payment Modal -->
+  <div class="modal" *ngIf="showPaymentModal" (click)="closeModals()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-credit-card"></i> Make Payment</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedInstalment && selectedPayment">
+        <div class="payment-summary">
+          <div class="summary-row">
+            <span>Plan:</span>
+            <strong>{{ selectedInstalment.plan_name }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Installment:</span>
+            <strong>Installment {{ selectedPayment.installment_number }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Due Date:</span>
+            <strong [class.urgent]="getDaysRemaining(selectedPayment.due_date) < 0">
+              {{ formatDate(selectedPayment.due_date) }}
+            </strong>
+          </div>
+          <div class="summary-row">
+            <span>Amount:</span>
+            <strong>{{ formatCurrency(selectedPayment.amount) }}</strong>
+          </div>
+        </div>
+
+        <form [formGroup]="paymentForm" (ngSubmit)="makePayment()">
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <div class="payment-methods">
+              <button
+                *ngFor="let method of paymentMethods"
+                type="button"
+                class="method-btn"
+                [class.active]="paymentForm.get('payment_method')?.value === method.value"
+                (click)="paymentForm.patchValue({ payment_method: method.value })">
+                <span class="method-icon">{{ method.icon }}</span>
+                {{ method.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Reference (Optional)</label>
+            <input type="text" formControlName="payment_reference" placeholder="Enter reference number if any">
+          </div>
+
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <textarea formControlName="notes" rows="2" placeholder="Any additional notes"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isPaying">
+              <i class="fas fa-spinner fa-spin" *ngIf="isPaying"></i>
+              {{ isPaying ? 'Processing...' : 'Pay Now' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

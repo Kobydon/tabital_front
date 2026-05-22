@@ -1,0 +1,362 @@
+<div class="customer-dashboard" *ngIf="!isLoading; else loadingTemplate">
+  <!-- Error Message -->
+  <div class="error-alert" *ngIf="errorMessage">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button class="close-btn" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <div>
+      <h1>Welcome back, {{ stats?.customer_name || customerProfile?.full_name || 'Customer' }}!</h1>
+      <p class="text-muted">Here's what's happening with your account today.</p>
+    </div>
+    <div class="current-date">
+      <i class="fas fa-calendar-alt"></i>
+      <span>{{ getCurrentDate() }}</span>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total-outstanding">
+        <i class="fas fa-credit-card"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Total Outstanding</h3>
+        <div class="stat-value">{{ formatCurrency(stats?.total_outstanding ?? 0) }}</div>
+        <p class="stat-subtitle">Across {{ stats?.total_outstanding_plans_count ?? 0 }} plans</p>
+        <div class="stat-trend" *ngIf="getOutstandingTrend() !== 0">
+          <span class="trend-text">{{ getOutstandingTrend() > 0 ? '+' : '' }}{{ getOutstandingTrend() }}% vs last month</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon next-payment">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Next Payment</h3>
+        <div class="stat-value">{{ formatCurrency(stats?.next_payment_amount ?? 0) }}</div>
+        <p class="stat-subtitle">Due: {{ formatDate(stats?.next_payment_date ?? '') }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon paid-to-date">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Paid to Date</h3>
+        <div class="stat-value">{{ formatCurrency(stats?.paid_to_date ?? 0) }}</div>
+        <p class="stat-subtitle">{{ stats?.paid_to_date_period ?? 'This Year' }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon active-plans">
+        <i class="fas fa-list-alt"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Active Plans</h3>
+        <div class="stat-value">{{ stats?.active_plans_count ?? 0 }}</div>
+        <p class="stat-subtitle">
+          <a routerLink="/customer/instalments" class="view-link">View all plans →</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="stat-card account-status">
+      <div class="stat-icon status">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Account Status</h3>
+        <div class="stat-value status-badge" [class.status-good]="stats?.account_status === 'good_standing'">
+          {{ stats?.account_status_message ?? 'Good Standing' }}
+        </div>
+        <p class="stat-subtitle">
+          <i class="fas fa-check-circle"></i> Thank you!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Overview Chart and Summary -->
+  <!-- <div class="payment-overview-section" *ngIf="paymentOverview">
+    <div class="section-header">
+      <h2>Payment Overview</h2>
+      <div class="view-options">
+        <button class="view-option" [class.active]="chartView === 'bar'" (click)="changeChartView('bar')">
+          <i class="fas fa-chart-bar"></i> Bar
+        </button>
+        <button class="view-option" [class.active]="chartView === 'line'" (click)="changeChartView('line')">
+          <i class="fas fa-chart-line"></i> Line
+        </button>
+      </div>
+    </div>
+    
+    <div class="overview-container">
+      <div class="chart-container">
+        <canvas id="paymentChart" style="width: 100%; height: 300px;"></canvas>
+        <div *ngIf="!hasChartData" class="no-chart-data">
+          <i class="fas fa-chart-line"></i>
+          <p>No payment data available</p>
+        </div>
+      </div>
+      
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="summary-label">Total Paid</div>
+          <div class="summary-value paid">{{ formatCurrency(paymentOverview.total_paid || 0) }}</div>
+          <div class="summary-trend positive" *ngIf="getPaidTrend() !== 0">
+            <i class="fas" [class.fa-arrow-up]="getPaidTrend() > 0" [class.fa-arrow-down]="getPaidTrend() < 0"></i>
+            {{ getPaidTrend() > 0 ? '+' : '' }}{{ getPaidTrend() }}% vs last period
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Total Outstanding</div>
+          <div class="summary-value outstanding">{{ formatCurrency(paymentOverview.total_outstanding || 0) }}</div>
+          <div class="summary-trend" [class.positive]="getOutstandingTrend() < 0" [class.negative]="getOutstandingTrend() > 0" *ngIf="getOutstandingTrend() !== 0">
+            <i class="fas" [class.fa-arrow-down]="getOutstandingTrend() < 0" [class.fa-arrow-up]="getOutstandingTrend() > 0"></i>
+            {{ getOutstandingTrend() > 0 ? '+' : '' }}{{ getOutstandingTrend() }}% vs last period
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- Two Column Layout -->
+  <div class="two-column-layout">
+    <!-- Left Column - Upcoming Payments & My Plans -->
+    <div class="left-column">
+      <!-- Upcoming Payments -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Upcoming Payments</h2>
+          <a routerLink="/customer/payments" class="view-all-link">View All Payments →</a>
+        </div>
+        
+        <div class="upcoming-payments-list">
+          <div class="payment-item" *ngFor="let payment of upcomingPayments">
+            <div class="payment-info">
+              <div class="payment-product">{{ payment?.product_name ?? 'Payment Plan' }}</div>
+              <div class="payment-plan-id">Plan ID: {{ payment?.plan_id ?? 'N/A' }}</div>
+              <div class="payment-due-date" *ngIf="payment?.next_payment_date">
+                <i class="fas fa-clock"></i> Due in {{ getDaysRemaining(payment.next_payment_date) }} days
+              </div>
+            </div>
+            <div class="payment-right">
+              <div class="payment-amount">{{ formatCurrency(payment?.next_payment_amount ?? 0) }}</div>
+              <button class="pay-now-btn" (click)="makePayment(payment)" *ngIf="payment?.status === 'active'">
+                Pay Now
+              </button>
+            </div>
+          </div>
+          
+          <div *ngIf="upcomingPayments.length === 0" class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <p>No upcoming payments</p>
+            <p class="empty-subtitle">You're all caught up!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Plans -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>My Plans</h2>
+          <a routerLink="/customer/instalments" class="view-all-link">View All ({{ stats?.active_plans_count ?? 0 }})</a>
+        </div>
+        
+        <div class="plans-list">
+          <div class="plan-item" *ngFor="let plan of activePlans">
+            <div class="plan-icon">
+              <i class="fas" [class.fa-mobile-alt]="plan?.product_name?.includes('Phone') || plan?.product_name?.includes('iPhone')" 
+                 [class.fa-laptop]="plan?.product_name?.includes('Mac') || plan?.product_name?.includes('Laptop')"
+                 [class.fa-tv]="plan?.product_name?.includes('TV')"
+                 [class.fa-box]="true"></i>
+            </div>
+            <div class="plan-info">
+              <div class="plan-product">{{ plan?.product_name ?? 'Product' }}</div>
+              <div class="plan-id">{{ plan?.plan_id ?? 'N/A' }}</div>
+              <div class="plan-due">
+                <span class="due-label">Due:</span>
+                {{ formatDate(plan?.due_date ?? '') }}
+              </div>
+              <div class="plan-progress" *ngIf="plan?.total_amount">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="getPlanProgress(plan)"></div>
+                </div>
+                <div class="progress-text">
+                  {{ formatCurrency(plan?.amount_paid ?? 0) }} / {{ formatCurrency(plan?.total_amount ?? 0) }}
+                </div>
+              </div>
+            </div>
+            <div class="plan-status">
+              <span class="status-badge" [class]="getStatusClass(plan?.status ?? '')">
+                {{ (plan?.status ?? 'active') | titlecase }}
+              </span>
+            </div>
+          </div>
+          
+          <div *ngIf="activePlans.length === 0" class="empty-state">
+            <i class="fas fa-shopping-cart"></i>
+            <p>No active plans</p>
+            <button routerLink="/customer/shop" class="btn-primary">Browse Products</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Recent Transactions & Account Summary -->
+    <div class="right-column">
+      <!-- Recent Transactions -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Recent Transactions</h2>
+          <a routerLink="/customer/transactions" class="view-all-link">View All →</a>
+        </div>
+        
+        <div class="transactions-list">
+          <div class="transaction-item" *ngFor="let transaction of recentTransactions">
+            <div class="transaction-icon" [class]="transaction?.status ?? ''">
+              <i class="fas" [class.fa-check-circle]="transaction?.status === 'completed'" 
+                 [class.fa-hourglass-half]="transaction?.status === 'pending'"
+                 [class.fa-times-circle]="transaction?.status === 'failed'"
+                 [class.fa-receipt]="!transaction?.status"></i>
+            </div>
+            <div class="transaction-details">
+              <div class="transaction-title">{{ transaction?.product_name ?? 'Transaction' }}</div>
+              <div class="transaction-merchant" *ngIf="transaction?.merchant_name">
+                <i class="fas fa-store"></i> {{ transaction?.merchant_name }}
+              </div>
+              <div class="transaction-date">
+                <i class="fas fa-calendar-alt"></i> {{ formatDateTime(transaction?.transaction_date ?? '') }}
+              </div>
+            </div>
+            <div class="transaction-amount" [class]="transaction?.status ?? ''">
+              {{ formatCurrency(transaction?.amount ?? 0) }}
+            </div>
+          </div>
+          
+          <div *ngIf="recentTransactions.length === 0" class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <p>No recent transactions</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Summary -->
+      <div class="section-card account-summary" *ngIf="customerProfile">
+        <div class="section-header">
+          <h2>Account Summary</h2>
+          <i class="fas fa-user-circle"></i>
+        </div>
+        
+        <div class="summary-details">
+          <div class="summary-row">
+            <span class="summary-label">Customer ID</span>
+            <div class="summary-value-wrapper">
+              <span class="summary-value">{{ customerProfile.customer_id || 'N/A' }}</span>
+              <button class="copy-btn" (click)="copyToClipboard(customerProfile.customer_id || '')" *ngIf="customerProfile.customer_id" title="Copy to clipboard">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Full Name</span>
+            <span class="summary-value">{{ customerProfile.full_name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Email</span>
+            <span class="summary-value">{{ customerProfile.email }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Phone</span>
+            <span class="summary-value">{{ customerProfile.phone || 'N/A' }}</span>
+          </div>
+          <div class="summary-row" *ngIf="customerProfile.business_name">
+            <span class="summary-label">Business</span>
+            <span class="summary-value">{{ customerProfile.business_name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">KYC Status</span>
+            <span class="summary-value">
+              <span class="kyc-badge" [class.verified]="customerProfile.kyc_status === 'verified'"
+                    [class.pending]="customerProfile.kyc_status === 'pending'"
+                    [class.rejected]="customerProfile.kyc_status === 'rejected'">
+                <i class="fas" [class.fa-check-circle]="customerProfile.kyc_status === 'verified'"
+                   [class.fa-clock]="customerProfile.kyc_status === 'pending'"
+                   [class.fa-times-circle]="customerProfile.kyc_status === 'rejected'"></i>
+                {{ customerProfile.kyc_status | titlecase }}
+              </span>
+            </span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Member Since</span>
+            <span class="summary-value">{{ formatDate(customerProfile.created_at) }}</span>
+          </div>
+          <div class="summary-row" *ngIf="customerProfile.total_spent">
+            <span class="summary-label">Lifetime Spent</span>
+            <span class="summary-value total-spent">{{ formatCurrency(customerProfile.total_spent) }}</span>
+          </div>
+        </div>
+        
+        <div class="profile-actions">
+          <button class="profile-action-btn" routerLink="/customer/profile">
+            <i class="fas fa-user-edit"></i> Edit Profile
+          </button>
+          <button class="profile-action-btn" (click)="upgradeKYC()" *ngIf="customerProfile.kyc_status !== 'verified'">
+            <i class="fas fa-shield-alt"></i> Upgrade KYC
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-card quick-actions">
+        <div class="section-header">
+          <h2>Quick Actions</h2>
+        </div>
+        
+        <div class="actions-grid">
+          <button class="action-btn" routerLink="/customer/payments">
+            <i class="fas fa-credit-card"></i>
+            <span>Make a Payment</span>
+          </button>
+          <button class="action-btn" routerLink="/customer/transactions">
+            <i class="fas fa-history"></i>
+            <span>View All Transactions</span>
+          </button>
+          <button class="action-btn" (click)="downloadStatement()">
+            <i class="fas fa-download"></i>
+            <span>Download Statement</span>
+          </button>
+         <a href="mailto:info@tabitalpay.com" style="text-decoration: none;"> <button class="action-btn">
+            <i class="fas fa-headset"></i>
+            <span>Contact Support</span>
+          </button></a>
+          <button class="action-btn" routerLink="/customer/shop">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Shop Now</span>
+          </button>
+          <button class="action-btn" (click)="requestPaymentReminder()">
+            <i class="fas fa-bell"></i>
+            <span>Payment Reminder</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Template -->
+<ng-template #loadingTemplate>
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your dashboard...</p>
+  </div>
+</ng-template>

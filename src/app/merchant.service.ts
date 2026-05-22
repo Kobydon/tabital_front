@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantService {
@@ -324,13 +324,13 @@ updatePaymentSettings(data: any): Observable<any> {
   return this.http.put(`${this.API}/merchant/settings/payment`, data, { headers: this.getAuthHeaders() });
 }
 
-getNotificationSettings(): Observable<any> {
-  return this.http.get(`${this.API}/merchant/settings/notifications`, { headers: this.getAuthHeaders() });
-}
+// getNotificationSettings(): Observable<any> {
+//   return this.http.get(`${this.API}/merchant/settings/notifications`, { headers: this.getAuthHeaders() });
+// }
 
-updateNotificationSettings(data: any): Observable<any> {
-  return this.http.put(`${this.API}/merchant/settings/notifications`, data, { headers: this.getAuthHeaders() });
-}
+// updateNotificationSettings(data: any): Observable<any> {
+//   return this.http.put(`${this.API}/merchant/settings/notifications`, data, { headers: this.getAuthHeaders() });
+// }
 
 getPreferences(): Observable<any> {
   return this.http.get(`${this.API}/merchant/settings/preferences`, { headers: this.getAuthHeaders() });
@@ -353,5 +353,117 @@ uploadDocument(file: File, documentType: string): Observable<any> {
 
 getActivityLog(): Observable<any> {
   return this.http.get(`${this.API}/merchant/settings/activity-log`, { headers: this.getAuthHeaders() });
+}
+
+
+// Update these methods in MerchantService
+
+getNotificationSettings(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/settings/notifications`, { headers: this.getAuthHeaders() });
+}
+
+updateNotificationSettings(data: any): Observable<any> {
+  return this.http.put(`${this.API}/merchant/settings/notifications`, data, { headers: this.getAuthHeaders() });
+}
+
+
+ getMerchantProducts(filters?: any): Observable<any> {
+    let url = `${this.API}/merchant/products`;
+    if (filters) {
+      const params = new URLSearchParams();
+      Object.keys(filters).forEach(key => {
+        if (filters[key]) params.append(key, filters[key]);
+      });
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+    }
+    return this.http.get(url, { headers: this.getAuthHeaders() });
+  }
+
+  getProductDetails(productId: number): Observable<any> {
+    return this.http.get(`${this.API}/merchant/products/${productId}`, { headers: this.getAuthHeaders() });
+  }
+
+  createProduct(productData: any): Observable<any> {
+    return this.http.post(`${this.API}/merchant/products`, productData, { headers: this.getAuthHeaders() });
+  }
+
+  updateProduct(productId: number, productData: any): Observable<any> {
+    return this.http.put(`${this.API}/merchant/products/${productId}`, productData, { headers: this.getAuthHeaders() });
+  }
+
+  deleteProduct(productId: number): Observable<any> {
+    return this.http.delete(`${this.API}/merchant/products/${productId}`, { headers: this.getAuthHeaders() });
+  }
+
+  uploadProductImage(file: File, productId?: number): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (productId) {
+      formData.append('product_id', productId.toString());
+    }
+    return this.http.post(`${this.API}/merchant/products/upload-image`, formData, { headers: this.getAuthHeaders() });
+  }
+
+  // Generic error handler for HTTP requests
+  private handleError(error: any): Observable<never> {
+    // You can customize this as needed
+    console.error('An error occurred:', error);
+    throw error;
+  }
+  
+// merchant.service.ts - Add these methods
+
+// Get merchant orders
+getMerchantOrders(filters?: any): Observable<any> {
+  let url = `${this.API}/merchant/orders`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Update order delivery status
+updateOrderDelivery(orderId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/merchant/orders/${orderId}/delivery`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+// Add these methods to merchant.service.ts
+
+// Get merchant documents
+getMerchantDocuments(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/documents`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Get KYC status
+getKycStatus(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/kyc/status`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Get bank details
+getBankDetails(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/bank-details`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Update bank details
+updateBankDetails(bankDetails: any): Observable<any> {
+  return this.http.put(`${this.API}/merchant/bank-details`, bankDetails, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Upload merchant documents
+uploadMerchantDocuments(formData: FormData): Observable<any> {
+  return this.http.post(`${this.API}/merchant/documents/upload`, formData, { 
+    headers: this.getAuthHeaders() 
+  }).pipe(catchError(this.handleError.bind(this)));
 }
 }

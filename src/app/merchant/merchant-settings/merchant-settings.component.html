@@ -148,7 +148,7 @@
             <input type="password" formControlName="confirm_password" placeholder="Confirm new password">
           </div>
         </div>
-        <div class="error-message" *ngIf="passwordForm.errors?.mismatch && passwordForm.get('confirm_password')?.touched">
+        <div class="error-message" *ngIf="passwordForm.errors?.['mismatch'] && passwordForm.get('confirm_password')?.touched">
           Passwords do not match
         </div>
         <div class="form-actions">
