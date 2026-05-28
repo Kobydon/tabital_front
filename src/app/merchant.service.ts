@@ -4,7 +4,7 @@ import { catchError, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantService {
-  private API = 'http://127.0.0.1:5000';
+  private API = 'https://tabital.onrender.com';
 
   constructor(private http: HttpClient) {}
 
@@ -89,6 +89,16 @@ getMerchantTransactions(filters?: any): Observable<any> {
     if (qs) url += `?${qs}`;
   }
   return this.http.get(url, { headers: this.getAuthHeaders() });
+}
+getMerchantPayoutStats(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/payouts/stats`);
+}
+
+getRecentPayouts(limit: number = 5): Observable<any> {
+    return this.http.get(`${this.API}/merchant/payouts/recent?limit=${limit}`);
+  }
+getTransactionStats(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/transactions/stats`);
 }
 
 getMerchantTransactionStats(): Observable<any> {
@@ -461,9 +471,88 @@ updateBankDetails(bankDetails: any): Observable<any> {
 }
 
 // Upload merchant documents
-uploadMerchantDocuments(formData: FormData): Observable<any> {
-  return this.http.post(`${this.API}/merchant/documents/upload`, formData, { 
-    headers: this.getAuthHeaders() 
-  }).pipe(catchError(this.handleError.bind(this)));
+// In your service, temporarily add this before the POST:
+
+ uploadMerchantDocuments(formData: FormData): Observable<any> {
+    // Debug: Log all form data entries using forEach (compatible with all browsers)
+    console.log('=== Uploading Documents ===');
+    
+    // Use forEach instead of entries() for better compatibility
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        console.log(`${key}: ${value.name} (${value.size} bytes, type: ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    });
+    
+    // Get auth token
+    const token = localStorage.getItem('access_token');
+    
+    // Create headers with auth token only (no Content-Type for FormData)
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    
+    // IMPORTANT: Do NOT set Content-Type header - let browser handle it for FormData
+    return this.http.post(`${this.API}/merchant/documents/upload`, formData, { headers });
+  }
+
+// Add these methods to merchant.service.ts
+
+// Get merchant notifications
+getMerchantNotifications(filters?: any): Observable<any> {
+  let url = `${this.API}/merchant/notifications`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
 }
+
+// Get merchant notification settings
+getMerchantNotificationSettings(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/notifications/settings`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Update merchant notification settings
+updateMerchantNotificationSettings(settings: any): Observable<any> {
+  return this.http.put(`${this.API}/merchant/notifications/settings`, settings, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Mark notification as read
+markMerchantNotificationRead(notificationId: string): Observable<any> {
+  return this.http.put(`${this.API}/merchant/notifications/${notificationId}/read`, {}, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Mark all notifications as read
+markAllMerchantNotificationsRead(): Observable<any> {
+  return this.http.post(`${this.API}/merchant/notifications/mark-all-read`, {}, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Delete notification
+deleteMerchantNotification(notificationId: string): Observable<any> {
+  return this.http.delete(`${this.API}/merchant/notifications/${notificationId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Clear all notifications
+clearAllMerchantNotifications(): Observable<any> {
+  return this.http.delete(`${this.API}/merchant/notifications/clear-all`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+  getMerchantUnreadCount(): Observable<any> {
+    return this.http.get(`${this.API}/merchant/notifications/unread-count`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
 }

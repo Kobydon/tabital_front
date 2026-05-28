@@ -779,3 +779,219 @@
   color: white;
   border-color: transparent;
 }
+// KYC Block Modal Styles
+.kyc-block-modal {
+  max-width: 500px;
+  text-align: center;
+  
+  .kyc-block-icon {
+    margin: 20px 0 0;
+    
+    i {
+      font-size: 64px;
+      
+      &.fa-times-circle {
+        color: #dc2626;
+      }
+      
+      &.fa-shield-alt {
+        color: #6366f1;
+      }
+    }
+  }
+  
+  .kyc-warning {
+    p {
+      margin-bottom: 20px;
+      color: #374151;
+      line-height: 1.6;
+    }
+  }
+  
+  .kyc-info-card {
+    background: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: left;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    
+    i {
+      font-size: 24px;
+      color: #3b82f6;
+      flex-shrink: 0;
+    }
+    
+    h4 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: #1e293b;
+    }
+    
+    p {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #475569;
+    }
+    
+    ul {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+      
+      li {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #475569;
+        
+        i {
+          font-size: 12px;
+          margin-right: 8px;
+          color: #10b981;
+        }
+      }
+    }
+  }
+  
+  .kyc-status {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: left;
+    
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      span:first-child {
+        color: #64748b;
+        font-weight: 500;
+      }
+      
+      span:last-child {
+        color: #1e293b;
+        font-weight: 600;
+      }
+      
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        
+        &.status-pending {
+          background: #fef3c7;
+          color: #d97706;
+        }
+        
+        &.status-approved {
+          background: #d1fae5;
+          color: #059669;
+        }
+        
+        &.status-rejected {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+      }
+    }
+  }
+  
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      
+      &:hover {
+        background: #e2e8f0;
+      }
+    }
+    
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      
+      &:hover {
+        background: #4f46e5;
+      }
+    }
+  }
+}
+
+// KYC Warning Banner
+.kyc-warning-banner {
+  background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    i {
+      font-size: 24px;
+      color: #d97706;
+    }
+    
+    .banner-text {
+      h4 {
+        margin: 0 0 4px 0;
+        font-size: 16px;
+        color: #92400e;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #78350f;
+      }
+    }
+  }
+  
+  .banner-btn {
+    background: #d97706;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #b45309;
+      transform: translateY(-1px);
+    }
+  }
+}

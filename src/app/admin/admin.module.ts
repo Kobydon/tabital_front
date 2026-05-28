@@ -12,6 +12,7 @@ import { TransactionsComponent } from './transactions/transactions.component';
 import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
+import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 // import { OrdersComponent } from './orders/orders.component';
 
 
@@ -25,12 +26,13 @@ import { AdminOrdersComponent } from './orders/orders.component';
     TransactionsComponent,
     MerchantDetailsComponent,
     ChargesComponent,
-    AdminOrdersComponent
+    AdminOrdersComponent,
+    ApproveKybKycComponent
 
   ],
   imports: [
     CommonModule,ReactiveFormsModule,FormsModule,
-    RouterModule,DecimalPipe,
+    RouterModule,DecimalPipe,FormsModule,
     AdminRoutingModule  // ✅ This is correct
   ],
   exports: [

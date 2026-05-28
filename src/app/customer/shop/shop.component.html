@@ -15,6 +15,21 @@
     </div>
   </div>
 
+  <!-- KYC Warning Banner (Shows when KYC is pending or rejected) -->
+  <div class="kyc-warning-banner" *ngIf="isKYCPending && customerKYC">
+    <div class="banner-icon" [class.warning]="customerKYC.kyc_status === 'pending'" [class.danger]="customerKYC.kyc_status === 'rejected'">
+      <i class="fas" [class.fa-clock]="customerKYC.kyc_status === 'pending'" [class.fa-exclamation-triangle]="customerKYC.kyc_status === 'rejected'"></i>
+    </div>
+    <div class="banner-content">
+      <h4>{{ getKYCBlockTitle() }}</h4>
+      <p>{{ getKYCBlockMessageText() }}</p>
+    </div>
+    <button class="banner-btn" (click)="navigateToKYC()">
+      {{ getKYCBlockButtonText() }}
+      <i class="fas fa-arrow-right"></i>
+    </button>
+  </div>
+
   <!-- Categories -->
   <div class="categories-section">
     <div class="categories-header">
@@ -103,7 +118,7 @@
         
         <div class="installment-teaser">
           <i class="fas fa-calendar-alt"></i>
-          From {{ formatCurrency(product.price * 0.6 / 3) }}/month
+          From {{ formatCurrency(product.price) }}/full payment
         </div>
         
         <button class="btn-view" (click)="viewProduct(product)" [disabled]="product.stock_quantity <= 0">
@@ -195,44 +210,31 @@
         <!-- Installment Plans Section -->
         <div class="installment-section">
           <h3><i class="fas fa-calendar-alt"></i> Choose Your Installment Plan</h3>
+          
           <div class="installment-options">
             <button 
               *ngFor="let option of installmentOptions"
               class="installment-btn"
-              [class.active]="purchaseForm.get('selected_installments')?.value === option.months"
-              (click)="selectInstallment(option.months)">
-              <span class="months">{{ option.months }}</span>
-              <span class="period">Months</span>
+              [class.active]="purchaseForm.get('selected_installments')?.value === option.months && option.is_active"
+              [class.coming-soon]="!option.is_active"
+              (click)="selectInstallment(option.months)"
+              [disabled]="!option.is_active">
+              <div class="plan-details">
+                <span class="months">{{ option.months }}</span>
+                <span class="period">{{ option.months === 1 ? 'Month (Full Payment)' : 'Months' }}</span>
+                <span class="plan-type" *ngIf="option.months === 1">100% Down</span>
+                <span class="plan-type" *ngIf="option.months === 2">50% Down + 50%</span>
+                <span class="plan-type" *ngIf="option.months === 3">50% Down + 25% + 25%</span>
+                <span class="plan-type" *ngIf="option.months === 4">40% Down + 20% + 20% + 20%</span>
+              </div>
+              <span *ngIf="option.coming_soon" class="coming-soon-badge">
+                <i class="fas fa-clock"></i> Coming Soon
+              </span>
             </button>
           </div>
 
           <!-- Calculation Display -->
           <div *ngIf="calculation" class="calculation-preview">
-            <div class="calculation-header">
-              <h4>Payment Breakdown</h4>
-              <span class="formula-note" *ngIf="calculation.down_payment.percentage > 0">{{ calculation.down_payment.percentage }}% Down Payment Required</span>
-              <span class="formula-note" *ngIf="calculation.down_payment.percentage === 0">Full Payment Due in 1 Month</span>
-            </div>
-            
-            <div class="calculation-grid">
-              <div class="calc-item down-payment" *ngIf="calculation.down_payment.amount > 0">
-                <span class="calc-label">Down Payment ({{ calculation.down_payment.percentage }}%)</span>
-                <span class="calc-value">{{ formatCurrency(calculation.down_payment.amount) }}</span>
-              </div>
-              <div class="calc-item">
-                <span class="calc-label">Monthly Installment</span>
-                <span class="calc-value">{{ formatCurrency(calculation.installment_details.installment_amount) }}</span>
-              </div>
-              <div class="calc-item">
-                <span class="calc-label">Number of Payments</span>
-                <span class="calc-value">{{ calculation.installment_details.total_installments }} payments</span>
-              </div>
-              <div class="calc-item total">
-                <span class="calc-label">Total Payable</span>
-                <span class="calc-value">{{ formatCurrency(calculation.totals.total_payable) }}</span>
-              </div>
-            </div>
-
             <!-- Payment Schedule Preview -->
             <div class="payment-schedule-preview" *ngIf="calculation.payment_schedule">
               <h4><i class="fas fa-calendar-alt"></i> Payment Schedule</h4>
@@ -244,9 +246,12 @@
                   <span>Status</span>
                 </div>
                 <div class="schedule-row" *ngFor="let payment of calculation.payment_schedule">
-                  <span>Installment {{ payment.installment_number }}</span>
+                  <span>
+                    <strong>Payment {{ payment.installment_number }}</strong>
+                    <small *ngIf="payment.description" class="payment-desc">{{ payment.description }}</small>
+                  </span>
                   <span class="amount">{{ formatCurrency(payment.amount) }}</span>
-                  <span>{{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Now' : formatDate(payment.due_date) }}</span>
+                  <span>{{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Immediately' : formatDate(payment.due_date) }}</span>
                   <span class="payment-status-badge" [class]="payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'status-due' : 'status-pending'">
                     {{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Due Now' : 'Pending' }}
                   </span>
@@ -254,45 +259,26 @@
               </div>
               <div class="payment-note">
                 <i class="fas fa-info-circle"></i>
-                <span *ngIf="calculation.down_payment.amount > 0">
-                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} will be charged now.
-                  Remaining installments will be due monthly.
+                <span *ngIf="calculation.down_payment.percentage === 100">
+                  Full payment of {{ formatCurrency(calculation.down_payment.amount) }} is required now to complete your purchase.
                 </span>
-                <span *ngIf="calculation.down_payment.amount === 0">
-                  Full payment of {{ formatCurrency(calculation.installment_details.installment_amount) }} will be charged after 1 month.
+                <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 2">
+                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (50%) will be charged now.
+                  Remaining 50% ({{ formatCurrency(calculation.remaining_balance) }}) will be due in 1 month.
+                </span>
+                <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 3">
+                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (50%) will be charged now.
+                  Second payment of 25% ({{ formatCurrency(calculation.payment_schedule[1].amount) }}) due in 1 month.
+                  Final payment of 25% ({{ formatCurrency(calculation.payment_schedule[2].amount) }}) due in 2 months.
+                </span>
+                <span *ngIf="calculation.down_payment.percentage === 40 && calculation.installment_details.total_installments === 4">
+                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (40%) will be charged now.
+                  Remaining 60% will be split into 3 equal monthly payments of {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% each).
                 </span>
               </div>
             </div>
 
-            <!-- Formula Explanation (Only for 2+ months) -->
-            <div class="formula-box" *ngIf="calculation.down_payment.percentage > 0">
-              <h5>How it's calculated</h5>
-              <div class="formula-steps">
-                <div class="step">
-                  <span class="step-num">1</span>
-                  <div>
-                    <strong>Down Payment ({{ calculation.down_payment.percentage }}%)</strong>
-                    <p>{{ formatCurrency(calculation.product_price) }} × {{ calculation.down_payment.percentage }}% = {{ formatCurrency(calculation.down_payment.amount) }}</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <span class="step-num">2</span>
-                  <div>
-                    <strong>Remaining Balance</strong>
-                    <p>{{ formatCurrency(calculation.product_price) }} - {{ formatCurrency(calculation.down_payment.amount) }} = {{ formatCurrency(calculation.remaining_balance) }}</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <span class="step-num">3</span>
-                  <div>
-                    <strong>Monthly Installment</strong>
-                    <p>{{ formatCurrency(calculation.remaining_balance) }} ÷ {{ calculation.installment_details.remaining_installments }} = {{ formatCurrency(calculation.installment_details.installment_amount) }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button class="btn-checkout" (click)="openCheckout()">
+            <button class="btn-checkout" (click)="openCheckout()" [disabled]="!calculation">
               <i class="fas fa-shopping-cart"></i> Proceed to Checkout
             </button>
           </div>
@@ -327,17 +313,31 @@
               <span>Down Payment ({{ calculation.down_payment.percentage }}%):</span>
               <strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong>
             </div>
-            <div class="breakdown-row">
+            <div class="breakdown-row" *ngIf="calculation.installment_details.installment_amount > 0">
               <span>Installment Amount:</span>
               <strong>{{ formatCurrency(calculation.installment_details.installment_amount) }}/month</strong>
             </div>
             <div class="breakdown-row">
               <span>Number of Installments:</span>
-              <strong>{{ calculation.installment_details.total_installments }} payments</strong>
+              <strong>{{ calculation.installment_details.total_installments }} payment(s)</strong>
             </div>
             <div class="breakdown-row total">
               <span>Total Payable:</span>
               <strong>{{ formatCurrency(calculation.totals.total_payable) }}</strong>
+            </div>
+          </div>
+          
+          <!-- Payment Schedule Summary in Checkout -->
+          <div class="checkout-schedule" *ngIf="calculation.payment_schedule">
+            <h5>Payment Schedule</h5>
+            <div class="mini-schedule">
+              <div *ngFor="let payment of calculation.payment_schedule" class="mini-schedule-item">
+                <span>Payment {{ payment.installment_number }}:</span>
+                <span>{{ formatCurrency(payment.amount) }}</span>
+                <span class="due-date">
+                  {{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Due Now' : 'Due ' + formatDate(payment.due_date) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -361,14 +361,41 @@
             </small>
           </div>
 
-          <div class="payment-note">
-            <i class="fas fa-info-circle"></i>
-            <span *ngIf="calculation.down_payment.amount > 0">
-              You will be charged the down payment amount of {{ formatCurrency(calculation.down_payment.amount) }} now.
-              The remaining installments will be charged monthly after admin approval.
+          <div class="payment-note warning" *ngIf="calculation.down_payment.percentage === 100">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>
+              Full payment of {{ formatCurrency(calculation.down_payment.amount) }} will be charged immediately.
+              No further payments required.
             </span>
-            <span *ngIf="calculation.down_payment.amount === 0">
-              You will be charged the full amount of {{ formatCurrency(calculation.installment_details.installment_amount) }} after 1 month.
+          </div>
+
+          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 2">
+            <i class="fas fa-info-circle"></i>
+            <span>
+              Payment Schedule:
+              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (50% down)
+              • Month 1: {{ formatCurrency(calculation.installment_details.installment_amount) }} (50% final)
+            </span>
+          </div>
+
+          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 3">
+            <i class="fas fa-info-circle"></i>
+            <span>
+              Payment Schedule:
+              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (50% down)
+              • Month 1: {{ formatCurrency(calculation.payment_schedule[1]?.amount || 0) }} (25%)
+              • Month 2: {{ formatCurrency(calculation.payment_schedule[2]?.amount || 0) }} (25% final)
+            </span>
+          </div>
+
+          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 40 && calculation.installment_details.total_installments === 4">
+            <i class="fas fa-info-circle"></i>
+            <span>
+              Payment Schedule:
+              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (40% down)
+              • Month 1: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
+              • Month 2: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
+              • Month 3: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
             </span>
           </div>
 
@@ -380,6 +407,59 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC/KYB Verification Required Modal -->
+  <div class="modal" *ngIf="showKYCBlockModal" (click)="closeModals()">
+    <div class="modal-content kyc-block-modal" (click)="$event.stopPropagation()">
+      <div class="kyc-block-icon">
+        <i class="fas" [class]="getKYCBlockIcon()"></i>
+      </div>
+      <div class="modal-header">
+        <h2>{{ getKYCBlockTitle() }}</h2>
+        <button class="close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="kyc-warning">
+          <p>{{ getKYCBlockMessageText() }}</p>
+          
+          <div class="kyc-info-card">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <h4>Why do I need to verify?</h4>
+              <p>Customers must complete KYC verification before they can:</p>
+              <ul>
+                <li><i class="fas fa-shopping-cart"></i> Make purchases</li>
+                <li><i class="fas fa-calendar-alt"></i> Use installment plans</li>
+                <li><i class="fas fa-chart-line"></i> Access full buying features</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="kyc-status" *ngIf="customerKYC">
+            <div class="status-row">
+              <span>Verification Status:</span>
+              <span class="status-badge" [class]="customerKYC.kyc_status === 'verified' ? 'status-verified' : (customerKYC.kyc_status === 'rejected' ? 'status-rejected' : 'status-pending')">
+                {{ customerKYC.kyc_status === 'verified' ? 'VERIFIED' : (customerKYC.kyc_status === 'rejected' ? 'REJECTED' : 'PENDING') }}
+              </span>
+            </div>
+            <div class="status-row" *ngIf="customerKYC.verification_level">
+              <span>Verification Level:</span>
+              <span>{{ customerKYC.verification_level | titlecase }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Maybe Later</button>
+        <button class="btn-primary" (click)="navigateToKYC()">
+          <i class="fas" [class.fa-shield-alt]="customerKYC?.kyc_status !== 'rejected'" [class.fa-upload]="customerKYC?.kyc_status === 'rejected'"></i>
+          {{ getKYCBlockButtonText() }}
+        </button>
       </div>
     </div>
   </div>

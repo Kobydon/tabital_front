@@ -84,7 +84,7 @@ export class MerchantLayoutComponent implements OnInit {
      {
       path: '/merchant/documents',
       icon: '📄',
-      label: 'Documents'
+      label: 'KYB Verification'
     },
     {
       path: '/merchant/settings',

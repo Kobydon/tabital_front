@@ -32,11 +32,25 @@ export class CustomerDocumentComponent implements OnInit {
   // Forms
   documentForm: FormGroup;
   
-  // Image Preview
+  // Ghana Card Images
   frontImagePreview: string | null = null;
   backImagePreview: string | null = null;
   frontImageFile: File | null = null;
   backImageFile: File | null = null;
+  
+  // Salary Certificate
+  salaryCertificatePreview: string | null = null;
+  salaryCertificateFile: File | null = null;
+  
+  // Bank Statement (3 months)
+  bankStatementPreview: string | null = null;
+  bankStatementFile: File | null = null;
+  
+  // Optional Documents
+  passportPhotoPreview: string | null = null;
+  passportPhotoFile: File | null = null;
+  proofOfAddressPreview: string | null = null;
+  proofOfAddressFile: File | null = null;
   
   // Verification Status
   verificationSteps = [
@@ -44,21 +58,12 @@ export class CustomerDocumentComponent implements OnInit {
     { step: 2, name: 'Under Review', icon: '🔍', completed: false },
     { step: 3, name: 'Verification Complete', icon: '✅', completed: false }
   ];
-  
-  // Document Types
-  documentTypes = [
-    { value: 'ghana_card_front', label: 'Ghana Card (Front)', icon: '🪪', description: 'Upload clear photo of the front side of your Ghana Card' },
-    { value: 'ghana_card_back', label: 'Ghana Card (Back)', icon: '🪪', description: 'Upload clear photo of the back side of your Ghana Card' },
-    { value: 'passport_photo', label: 'Passport Photo', icon: '📸', description: 'Recent passport-sized photograph' },
-    { value: 'proof_of_address', label: 'Proof of Address', icon: '🏠', description: 'Utility bill or bank statement (last 3 months)' }
-  ];
 
   constructor(
     private customerService: CustomerService,
     private fb: FormBuilder
   ) {
     this.documentForm = this.fb.group({
-      document_type: ['ghana_card_front', Validators.required],
       notes: ['']
     });
   }
@@ -119,25 +124,32 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   // ============================================
-  // IMAGE HANDLING
+  // VALIDATION METHODS
+  // ============================================
+
+  private isValidFile(file: File): boolean {
+    if (!file.type.match(/image\/(jpeg|png|jpg|webp)|application\/pdf/)) {
+      alert('Please upload a valid file (JPEG, PNG, WEBP, or PDF)');
+      return false;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return false;
+    }
+    
+    return true;
+  }
+
+  // ============================================
+  // GHANA CARD HANDLING
   // ============================================
 
   onFrontImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      
-      // Validate file type
-      if (!file.type.match(/image\/(jpeg|png|jpg|webp)/)) {
-        alert('Please upload a valid image file (JPEG, PNG, or WEBP)');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
+      if (!this.isValidFile(file)) return;
       
       this.frontImageFile = file;
       const reader = new FileReader();
@@ -152,16 +164,7 @@ export class CustomerDocumentComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      
-      if (!file.type.match(/image\/(jpeg|png|jpg|webp)/)) {
-        alert('Please upload a valid image file (JPEG, PNG, or WEBP)');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
+      if (!this.isValidFile(file)) return;
       
       this.backImageFile = file;
       const reader = new FileReader();
@@ -183,21 +186,164 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   // ============================================
-  // DOCUMENT UPLOAD
+  // SALARY CERTIFICATE HANDLING
   // ============================================
 
+  onSalaryCertificateSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (!this.isValidFile(file)) return;
+      
+      this.salaryCertificateFile = file;
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.salaryCertificatePreview = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.salaryCertificatePreview = 'assets/pdf-icon.png';
+      }
+    }
+  }
+
+  removeSalaryCertificate(): void {
+    this.salaryCertificateFile = null;
+    this.salaryCertificatePreview = null;
+  }
+
+  // ============================================
+  // BANK STATEMENT HANDLING
+  // ============================================
+
+  onBankStatementSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (!this.isValidFile(file)) return;
+      
+      this.bankStatementFile = file;
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.bankStatementPreview = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.bankStatementPreview = 'assets/pdf-icon.png';
+      }
+    }
+  }
+
+  removeBankStatement(): void {
+    this.bankStatementFile = null;
+    this.bankStatementPreview = null;
+  }
+
+  // ============================================
+  // OPTIONAL DOCUMENTS HANDLING
+  // ============================================
+
+  onPassportSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (!this.isValidFile(file)) return;
+      
+      this.passportPhotoFile = file;
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.passportPhotoPreview = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+      
+      this.uploadOptionalDocument(file, 'passport_photo', 'Passport Photo');
+    }
+  }
+
+  onAddressSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (!this.isValidFile(file)) return;
+      
+      this.proofOfAddressFile = file;
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.proofOfAddressPreview = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.proofOfAddressPreview = 'assets/pdf-icon.png';
+      }
+      
+      this.uploadOptionalDocument(file, 'proof_of_address', 'Proof of Address');
+    }
+  }
+
+  removePassportPhoto(): void {
+    this.passportPhotoFile = null;
+    this.passportPhotoPreview = null;
+  }
+
+  removeProofOfAddress(): void {
+    this.proofOfAddressFile = null;
+    this.proofOfAddressPreview = null;
+  }
+
+  // ============================================
+  // UPLOAD METHODS
+  // ============================================
+
+  uploadOptionalDocument(file: File, documentType: string, documentName: string): void {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('document_type', documentType);
+    formData.append('document_name', documentName);
+    
+    this.customerService.uploadOptionalDocument(formData).subscribe({
+      next: (response) => {
+        console.log(`${documentName} uploaded successfully`);
+        this.loadDocuments();
+      },
+      error: (error) => {
+        console.error(`Error uploading ${documentName}:`, error);
+      }
+    });
+  }
+
   uploadDocuments(): void {
+    // Check required documents
     if (!this.frontImageFile || !this.backImageFile) {
       alert('Please upload both front and back images of your Ghana Card');
+      return;
+    }
+    
+    if (!this.salaryCertificateFile) {
+      alert('Please upload your Salary Certificate');
+      return;
+    }
+    
+    if (!this.bankStatementFile) {
+      alert('Please upload your 3 months Bank Statement');
       return;
     }
     
     this.isUploading = true;
     
     const formData = new FormData();
+    // Ghana Card
     formData.append('front_image', this.frontImageFile);
     formData.append('back_image', this.backImageFile);
-    formData.append('document_type', this.documentForm.value.document_type);
+    // Additional documents
+    formData.append('salary_certificate', this.salaryCertificateFile);
+    formData.append('bank_statement', this.bankStatementFile);
     formData.append('notes', this.documentForm.value.notes || '');
     
     this.customerService.uploadKycDocuments(formData).subscribe({
@@ -217,12 +363,24 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   resetForm(): void {
+    // Ghana Card
     this.frontImageFile = null;
     this.backImageFile = null;
     this.frontImagePreview = null;
     this.backImagePreview = null;
+    // Salary Certificate
+    this.salaryCertificateFile = null;
+    this.salaryCertificatePreview = null;
+    // Bank Statement
+    this.bankStatementFile = null;
+    this.bankStatementPreview = null;
+    // Optional Documents
+    this.passportPhotoFile = null;
+    this.passportPhotoPreview = null;
+    this.proofOfAddressFile = null;
+    this.proofOfAddressPreview = null;
+    // Form
     this.documentForm.reset({
-      document_type: 'ghana_card_front',
       notes: ''
     });
   }
@@ -300,5 +458,12 @@ export class CustomerDocumentComponent implements OnInit {
       case 'rejected': return 'Verification Failed';
       default: return 'Not Started';
     }
+  }
+
+  isFormComplete(): boolean {
+    return !!this.frontImageFile && 
+           !!this.backImageFile && 
+           !!this.salaryCertificateFile && 
+           !!this.bankStatementFile;
   }
 }

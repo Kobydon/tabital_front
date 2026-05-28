@@ -1063,3 +1063,404 @@
     gap: 8px;
   }
 }
+// Updated styles for installment options
+.installment-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+.installment-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  
+  .plan-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    
+    .months {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    .period {
+      font-size: 0.75rem;
+      color: #7f8c8d;
+    }
+    
+    .plan-type {
+      font-size: 0.7rem;
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+  }
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #3498db;
+  }
+  
+  &.active {
+    border-color: #3498db;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    .plan-details {
+      .months, .period, .plan-type {
+        color: white;
+      }
+      
+      .plan-type {
+        background: rgba(255,255,255,0.2);
+      }
+    }
+  }
+  
+  &.coming-soon {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f9f9f9;
+    
+    .plan-details {
+      .months, .period, .plan-type {
+        color: #999;
+      }
+    }
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+  }
+  
+  .coming-soon-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #ff9800;
+    color: white;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    
+    i {
+      font-size: 0.6rem;
+    }
+  }
+}
+
+.plan-info {
+  margin-bottom: 1rem;
+  
+  .info-card {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 0.75rem;
+    border-radius: 8px;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    
+    i {
+      color: #2196f3;
+      margin-top: 2px;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #1976d2;
+      
+      strong {
+        color: #0d47a1;
+      }
+    }
+  }
+}
+
+.payment-desc {
+  display: block;
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.checkout-schedule {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  
+  h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+  }
+  
+  .mini-schedule {
+    .mini-schedule-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.85rem;
+      
+      .due-date {
+        color: #666;
+        font-size: 0.75rem;
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+.payment-note {
+  &.warning {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+    
+    i {
+      color: #ffc107;
+    }
+  }
+  
+  &.info {
+    background: #d1ecf1;
+    border-left-color: #17a2b8;
+    
+    i {
+      color: #17a2b8;
+    }
+  }
+}
+.delivery-fee-info {
+  margin: 1rem 0;
+  
+  .fee-badge {
+    background: linear-gradient(135deg, #FF9800 0%, #FF5722 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    
+    i {
+      font-size: 1.2rem;
+    }
+    
+    small {
+      margin-left: auto;
+      font-size: 0.7rem;
+      opacity: 0.9;
+    }
+  }
+}
+
+.calculation-grid {
+  .calc-item {
+    &.delivery-fee {
+      background: #FFF3E0;
+      border-left: 3px solid #FF9800;
+      
+      .calc-label i {
+        color: #FF9800;
+      }
+    }
+    
+    &.first-payment-total {
+      background: #E8F5E9;
+      border-left: 3px solid #4CAF50;
+      
+      .calc-label i {
+        color: #4CAF50;
+      }
+      
+      .calc-value {
+        color: #2E7D32;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+    }
+    
+    .highlight {
+      color: #4CAF50;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+  }
+}// KYC Warning Banner Styles
+.kyc-warning-banner {
+  background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+  border: 1px solid #fde68a;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  .banner-icon {
+    width: 48px;
+    height: 48px;
+    background: #f59e0b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      font-size: 24px;
+      color: white;
+    }
+    
+    &.warning {
+      background: #f59e0b;
+    }
+    
+    &.danger {
+      background: #dc2626;
+    }
+  }
+  
+  .banner-content {
+    flex: 1;
+    
+    h4 {
+      margin: 0 0 4px 0;
+      color: #92400e;
+      font-size: 18px;
+    }
+    
+    p {
+      margin: 0;
+      color: #78350f;
+      font-size: 14px;
+    }
+  }
+  
+  .banner-btn {
+    background: #d97706;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    &:hover {
+      background: #b45309;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// KYC Block Modal Styles
+.kyc-block-modal {
+  max-width: 500px;
+  text-align: center;
+  
+  .kyc-block-icon i {
+    font-size: 64px;
+    
+    &.fa-times-circle {
+      color: #dc2626;
+    }
+    
+    &.fa-shield-alt {
+      color: #6366f1;
+    }
+  }
+  
+  .kyc-info-card {
+    background: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: left;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    
+    i {
+      font-size: 24px;
+      color: #3b82f6;
+    }
+    
+    ul {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+      
+      li {
+        margin: 4px 0;
+        font-size: 13px;
+        
+        i {
+          font-size: 12px;
+          margin-right: 8px;
+          color: #10b981;
+        }
+      }
+    }
+  }
+  
+  .kyc-status {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        
+        &.status-pending {
+          background: #fef3c7;
+          color: #d97706;
+        }
+        
+        &.status-approved {
+          background: #d1fae5;
+          color: #059669;
+        }
+        
+        &.status-rejected {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+      }
+    }
+  }
+}

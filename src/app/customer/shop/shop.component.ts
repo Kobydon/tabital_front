@@ -1,8 +1,8 @@
-// customer/components/shop/shop.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from '../../customers.service';
 import { Router } from '@angular/router';
+import { AdminService } from 'src/app/admin/admin.service';
 
 export interface Product {
   id: number;
@@ -27,6 +27,7 @@ export interface InstallmentOption {
   label: string;
   interest_rate: number;
   is_active: boolean;
+  coming_soon?: boolean;
 }
 
 export interface InstallmentCalculation {
@@ -62,6 +63,12 @@ export interface PaymentSchedule {
   description: string;
 }
 
+export interface CustomerKYC {
+  kyc_status: 'pending' | 'verified' | 'rejected';
+  verification_level: string;
+  kyc_completed_on: string | null;
+}
+
 @Component({
   selector: 'app-customer-shop',
   templateUrl: './shop.component.html',
@@ -74,6 +81,11 @@ export class CustomerShopComponent implements OnInit {
   selectedProduct: Product | null = null;
   installmentOptions: InstallmentOption[] = [];
   calculation: InstallmentCalculation | null = null;
+  
+  // KYC/KYB Status
+  customerKYC: CustomerKYC | null = null;
+  isKYCPending: boolean = false;
+  showKYCBlockModal: boolean = false;
   
   // UI State
   isLoading = true;
@@ -100,10 +112,11 @@ export class CustomerShopComponent implements OnInit {
   constructor(
     private customerService: CustomerService,
     private fb: FormBuilder,
+    private adminService: AdminService,
     private router: Router
   ) {
     this.purchaseForm = this.fb.group({
-      selected_installments: [4, Validators.required],
+      selected_installments: [1, Validators.required],
       delivery_address: ['', [Validators.required, Validators.minLength(10)]],
       quantity: [1, [Validators.required, Validators.min(1)]],
       agree_terms: [false, Validators.requiredTrue]
@@ -111,8 +124,64 @@ export class CustomerShopComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.checkKYCStatus();
     this.loadProducts();
     this.loadInstallmentOptions();
+  }
+
+  // ============================================
+  // KYC/KYB VERIFICATION CHECK
+  // ============================================
+
+  checkKYCStatus(): void {
+    this.adminService.getCurrentUser().subscribe({
+      next: (profile: any) => {
+        this.customerKYC = {
+          kyc_status: profile.kyc_status || 'pending',
+          verification_level: profile.verification_level || 'standard',
+          kyc_completed_on: profile.kyc_completed_on || null
+        };
+        // Only allow if status is 'verified' - NOT 'approved'
+        this.isKYCPending = this.customerKYC.kyc_status !== 'verified';
+      },
+      error: (error) => {
+        console.error('Error fetching customer profile:', error);
+        this.isKYCPending = true;
+      }
+    });
+  }
+
+  canPurchase(): boolean {
+    return this.customerKYC?.kyc_status === 'verified';
+  }
+
+  getKYCBlockTitle(): string {
+    return this.customerKYC?.kyc_status === 'rejected' 
+      ? 'KYC Verification Rejected' 
+      : 'KYC Verification Required';
+  }
+
+  getKYCBlockMessageText(): string {
+    return this.customerKYC?.kyc_status === 'rejected'
+      ? 'Your KYC verification has been rejected. Please update your documents and resubmit for approval before you can make purchases.'
+      : 'Your KYC (Know Your Customer) verification is currently pending. You need to complete your identity verification before you can make purchases on our platform.';
+  }
+
+  getKYCBlockButtonText(): string {
+    return this.customerKYC?.kyc_status === 'rejected' ? 'Update Documents' : 'Verify Now';
+  }
+
+  getKYCBlockIcon(): string {
+    return this.customerKYC?.kyc_status === 'rejected' ? 'fa-times-circle' : 'fa-shield-alt';
+  }
+
+  showKYCBlockedModal(): void {
+    this.showKYCBlockModal = true;
+  }
+
+  navigateToKYC(): void {
+    this.showKYCBlockModal = false;
+    this.router.navigate(['/customer/documents']);
   }
 
   // ============================================
@@ -148,23 +217,13 @@ export class CustomerShopComponent implements OnInit {
   }
 
   loadInstallmentOptions(): void {
-    this.customerService.getInstallmentOptions().subscribe({
-      next: (response: any) => {
-        this.installmentOptions = response.installment_options || [];
-      },
-      error: (error) => {
-        console.error('Error loading installment options:', error);
-        // Default options including 1 month
-        this.installmentOptions = [
-          { months: 1, label: '1 Month', interest_rate: 1, is_active: true },
-          { months: 2, label: '2 Months', interest_rate: 3, is_active: true },
-          { months: 3, label: '3 Months', interest_rate: 5, is_active: true },
-          { months: 4, label: '4 Months', interest_rate: 7, is_active: true },
-          { months: 5, label: '5 Months', interest_rate: 9, is_active: true },
-          { months: 6, label: '6 Months', interest_rate: 12, is_active: true }
-        ];
-      }
-    });
+    this.installmentOptions = [
+      { months: 1, label: 'Full Payment', interest_rate: 0, is_active: true },
+      { months: 2, label: '2 Months - 50% Down, 50% Later', interest_rate: 0, is_active: true },
+      { months: 3, label: '3 Months - 50% Down, 25% + 25% Later', interest_rate: 0, is_active: true },
+      { months: 4, label: '4 Months - 40% Down', interest_rate: 0, is_active: true },
+      { months: 6, label: '6 Months', interest_rate: 0, is_active: false, coming_soon: true }
+    ];
   }
 
   calculateInstallment(product: Product, months: number): void {
@@ -192,49 +251,209 @@ export class CustomerShopComponent implements OnInit {
     const serviceFee = 0;
     const lateFeePercentage = 10;
     
-    // For 1 month: No down payment, single payment after 1 month
-    // For 2+ months: 40% down payment, monthly installments
-    const downPaymentPercentage = months === 1 ? 0 : 40;
-    const downPaymentAmount = totalPrice * (downPaymentPercentage / 100);
-    const remainingBalance = totalPrice - downPaymentAmount + serviceFee;
-    
+    let downPaymentPercentage = 0;
+    let remainingBalanceAfterDown = 0;
+    let totalInstallments = 0;
+    let remainingInstallments = 0;
     let installmentAmount = 0;
-    let remainingInstallments = months === 1 ? 1 : months - 1;
-    let totalInstallments = months === 1 ? 1 : months;
     
     if (months === 1) {
-      // Single payment after 1 month
-      installmentAmount = remainingBalance;
-    } else {
-      // Multiple months: divide remaining balance
-      installmentAmount = remainingBalance / remainingInstallments;
-    }
-    
-    const totalPayable = totalPrice + serviceFee;
-    
-    // Generate payment schedule
-    const paymentSchedule: PaymentSchedule[] = [];
-    const currentDate = new Date();
-    
-    if (months === 1) {
-      // 1-month plan: Single payment due in 1 month
-      const dueDate = new Date(currentDate);
-      dueDate.setMonth(dueDate.getMonth() + 1);
-      paymentSchedule.push({
-        installment_number: 1,
-        amount: installmentAmount,
-        due_date: dueDate.toISOString(),
-        status: 'pending',
-        description: `Full Payment - Due in 1 month`
-      });
-    } else {
-      // 2+ months: Down payment + monthly installments
+      downPaymentPercentage = 100;
+      const downPaymentAmount = totalPrice;
+      remainingBalanceAfterDown = 0;
+      totalInstallments = 1;
+      remainingInstallments = 0;
+      installmentAmount = 0;
+      
+      const totalPayable = totalPrice + serviceFee;
+      
+      const paymentSchedule: PaymentSchedule[] = [];
+      const currentDate = new Date();
+      
       paymentSchedule.push({
         installment_number: 1,
         amount: downPaymentAmount,
         due_date: currentDate.toISOString(),
         status: 'due_now',
-        description: `Down Payment (${downPaymentPercentage}% upfront)`
+        description: `Full Payment (100% upfront)`
+      });
+      
+      this.calculation = {
+        product_price: totalPrice,
+        down_payment: {
+          percentage: downPaymentPercentage,
+          amount: downPaymentAmount
+        },
+        remaining_balance: remainingBalanceAfterDown,
+        installment_details: {
+          total_installments: totalInstallments,
+          remaining_installments: remainingInstallments,
+          installment_amount: installmentAmount
+        },
+        fees: {
+          service_fee: serviceFee,
+          merchant_fee_percentage: 10,
+          merchant_fee_amount: totalPrice * 0.1,
+          late_fee_percentage: lateFeePercentage
+        },
+        totals: {
+          total_payable: totalPayable,
+          merchant_payout: totalPrice * 0.9
+        },
+        payment_schedule: paymentSchedule
+      };
+      this.isCalculating = false;
+      return;
+    }
+    
+    if (months === 2) {
+      downPaymentPercentage = 50;
+      const downPaymentAmount = totalPrice * 0.5;
+      remainingBalanceAfterDown = totalPrice - downPaymentAmount;
+      totalInstallments = 2;
+      remainingInstallments = 1;
+      installmentAmount = remainingBalanceAfterDown / remainingInstallments;
+      
+      const totalPayable = totalPrice + serviceFee;
+      
+      const paymentSchedule: PaymentSchedule[] = [];
+      const currentDate = new Date();
+      
+      paymentSchedule.push({
+        installment_number: 1,
+        amount: downPaymentAmount,
+        due_date: currentDate.toISOString(),
+        status: 'due_now',
+        description: `Down Payment (50% of product price)`
+      });
+      
+      const secondDueDate = new Date(currentDate);
+      secondDueDate.setMonth(secondDueDate.getMonth() + 1);
+      paymentSchedule.push({
+        installment_number: 2,
+        amount: installmentAmount,
+        due_date: secondDueDate.toISOString(),
+        status: 'pending',
+        description: `Final Payment (Remaining 50%)`
+      });
+      
+      this.calculation = {
+        product_price: totalPrice,
+        down_payment: {
+          percentage: downPaymentPercentage,
+          amount: downPaymentAmount
+        },
+        remaining_balance: remainingBalanceAfterDown,
+        installment_details: {
+          total_installments: totalInstallments,
+          remaining_installments: remainingInstallments,
+          installment_amount: installmentAmount
+        },
+        fees: {
+          service_fee: serviceFee,
+          merchant_fee_percentage: 10,
+          merchant_fee_amount: totalPrice * 0.1,
+          late_fee_percentage: lateFeePercentage
+        },
+        totals: {
+          total_payable: totalPayable,
+          merchant_payout: totalPrice * 0.9
+        },
+        payment_schedule: paymentSchedule
+      };
+      this.isCalculating = false;
+      return;
+    }
+    
+    if (months === 3) {
+      downPaymentPercentage = 50;
+      const downPaymentAmount = totalPrice * 0.5;
+      const remainingAmount = totalPrice - downPaymentAmount;
+      const subsequentPaymentAmount = remainingAmount / 2;
+      
+      totalInstallments = 3;
+      remainingInstallments = 2;
+      
+      const paymentSchedule: PaymentSchedule[] = [];
+      const currentDate = new Date();
+      
+      paymentSchedule.push({
+        installment_number: 1,
+        amount: downPaymentAmount,
+        due_date: currentDate.toISOString(),
+        status: 'due_now',
+        description: `Down Payment (50% of product price)`
+      });
+      
+      const secondDueDate = new Date(currentDate);
+      secondDueDate.setMonth(secondDueDate.getMonth() + 1);
+      paymentSchedule.push({
+        installment_number: 2,
+        amount: subsequentPaymentAmount,
+        due_date: secondDueDate.toISOString(),
+        status: 'pending',
+        description: `Second Payment (25% of product price)`
+      });
+      
+      const thirdDueDate = new Date(currentDate);
+      thirdDueDate.setMonth(thirdDueDate.getMonth() + 2);
+      paymentSchedule.push({
+        installment_number: 3,
+        amount: subsequentPaymentAmount,
+        due_date: thirdDueDate.toISOString(),
+        status: 'pending',
+        description: `Final Payment (25% of product price)`
+      });
+      
+      const totalPayable = totalPrice + serviceFee;
+      
+      this.calculation = {
+        product_price: totalPrice,
+        down_payment: {
+          percentage: downPaymentPercentage,
+          amount: downPaymentAmount
+        },
+        remaining_balance: remainingAmount,
+        installment_details: {
+          total_installments: totalInstallments,
+          remaining_installments: remainingInstallments,
+          installment_amount: subsequentPaymentAmount
+        },
+        fees: {
+          service_fee: serviceFee,
+          merchant_fee_percentage: 10,
+          merchant_fee_amount: totalPrice * 0.1,
+          late_fee_percentage: lateFeePercentage
+        },
+        totals: {
+          total_payable: totalPayable,
+          merchant_payout: totalPrice * 0.9
+        },
+        payment_schedule: paymentSchedule
+      };
+      this.isCalculating = false;
+      return;
+    }
+    
+    if (months === 4) {
+      downPaymentPercentage = 40;
+      const downPaymentAmount = totalPrice * 0.4;
+      remainingBalanceAfterDown = totalPrice - downPaymentAmount;
+      totalInstallments = 4;
+      remainingInstallments = 3;
+      installmentAmount = remainingBalanceAfterDown / remainingInstallments;
+      
+      const totalPayable = totalPrice + serviceFee;
+      
+      const paymentSchedule: PaymentSchedule[] = [];
+      const currentDate = new Date();
+      
+      paymentSchedule.push({
+        installment_number: 1,
+        amount: downPaymentAmount,
+        due_date: currentDate.toISOString(),
+        status: 'due_now',
+        description: `Down Payment (40% of product price)`
       });
       
       for (let i = 1; i <= remainingInstallments; i++) {
@@ -245,49 +464,57 @@ export class CustomerShopComponent implements OnInit {
           amount: installmentAmount,
           due_date: dueDate.toISOString(),
           status: 'pending',
-          description: `Installment ${i + 1} of ${months}`
+          description: `Installment ${i + 1} of ${months} (20% of product price)`
         });
       }
+      
+      this.calculation = {
+        product_price: totalPrice,
+        down_payment: {
+          percentage: downPaymentPercentage,
+          amount: downPaymentAmount
+        },
+        remaining_balance: remainingBalanceAfterDown,
+        installment_details: {
+          total_installments: totalInstallments,
+          remaining_installments: remainingInstallments,
+          installment_amount: installmentAmount
+        },
+        fees: {
+          service_fee: serviceFee,
+          merchant_fee_percentage: 10,
+          merchant_fee_amount: totalPrice * 0.1,
+          late_fee_percentage: lateFeePercentage
+        },
+        totals: {
+          total_payable: totalPayable,
+          merchant_payout: totalPrice * 0.9
+        },
+        payment_schedule: paymentSchedule
+      };
     }
     
-    this.calculation = {
-      product_price: totalPrice,
-      down_payment: {
-        percentage: downPaymentPercentage,
-        amount: downPaymentAmount
-      },
-      remaining_balance: remainingBalance,
-      installment_details: {
-        total_installments: totalInstallments,
-        remaining_installments: remainingInstallments,
-        installment_amount: installmentAmount
-      },
-      fees: {
-        service_fee: serviceFee,
-        merchant_fee_percentage: 10,
-        merchant_fee_amount: totalPrice * 0.1,
-        late_fee_percentage: lateFeePercentage
-      },
-      totals: {
-        total_payable: totalPayable,
-        merchant_payout: totalPrice * 0.9
-      },
-      payment_schedule: paymentSchedule
-    };
+    this.isCalculating = false;
   }
 
   // ============================================
-  // PRODUCT ACTIONS
+  // PRODUCT ACTIONS (With KYC Check)
   // ============================================
 
   viewProduct(product: Product): void {
     this.selectedProduct = product;
-    this.purchaseForm.patchValue({ quantity: 1, selected_installments: 4 });
+    this.purchaseForm.patchValue({ quantity: 1, selected_installments: 1 });
     this.showProductModal = true;
-    this.calculateInstallment(product, 4);
+    this.calculateInstallment(product, 1);
   }
 
   selectInstallment(months: number): void {
+    const option = this.installmentOptions.find(opt => opt.months === months);
+    if (option && !option.is_active) {
+      alert(`${option.label} is coming soon! Please select another payment plan.`);
+      return;
+    }
+    
     if (this.selectedProduct) {
       this.purchaseForm.patchValue({ selected_installments: months });
       this.calculateInstallment(this.selectedProduct, months);
@@ -312,11 +539,16 @@ export class CustomerShopComponent implements OnInit {
     
     this.purchaseForm.patchValue({ quantity: currentQuantity });
     
-    const months = this.purchaseForm.value.selected_installments || 4;
+    const months = this.purchaseForm.value.selected_installments || 1;
     this.calculateInstallment(this.selectedProduct, months);
   }
 
   openCheckout(): void {
+    if (this.isKYCPending) {
+      this.showKYCBlockedModal();
+      return;
+    }
+    
     if (!this.selectedProduct || !this.calculation) return;
     this.showCheckoutModal = true;
   }
@@ -402,10 +634,11 @@ export class CustomerShopComponent implements OnInit {
   closeModals(): void {
     this.showProductModal = false;
     this.showCheckoutModal = false;
+    this.showKYCBlockModal = false;
     this.selectedProduct = null;
     this.calculation = null;
     this.purchaseForm.patchValue({
-      selected_installments: 4,
+      selected_installments: 1,
       quantity: 1,
       agree_terms: false
     });

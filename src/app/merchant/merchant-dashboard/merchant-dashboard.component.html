@@ -6,11 +6,73 @@
   </div>
 
   <div *ngIf="!isLoading">
-    <!-- Welcome Header -->
+    <!-- Welcome Header with Notification Bell -->
     <div class="welcome-header">
       <div>
         <h1 class="welcome-title">Welcome back, {{ merchantName }}!</h1>
         <p class="welcome-subtitle">Here's what's happening with your business today.</p>
+      </div>
+      <div class="notification-bell" (click)="toggleNotifications()">
+        <i class="fas fa-bell"></i>
+        <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+      </div>
+    </div>
+
+    <!-- KYC Warning Banner -->
+    <div class="kyc-warning-banner" *ngIf="kycStatus === 'pending' || kycStatus === 'rejected'">
+      <div class="banner-icon" [class.warning]="kycStatus === 'pending'" [class.danger]="kycStatus === 'rejected'">
+        <i class="fas" [class.fa-clock]="kycStatus === 'pending'" [class.fa-exclamation-triangle]="kycStatus === 'rejected'"></i>
+      </div>
+      <div class="banner-content">
+        <h4>{{ kycStatus === 'pending' ? 'KYC Verification Pending' : 'KYC Verification Failed' }}</h4>
+        <p>{{ kycMessage }}</p>
+      </div>
+      <button class="banner-btn" (click)="navigateToKYCDocuments()">
+        {{ kycStatus === 'pending' ? 'Complete Verification' : 'Re-upload Documents' }}
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" [class.show]="showNotifications" (click)="$event.stopPropagation()">
+      <div class="dropdown-header">
+        <h4>Notifications</h4>
+        <button class="mark-all" (click)="markAllAsRead($event)" *ngIf="unreadCount > 0">Mark all as read</button>
+      </div>
+      <div class="notification-list">
+        <div *ngFor="let notification of notifications" 
+             class="notification-item" 
+             [class.unread]="!notification.read"
+             (click)="viewNotification(notification)">
+          <div class="notification-icon" [class]="notification.type">
+            <i class="fas" [class.fa-shopping-cart]="notification.type === 'order'"
+               [class.fa-credit-card]="notification.type === 'payment'"
+               [class.fa-id-card]="notification.type === 'kyc'"
+               [class.fa-money-bill-wave]="notification.type === 'settlement'"
+               [class.fa-exclamation-triangle]="notification.type === 'warning'"
+               [class.fa-check-circle]="notification.type === 'success'"></i>
+          </div>
+          <div class="notification-content">
+            <div class="notification-header">
+              <span class="notification-title">{{ notification.title }}</span>
+              <span class="notification-time">{{ formatNotificationTime(notification.created_at) }}</span>
+            </div>
+            <p class="notification-message">{{ notification.message }}</p>
+            <div class="notification-footer">
+              <span class="notification-type">{{ notification.type | titlecase }}</span>
+              <button class="mark-read-btn" (click)="markAsRead(notification.id, $event)" *ngIf="!notification.read">
+                Mark as read
+              </button>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="notifications.length === 0" class="empty-notifications">
+          <i class="fas fa-bell-slash"></i>
+          <p>No notifications</p>
+        </div>
+        <div class="dropdown-footer" *ngIf="notifications.length > 0">
+          <a (click)="goToNotifications()">View all notifications</a>
+        </div>
       </div>
     </div>
 
@@ -18,12 +80,12 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-header">
-          <span class="stat-icon">💰</span>
-          <span class="stat-label">Total Sales (Today)</span>
+          <span class="stat-icon">💵</span>
+          <span class="stat-label">Total Payouts</span>
         </div>
-        <div class="stat-value">{{ formatCurrency(stats.totalSales) }}</div>
-        <div class="stat-trend" [class]="getTrendClass(stats.salesGrowth)">
-          {{ getTrendIcon(stats.salesGrowth) }} {{ Math.abs(stats.salesGrowth).toFixed(1) }}% vs Yesterday
+        <div class="stat-value">{{ formatCurrency(payoutStats.totalPayout) }}</div>
+        <div class="stat-trend" [class]="getTrendClass(payoutStats.payoutGrowth)">
+          {{ getTrendIcon(payoutStats.payoutGrowth) }} {{ Math.abs(payoutStats.payoutGrowth).toFixed(1) }}% vs Yesterday
         </div>
       </div>
       
@@ -52,7 +114,7 @@
       <div class="stat-card">
         <div class="stat-header">
           <span class="stat-icon">📅</span>
-          <span class="stat-label">Instalment Sales</span>
+          <span class="stat-label">Total Sales</span>
         </div>
         <div class="stat-value">{{ formatCurrency(stats.instalmentSales) }}</div>
         <div class="stat-trend" [class]="getTrendClass(stats.instalmentGrowth)">
@@ -69,14 +131,6 @@
         <div class="stat-trend" [class]="getTrendClass(stats.successRateGrowth)">
           {{ getTrendIcon(stats.successRateGrowth) }} {{ Math.abs(stats.successRateGrowth).toFixed(1) }}% vs Yesterday
         </div>
-      </div>
-    </div>
-
-    <!-- Sales Overview Chart -->
-    <div class="chart-card">
-      <h3>📈 Sales Overview</h3>
-      <div class="chart-container">
-        <canvas id="salesChart"></canvas>
       </div>
     </div>
 
@@ -107,62 +161,6 @@
         </div>
       </div>
 
-      <!-- Instalments Overview -->
-      <div class="info-card instalments-card" (click)="goToInstalments()">
-        <div class="card-header">
-          <h3>📊 Instalments Overview</h3>
-          <button class="view-all" (click)="$event.stopPropagation(); goToInstalments()">View All →</button>
-        </div>
-        <div class="instalments-stats">
-          <div class="instalment-item">
-            <span class="instalment-label">Active Plans</span>
-            <span class="instalment-value">{{ instalmentsOverview.activePlans }}</span>
-          </div>
-          <div class="instalment-item">
-            <span class="instalment-label">Paid</span>
-            <span class="instalment-value">{{ instalmentsOverview.paid }}</span>
-          </div>
-          <div class="instalment-item">
-            <span class="instalment-label">Overdue</span>
-            <span class="instalment-value overdue">{{ instalmentsOverview.overdue }}</span>
-          </div>
-          <div class="instalment-item">
-            <span class="instalment-label">Completed</span>
-            <span class="instalment-value">{{ instalmentsOverview.completed }}</span>
-          </div>
-        </div>
-        <div class="total-active-amount">
-          <span>Total Active Amount</span>
-          <strong>{{ formatCurrency(instalmentsOverview.totalActiveAmount) }}</strong>
-        </div>
-        <div class="quick-create" (click)="$event.stopPropagation()">
-          <button class="create-plan-btn" (click)="createInstalmentPlan()">
-            + Create New Instalment Plan
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settlements and Account Status -->
-    <div class="two-columns">
-      <!-- Settlements -->
-      <div class="info-card">
-        <div class="card-header">
-          <h3>💰 Settlements</h3>
-          <button class="view-all" (click)="goToSettlements()">View All Settlements →</button>
-        </div>
-        <div class="settlement-info">
-          <div class="settlement-item">
-            <span class="settlement-label">Next Settlement</span>
-            <span class="settlement-value">{{ settlement.nextSettlement }}</span>
-          </div>
-          <div class="settlement-item">
-            <span class="settlement-label">Estimated Amount</span>
-            <span class="settlement-value amount">{{ formatCurrency(settlement.estimatedAmount) }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Account Status -->
       <div class="info-card">
         <div class="card-header">
@@ -172,34 +170,32 @@
         <div class="account-status">
           <div class="status-item">
             <span class="status-label">KYC Verification</span>
-            <span class="status-value" [class.verified]="accountStatus.kycVerified">
-              {{ accountStatus.kycVerified ? '✅ Verified' : '⏳ Pending' }}
+            <span class="status-value" [class.verified]="kycStatus === 'verified'" [class.pending]="kycStatus === 'pending'" [class.rejected]="kycStatus === 'rejected'">
+              <i class="fas" [class.fa-check-circle]="kycStatus === 'verified'" [class.fa-clock]="kycStatus === 'pending'" [class.fa-times-circle]="kycStatus === 'rejected'"></i>
+              {{ kycStatus === 'verified' ? 'Verified' : (kycStatus === 'pending' ? 'Pending' : 'Rejected') }}
             </span>
+            <button *ngIf="kycStatus !== 'verified'" class="action-link" (click)="navigateToKYCDocuments()">
+              {{ kycStatus === 'pending' ? 'Complete' : 'Re-upload' }}
+            </button>
           </div>
           <div class="status-item">
             <span class="status-label">Payout Account</span>
-            <span class="status-value">{{ accountStatus.payoutAccount }} <button class="edit-link" (click)="goToSettings()">></button></span>
+            <span class="status-value">{{ accountStatus.payoutAccount || 'Not Set' }}</span>
+            <button class="action-link" (click)="goToSettings()">Edit</button>
           </div>
           <div class="status-item">
-            <span class="status-label">Plan</span>
-            <span class="status-value premium">{{ accountStatus.plan }}</span>
+            <span class="status-label">Commission Rate</span>
+            <span class="status-value">{{ accountStatus.defaultCommissionRate }}%</span>
           </div>
           <div class="status-item">
             <span class="status-label">Member Since</span>
-            <span class="status-value">{{ accountStatus.memberSince }}</span>
+            <span class="status-value">{{ accountStatus.memberSince || 'N/A' }}</span>
+          </div>
+          <div class="status-item" *ngIf="kycStatus === 'verified'">
+            <span class="status-label">Verification Level</span>
+            <span class="status-value verified-level">{{ kycVerificationLevel | titlecase }}</span>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <h3>⚡ Quick Actions</h3>
-      <div class="action-buttons">
-        <button class="action-btn primary" (click)="createPaymentLink()">💰 Create Payment Link</button>
-        <!-- <button class="action-btn secondary" (click)="createInstalmentPlan()">📅 Create Instalment Plan</button> -->
-        <button class="action-btn secondary" (click)="downloadReports()">📊 Download Reports</button>
-        <button class="action-btn secondary" (click)="contactSupport()">💬 Contact Support</button>
       </div>
     </div>
   </div>

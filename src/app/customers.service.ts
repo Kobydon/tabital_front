@@ -132,7 +132,7 @@ export interface PaymentOverview {
   providedIn: 'root'
 })
 export class CustomerService {
-  private API = 'http://127.0.0.1:5000';
+  private API = 'https://tabital.onrender.com';
 
   constructor(private http: HttpClient) {}
 
@@ -728,7 +728,13 @@ uploadKycDocuments(formData: FormData): Observable<any> {
   }).pipe(catchError(this.handleError.bind(this)));
 }
 // customers.service.ts - Add these methods
+// Add these methods to customers.service.ts
 
+uploadOptionalDocument(formData: FormData): Observable<any> {
+  return this.http.post(`${this.API}/customer/documents/upload-optional`, formData, { 
+    headers: this.getAuthHeaders() 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
 getCustomerNotifications(filters?: any): Observable<any> {
   let url = `${this.API}/notifications`;
   if (filters) {

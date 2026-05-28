@@ -1,4 +1,3 @@
-// src/app/merchant/components/document/document.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
@@ -12,6 +11,12 @@ export interface MerchantDocument {
   uploaded_at: string;
   verified_at?: string;
   rejection_reason?: string;
+  auto_rejected?: boolean;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
 }
 
 @Component({
@@ -28,6 +33,14 @@ export class MerchantDocumentComponent implements OnInit {
   isLoading = true;
   isUploading = false;
   activeTab: 'upload' | 'history' = 'upload';
+  validationErrors: ValidationError[] = [];
+  uploadError: string | null = null;
+  
+  // Upload Restriction State
+  canUploadDocuments = true;
+  uploadBlockReason: string | null = null;
+  hasPendingDocuments = false;
+  hasVerifiedDocuments = false;
   
   // Forms
   documentForm: FormGroup;
@@ -43,6 +56,8 @@ export class MerchantDocumentComponent implements OnInit {
   
   // Bank Account Details Form
   bankDetailsForm: FormGroup;
+  showBankDetailsForm = false;
+  isSavingBankDetails = false;
   
   // Verification Steps
   verificationSteps = [
@@ -51,46 +66,26 @@ export class MerchantDocumentComponent implements OnInit {
     { step: 3, name: 'Verification Complete', icon: '✅', completed: false }
   ];
   
-  // Document Types
-  documentTypes = [
-    { 
-      value: 'business_registration', 
-      label: 'Business Registration Certificate', 
-      icon: '🏢', 
-      description: 'Certificate of incorporation or business registration document',
-      required: true
-    },
-    { 
-      value: 'tax_document', 
-      label: 'Tax Document (TIN/VAT)', 
-      icon: '📊', 
-      description: 'Tax Identification Number certificate or VAT registration',
-      required: true
-    },
-    { 
-      value: 'bank_statement', 
-      label: 'Bank Account Details', 
-      icon: '🏦', 
-      description: 'Bank statement or account confirmation letter (last 3 months)',
-      required: true
-    }
-  ];
+  // File Validation Settings
+  readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  readonly ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
 
   constructor(
     private merchantService: MerchantService,
     private fb: FormBuilder
   ) {
     this.documentForm = this.fb.group({
-      document_type: ['business_registration', Validators.required],
       notes: ['']
     });
     
     this.bankDetailsForm = this.fb.group({
-      bank_name: ['', Validators.required],
-      account_name: ['', Validators.required],
-      account_number: ['', Validators.required],
+      bank_name: [''],
+      account_name: [''],
+      account_number: [''],
       branch_name: [''],
-      swift_code: ['']
+      swift_code: [''],
+      momo_name: [''],
+      momo_number: ['']
     });
   }
 
@@ -98,6 +93,60 @@ export class MerchantDocumentComponent implements OnInit {
     this.loadDocuments();
     this.loadKYCStatus();
     this.loadBankDetails();
+  }
+
+  // ============================================
+  // CHECK IF USER CAN UPLOAD DOCUMENTS
+  // Based on document status, not just KYC status
+  // ============================================
+
+  checkUploadPermissions(): void {
+    // Reset flags
+    this.hasPendingDocuments = false;
+    this.hasVerifiedDocuments = false;
+    
+    // Check document statuses
+    for (const doc of this.documents) {
+      if (doc.status === 'pending') {
+        this.hasPendingDocuments = true;
+      }
+      if (doc.status === 'verified') {
+        this.hasVerifiedDocuments = true;
+      }
+    }
+    
+    // RULE 1: If there are ANY documents with status 'pending' → CANNOT upload
+    if (this.hasPendingDocuments) {
+      this.canUploadDocuments = false;
+      this.uploadBlockReason = 'You have documents currently under review. Please wait for the review to complete before uploading new documents.';
+      return;
+    }
+    
+    // RULE 2: If documents are verified (approved) → CANNOT upload (already verified)
+    if (this.hasVerifiedDocuments && this.documents.length >= 3) {
+      this.canUploadDocuments = false;
+      this.uploadBlockReason = 'Your documents have been verified. No further uploads are required.';
+      return;
+    }
+    
+    // RULE 3: If documents were rejected → CAN upload new documents
+    const hasRejectedDocuments = this.documents.some(doc => doc.status === 'rejected');
+    if (hasRejectedDocuments) {
+      this.canUploadDocuments = true;
+      this.uploadBlockReason = null;
+      return;
+    }
+    
+    // RULE 4: No documents uploaded yet → CAN upload
+    if (this.documents.length === 0) {
+      this.canUploadDocuments = true;
+      this.uploadBlockReason = null;
+      return;
+    }
+    
+    // Default: allow upload
+    this.canUploadDocuments = true;
+    this.uploadBlockReason = null;
   }
 
   // ============================================
@@ -109,8 +158,10 @@ export class MerchantDocumentComponent implements OnInit {
     
     this.merchantService.getMerchantDocuments().subscribe({
       next: (response: any) => {
+        console.log('Documents loaded:', response);
         this.documents = response.documents || [];
         this.updateVerificationSteps();
+        this.checkUploadPermissions(); // Check permissions after loading documents
         this.isLoading = false;
       },
       error: (error) => {
@@ -123,6 +174,7 @@ export class MerchantDocumentComponent implements OnInit {
   loadKYCStatus(): void {
     this.merchantService.getKycStatus().subscribe({
       next: (response: any) => {
+        console.log('KYC Status loaded:', response);
         this.kycStatus = response;
         this.updateVerificationSteps();
       },
@@ -135,13 +187,17 @@ export class MerchantDocumentComponent implements OnInit {
   loadBankDetails(): void {
     this.merchantService.getBankDetails().subscribe({
       next: (response: any) => {
-        if (response) {
+        console.log('Bank details loaded:', response);
+        if (response && (response.bank_name || response.momo_name)) {
+          this.showBankDetailsForm = true;
           this.bankDetailsForm.patchValue({
             bank_name: response.bank_name || '',
             account_name: response.account_name || '',
             account_number: response.account_number || '',
             branch_name: response.branch_name || '',
-            swift_code: response.swift_code || ''
+            swift_code: response.swift_code || '',
+            momo_name: response.momo_name || '',
+            momo_number: response.momo_number || ''
           });
         }
       },
@@ -152,21 +208,63 @@ export class MerchantDocumentComponent implements OnInit {
   }
 
   updateVerificationSteps(): void {
-    if (this.kycStatus) {
-      if (this.kycStatus.status === 'verified') {
-        this.verificationSteps[0].completed = true;
-        this.verificationSteps[1].completed = true;
-        this.verificationSteps[2].completed = true;
-      } else if (this.kycStatus.status === 'pending') {
-        this.verificationSteps[0].completed = true;
-        this.verificationSteps[1].completed = true;
-        this.verificationSteps[2].completed = false;
-      } else {
-        this.verificationSteps[0].completed = false;
-        this.verificationSteps[1].completed = false;
-        this.verificationSteps[2].completed = false;
-      }
+    // Check if any document is pending
+    const hasPending = this.documents.some(doc => doc.status === 'pending');
+    const allVerified = this.documents.length >= 3 && this.documents.every(doc => doc.status === 'verified');
+    const anyRejected = this.documents.some(doc => doc.status === 'rejected');
+    
+    if (allVerified) {
+      this.verificationSteps[0].completed = true;
+      this.verificationSteps[1].completed = true;
+      this.verificationSteps[2].completed = true;
+    } else if (hasPending) {
+      this.verificationSteps[0].completed = true;
+      this.verificationSteps[1].completed = true;
+      this.verificationSteps[2].completed = false;
+    } else if (anyRejected) {
+      this.verificationSteps[0].completed = false;
+      this.verificationSteps[1].completed = false;
+      this.verificationSteps[2].completed = false;
+    } else if (this.documents.length > 0) {
+      this.verificationSteps[0].completed = true;
+      this.verificationSteps[1].completed = false;
+      this.verificationSteps[2].completed = false;
+    } else {
+      this.verificationSteps[0].completed = false;
+      this.verificationSteps[1].completed = false;
+      this.verificationSteps[2].completed = false;
     }
+  }
+
+  // ============================================
+  // FILE VALIDATION METHODS
+  // ============================================
+
+  validateFile(file: File): { valid: boolean; error?: string } {
+    if (!file) {
+      return { valid: false, error: 'No file selected.' };
+    }
+    
+    if (file.size === 0) {
+      return { valid: false, error: 'File is empty. Please select a valid file.' };
+    }
+    
+    if (file.size > this.MAX_FILE_SIZE) {
+      return {
+        valid: false,
+        error: `File size exceeds ${this.MAX_FILE_SIZE / (1024 * 1024)}MB limit.`
+      };
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || !this.ALLOWED_EXTENSIONS.includes(extension)) {
+      return {
+        valid: false,
+        error: `Invalid file type. Please upload ${this.ALLOWED_EXTENSIONS.join(', ')} files only.`
+      };
+    }
+
+    return { valid: true };
   }
 
   // ============================================
@@ -174,19 +272,26 @@ export class MerchantDocumentComponent implements OnInit {
   // ============================================
 
   onFileSelected(event: Event, type: string): void {
+    // Check if upload is allowed
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
+    this.validationErrors = [];
+    this.uploadError = null;
+    
     if (input.files && input.files[0]) {
       const file = input.files[0];
       
-      // Validate file type
-      if (!file.type.match(/image\/(jpeg|png|jpg|webp)|application\/pdf/)) {
-        alert('Please upload a valid file (JPEG, PNG, WEBP, or PDF)');
-        return;
-      }
+      console.log(`File selected for ${type}:`, file.name, file.size, 'bytes');
       
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+      const validation = this.validateFile(file);
+      if (!validation.valid) {
+        this.validationErrors.push({ field: type, message: validation.error! });
+        alert(validation.error);
+        input.value = '';
         return;
       }
       
@@ -217,14 +322,12 @@ export class MerchantDocumentComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     } else {
-      // For PDF, show a PDF icon
-      const iconUrl = 'assets/pdf-icon.png';
       if (docType === 'business') {
-        this.businessRegistrationPreview = iconUrl;
+        this.businessRegistrationPreview = 'pdf';
       } else if (docType === 'tax') {
-        this.taxDocumentPreview = iconUrl;
+        this.taxDocumentPreview = 'pdf';
       } else if (docType === 'bank') {
-        this.bankStatementPreview = iconUrl;
+        this.bankStatementPreview = 'pdf';
       }
     }
   }
@@ -240,60 +343,105 @@ export class MerchantDocumentComponent implements OnInit {
       this.bankStatementFile = null;
       this.bankStatementPreview = null;
     }
+    this.validationErrors = this.validationErrors.filter(e => e.field !== type);
+    this.uploadError = null;
+  }
+
+  // ============================================
+  // FORM VALIDATION
+  // ============================================
+
+  isFormComplete(): boolean {
+    return !!this.businessRegistrationFile && 
+           !!this.taxDocumentFile && 
+           !!this.bankStatementFile;
+  }
+
+  getMissingDocuments(): string[] {
+    const missing: string[] = [];
+    if (!this.businessRegistrationFile) missing.push('Business Registration Certificate');
+    if (!this.taxDocumentFile) missing.push('Tax Document (TIN/VAT)');
+    if (!this.bankStatementFile) missing.push('Bank Account Proof');
+    return missing;
   }
 
   // ============================================
   // DOCUMENT UPLOAD
   // ============================================
 
-  saveBankDetails(): void {
-    if (this.bankDetailsForm.invalid) {
-      alert('Please fill all required bank details');
-      return;
-    }
-    
-    this.merchantService.updateBankDetails(this.bankDetailsForm.value).subscribe({
-      next: (response) => {
-        alert('Bank details saved successfully!');
-      },
-      error: (error) => {
-        console.error('Error saving bank details:', error);
-        alert('Failed to save bank details. Please try again.');
-      }
-    });
-  }
-
   uploadDocuments(): void {
-    if (!this.businessRegistrationFile || !this.taxDocumentFile || !this.bankStatementFile) {
-      alert('Please upload all required documents');
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
       return;
     }
     
-    if (this.bankDetailsForm.invalid) {
-      alert('Please fill in your bank account details first');
+    this.validationErrors = [];
+    this.uploadError = null;
+    
+    if (!this.isFormComplete()) {
+      const missing = this.getMissingDocuments();
+      this.uploadError = `Missing required documents:\n• ${missing.join('\n• ')}`;
+      alert(this.uploadError);
       return;
     }
     
     this.isUploading = true;
     
     const formData = new FormData();
-    formData.append('business_registration', this.businessRegistrationFile);
-    formData.append('tax_document', this.taxDocumentFile);
-    formData.append('bank_statement', this.bankStatementFile);
-    formData.append('notes', this.documentForm.value.notes || '');
+    formData.append('business_registration', this.businessRegistrationFile!);
+    formData.append('tax_document', this.taxDocumentFile!);
+    formData.append('bank_statement', this.bankStatementFile!);
+    
+    const notes = this.documentForm.value.notes;
+    if (notes && notes.trim()) {
+      formData.append('notes', notes.trim());
+    }
+    
+    console.log('========== UPLOADING DOCUMENTS ==========');
+    console.log('Business Registration:', this.businessRegistrationFile!.name);
+    console.log('Tax Document:', this.taxDocumentFile!.name);
+    console.log('Bank Statement:', this.bankStatementFile!.name);
     
     this.merchantService.uploadMerchantDocuments(formData).subscribe({
       next: (response) => {
+        console.log('Upload success:', response);
         this.isUploading = false;
-        alert('Documents uploaded successfully! Your verification is pending.');
+        alert('✅ Documents uploaded successfully! Your verification is pending review.');
         this.resetForm();
         this.loadDocuments();
         this.loadKYCStatus();
       },
       error: (error) => {
-        console.error('Error uploading documents:', error);
+        console.error('Upload error:', error);
         this.isUploading = false;
-        alert('Failed to upload documents. Please try again.');
+        
+        let errorMessage = 'Failed to upload documents.';
+        if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.uploadError = errorMessage;
+        alert(`❌ Upload failed: ${errorMessage}`);
+      }
+    });
+  }
+
+  saveBankDetails(): void {
+    this.isSavingBankDetails = true;
+    const bankData = this.bankDetailsForm.value;
+    
+    this.merchantService.updateBankDetails(bankData).subscribe({
+      next: (response) => {
+        this.isSavingBankDetails = false;
+        alert('Bank details saved successfully!');
+        this.showBankDetailsForm = true;
+      },
+      error: (error) => {
+        console.error('Error saving bank details:', error);
+        this.isSavingBankDetails = false;
+        alert('Failed to save bank details. Please try again.');
       }
     });
   }
@@ -305,10 +453,9 @@ export class MerchantDocumentComponent implements OnInit {
     this.businessRegistrationPreview = null;
     this.taxDocumentPreview = null;
     this.bankStatementPreview = null;
-    this.documentForm.reset({
-      document_type: 'business_registration',
-      notes: ''
-    });
+    this.validationErrors = [];
+    this.uploadError = null;
+    this.documentForm.reset({ notes: '' });
   }
 
   // ============================================
@@ -317,6 +464,12 @@ export class MerchantDocumentComponent implements OnInit {
 
   switchTab(tab: 'upload' | 'history'): void {
     this.activeTab = tab;
+    this.validationErrors = [];
+    this.uploadError = null;
+  }
+
+  isPdfPreview(preview: string | null): boolean {
+    return preview === 'pdf';
   }
 
   getStatusClass(status: string): string {
@@ -381,15 +534,25 @@ export class MerchantDocumentComponent implements OnInit {
     switch (this.kycStatus.status) {
       case 'verified': return 'Verification Complete';
       case 'pending': return 'Verification in Progress';
-      case 'rejected': return 'Verification Failed';
+      case 'rejected': return 'Verification Failed - Please Re-upload';
       default: return 'Not Started';
     }
   }
+  // Add these methods to your component
 
-  isFormComplete(): boolean {
-    return !!this.businessRegistrationFile && 
-           !!this.taxDocumentFile && 
-           !!this.bankStatementFile && 
-           this.bankDetailsForm.valid;
-  }
+hasRejectedDocuments = false;
+
+// Check if a specific document type is rejected
+getDocumentStatus(documentType: string): string | null {
+  const doc = this.documents.find(d => d.document_type === documentType);
+  return doc ? doc.status : null;
+}
+
+// Check if a specific document type is rejected
+hasRejectedDocument(documentType: string): boolean {
+  const doc = this.documents.find(d => d.document_type === documentType);
+  return doc?.status === 'rejected';
+}
+
+// Update checkUploadPermissions to track rejected documents
 }

@@ -46,18 +46,22 @@
       <div class="info-card">
         <i class="fas fa-info-circle"></i>
         <div class="info-content">
-          <h4>Ghana Card Verification Required</h4>
-          <p>Please upload clear photos of both the front and back of your Ghana Card for identity verification.</p>
+          <h4>KYC Verification Required</h4>
+          <p>Please upload the following documents for identity and income verification.</p>
           <ul>
-            <li>Make sure the card is fully visible</li>
-            <li>Ensure good lighting with no glare</li>
-            <li>All text and numbers must be readable</li>
-            <li>File size should be less than 5MB</li>
-            <li>Accepted formats: JPG, PNG, WEBP</li>
+            <li><strong>Required:</strong> Ghana Card (Front & Back)</li>
+            <li><strong>Required:</strong> Salary Certificate from employer</li>
+            <li><strong>Required:</strong> 3 months Bank Statement</li>
+            <li><strong>Optional:</strong> Passport Photo, Proof of Address</li>
+            <li>Make sure all documents are clear and readable</li>
+            <li>File size should be less than 5MB per document</li>
+            <li>Accepted formats: JPG, PNG, WEBP, PDF</li>
           </ul>
         </div>
       </div>
 
+      <!-- Ghana Card Section -->
+      <h3 class="section-title"><i class="fas fa-id-card"></i> Identity Verification</h3>
       <div class="upload-grid">
         <!-- Front of Ghana Card -->
         <div class="upload-card">
@@ -68,13 +72,13 @@
           </div>
           
           <div class="upload-area" (click)="frontImageInput.click()" *ngIf="!frontImagePreview">
-            <input type="file" #frontImageInput (change)="onFrontImageSelected($event)" accept="image/*" hidden>
+            <input type="file" #frontImageInput (change)="onFrontImageSelected($event)" accept="image/*,application/pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload front side</p>
-            <small>JPG, PNG or WEBP (max 5MB)</small>
+            <small>JPG, PNG, PDF (max 5MB)</small>
           </div>
           
-          <div class="image-preview" *ngIf="frontImagePreview">
+          <div class="file-preview" *ngIf="frontImagePreview">
             <img [src]="frontImagePreview" alt="Front of Ghana Card">
             <button class="remove-btn" (click)="removeFrontImage()">
               <i class="fas fa-times-circle"></i>
@@ -91,17 +95,112 @@
           </div>
           
           <div class="upload-area" (click)="backImageInput.click()" *ngIf="!backImagePreview">
-            <input type="file" #backImageInput (change)="onBackImageSelected($event)" accept="image/*" hidden>
+            <input type="file" #backImageInput (change)="onBackImageSelected($event)" accept="image/*,application/pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload back side</p>
-            <small>JPG, PNG or WEBP (max 5MB)</small>
+            <small>JPG, PNG, PDF (max 5MB)</small>
           </div>
           
-          <div class="image-preview" *ngIf="backImagePreview">
+          <div class="file-preview" *ngIf="backImagePreview">
             <img [src]="backImagePreview" alt="Back of Ghana Card">
             <button class="remove-btn" (click)="removeBackImage()">
               <i class="fas fa-times-circle"></i>
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Income Verification Section -->
+      <h3 class="section-title"><i class="fas fa-chart-line"></i> Income Verification</h3>
+      <div class="upload-grid">
+        <!-- Salary Certificate -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">📄</span>
+            <h3>Salary Certificate</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="salaryInput.click()" *ngIf="!salaryCertificatePreview">
+            <input type="file" #salaryInput (change)="onSalaryCertificateSelected($event)" accept="image/*,application/pdf" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload salary certificate</p>
+            <small>Recent salary certificate from employer</small>
+          </div>
+          
+          <div class="file-preview" *ngIf="salaryCertificatePreview">
+            <img [src]="salaryCertificatePreview" alt="Salary Certificate">
+            <button class="remove-btn" (click)="removeSalaryCertificate()">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bank Statement (3 months) -->
+        <div class="upload-card">
+          <div class="upload-header">
+            <span class="upload-icon">🏦</span>
+            <h3>3 Months Bank Statement</h3>
+            <span class="required">Required</span>
+          </div>
+          
+          <div class="upload-area" (click)="bankInput.click()" *ngIf="!bankStatementPreview">
+            <input type="file" #bankInput (change)="onBankStatementSelected($event)" accept="image/*,application/pdf" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload bank statement</p>
+            <small>Bank statement for last 3 months</small>
+          </div>
+          
+          <div class="file-preview" *ngIf="bankStatementPreview">
+            <img [src]="bankStatementPreview" alt="Bank Statement">
+            <button class="remove-btn" (click)="removeBankStatement()">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Documents Section -->
+      <h3 class="section-title optional"><i class="fas fa-plus-circle"></i> Optional Documents</h3>
+      <div class="optional-docs">
+        <p class="optional-note">These documents can help speed up your verification process:</p>
+        <div class="optional-grid">
+          <!-- Passport Photo -->
+          <div class="optional-card">
+            <div class="optional-header">
+              <i class="fas fa-camera"></i>
+              <span>Passport Photo</span>
+            </div>
+            <div *ngIf="!passportPhotoPreview" class="optional-upload" (click)="passportInput.click()">
+              <input type="file" #passportInput hidden (change)="onPassportSelected($event)" accept="image/*">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Click to upload</p>
+            </div>
+            <div *ngIf="passportPhotoPreview" class="optional-preview">
+              <img [src]="passportPhotoPreview" alt="Passport Photo">
+              <button class="remove-optional" (click)="removePassportPhoto()">
+                <i class="fas fa-times-circle"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Proof of Address -->
+          <div class="optional-card">
+            <div class="optional-header">
+              <i class="fas fa-home"></i>
+              <span>Proof of Address</span>
+            </div>
+            <div *ngIf="!proofOfAddressPreview" class="optional-upload" (click)="addressInput.click()">
+              <input type="file" #addressInput hidden (change)="onAddressSelected($event)" accept="image/*,application/pdf">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Click to upload</p>
+            </div>
+            <div *ngIf="proofOfAddressPreview" class="optional-preview">
+              <img [src]="proofOfAddressPreview" alt="Proof of Address">
+              <button class="remove-optional" (click)="removeProofOfAddress()">
+                <i class="fas fa-times-circle"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -112,11 +211,11 @@
       </div>
 
       <div class="upload-actions">
-        <button class="btn-secondary" (click)="resetForm()" *ngIf="frontImagePreview || backImagePreview">
+        <button class="btn-secondary" (click)="resetForm()" *ngIf="isFormComplete()">
           <i class="fas fa-undo-alt"></i> Reset
         </button>
         <button class="btn-primary" (click)="uploadDocuments()" 
-                [disabled]="!frontImagePreview || !backImagePreview || isUploading">
+                [disabled]="!isFormComplete() || isUploading">
           <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
           {{ isUploading ? 'Uploading...' : 'Submit for Verification' }}
         </button>
@@ -134,7 +233,11 @@
     <div class="documents-list" *ngIf="!isLoading && documents.length > 0">
       <div class="document-card" *ngFor="let doc of documents">
         <div class="document-icon">
-          <i class="fas fa-file-alt"></i>
+          <i class="fas" [class.fa-id-card]="doc.document_type.includes('kyc')"
+             [class.fa-file-alt]="doc.document_type === 'salary_certificate'"
+             [class.fa-university]="doc.document_type === 'bank_statement'"
+             [class.fa-camera]="doc.document_type === 'passport_photo'"
+             [class.fa-home]="doc.document_type === 'proof_of_address'"></i>
         </div>
         <div class="document-info">
           <div class="document-name">{{ doc.document_name }}</div>

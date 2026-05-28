@@ -98,7 +98,7 @@ export interface ApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private API = 'http://127.0.0.1:5000';
+  private API = 'https://tabital.onrender.com';
   private readonly TOKEN_KEY = 'access_token';
 
   constructor(private http: HttpClient) {}
@@ -375,6 +375,40 @@ exportAdminOrders(): Observable<Blob> {
     responseType: 'blob' 
   }).pipe(catchError(this.handleError.bind(this)));
 }
+getPendingKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/pending`, { headers: this.getAuthHeaders() });
+  }
+
+  getVerifiedKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/verified`, { headers: this.getAuthHeaders() });
+  }
+
+  getRejectedKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/rejected`, { headers: this.getAuthHeaders() });
+  }
+
+  getMerchantKYC(merchantId: number): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/merchant/${merchantId}`, { headers: this.getAuthHeaders() });
+  }
+
+  approveMerchantKYC(merchantId: number): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  rejectMerchantKYC(merchantId: number, rejectionReason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/reject/${merchantId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() });
+  }
+
+  approveDocument(documentId: number): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  rejectDocument(documentId: number, rejectionReason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() });
+  }
+
+
+
 }
 
 

@@ -1,7 +1,9 @@
-// merchant/components/product/product.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
+import { Router } from '@angular/router';
+import { AuthService } from 'src/app/auth/auth.service';
+import { AdminService } from 'src/app/admin/admin.service';
 
 export interface Product {
   id: number;
@@ -25,6 +27,12 @@ export interface Product {
   updated_at: string;
 }
 
+export interface MerchantKYC {
+  kyc_status: 'pending' | 'verified' | 'rejected';
+  verification_level: string;
+  kyc_completed_on: string | null;
+}
+
 @Component({
   selector: 'app-product',
   templateUrl: './product.component.html',
@@ -35,6 +43,11 @@ export class ProductComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProduct: Product | null = null;
+  
+  // KYC/KYB Status
+  merchantKYC: MerchantKYC | null = null;
+  isKYCPending: boolean = false;
+  showKYCBlockModal: boolean = false;
   
   // UI State
   isLoading = true;
@@ -69,7 +82,10 @@ export class ProductComponent implements OnInit {
 
   constructor(
     private merchantService: MerchantService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router,
+    private adminService: AdminService,
+    private auth: AuthService
   ) {
     this.productForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -89,7 +105,63 @@ export class ProductComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.checkKYCStatus();
     this.loadProducts();
+  }
+
+  // ============================================
+  // KYC/KYB VERIFICATION CHECK
+  // ============================================
+
+  checkKYCStatus(): void {
+    this.adminService.getCurrentUser().subscribe({
+      next: (profile: any) => {
+        this.merchantKYC = {
+          kyc_status: profile.kyc_status || 'pending',
+          verification_level: profile.verification_level || 'standard',
+          kyc_completed_on: profile.kyc_completed_on || null
+        };
+        // Only allow if status is 'verified' - NOT 'approved'
+        this.isKYCPending = this.merchantKYC.kyc_status !== 'verified';
+      },
+      error: (error) => {
+        console.error('Error fetching merchant profile:', error);
+        this.isKYCPending = true;
+      }
+    });
+  }
+
+  canManageProducts(): boolean {
+    return this.merchantKYC?.kyc_status === 'verified';
+  }
+
+  getKYCBlockTitle(): string {
+    return this.merchantKYC?.kyc_status === 'rejected' 
+      ? 'KYC Verification Rejected' 
+      : 'KYC Verification Required';
+  }
+
+  getKYCBlockMessageText(): string {
+    return this.merchantKYC?.kyc_status === 'rejected'
+      ? 'Your KYC verification has been rejected. Please update your documents and resubmit for approval before you can manage products.'
+      : 'Your KYC (Know Your Customer) / KYB (Know Your Business) verification is currently pending. You need to complete your business verification before you can add or edit products.';
+  }
+
+  getKYCBlockButtonText(): string {
+    return this.merchantKYC?.kyc_status === 'rejected' ? 'Update Documents' : 'Verify Now';
+  }
+
+  getKYCBlockIcon(): string {
+    return this.merchantKYC?.kyc_status === 'rejected' ? 'fa-times-circle' : 'fa-shield-alt';
+  }
+
+  showKYCBlockedModal(): void {
+    this.showKYCBlockModal = true;
+  }
+
+  navigateToDocuments(): void {
+    this.showKYCBlockModal = false;
+    this.router.navigate(['/merchant/documents']);
   }
 
   // ============================================
@@ -197,10 +269,15 @@ export class ProductComponent implements OnInit {
   }
 
   // ============================================
-  // PRODUCT ACTIONS
+  // PRODUCT ACTIONS (With KYC Check)
   // ============================================
 
   openAddModal(): void {
+    if (this.isKYCPending) {
+      this.showKYCBlockedModal();
+      return;
+    }
+    
     this.isEditMode = false;
     this.selectedProduct = null;
     this.resetForm();
@@ -209,6 +286,11 @@ export class ProductComponent implements OnInit {
   }
 
   openEditModal(product: Product): void {
+    if (this.isKYCPending) {
+      this.showKYCBlockedModal();
+      return;
+    }
+    
     this.isEditMode = true;
     this.selectedProduct = product;
     this.productForm.patchValue({
@@ -340,6 +422,7 @@ export class ProductComponent implements OnInit {
   closeModals(): void {
     this.showProductModal = false;
     this.showDeleteModal = false;
+    this.showKYCBlockModal = false;
     this.selectedProduct = null;
     this.resetForm();
     this.clearImages();

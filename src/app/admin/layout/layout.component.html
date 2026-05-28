@@ -106,6 +106,12 @@
         </div>
       </div>
 
+      <!-- Add this inside the nav-menu section -->
+<a routerLink="kyc-verification" routerLinkActive="active">
+  <span class="icon">✅</span>
+  <span class="label" *ngIf="!isCollapsed">KYC/KYB Verification</span>
+</a>
+
       <!-- Settings Dropdown -->
       <div class="nav-dropdown">
         <div class="dropdown-trigger" (click)="toggleDropdown('settings')" [class.active]="activeDropdown === 'settings'">

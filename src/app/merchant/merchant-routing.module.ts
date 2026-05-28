@@ -22,7 +22,7 @@ const routes: Routes = [
   {
     path: '',
     component: MerchantLayoutComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard,RoleGuard],
     data: { role: 'merchant' },
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

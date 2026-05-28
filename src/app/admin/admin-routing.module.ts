@@ -9,6 +9,7 @@ import { TransactionsComponent } from './transactions/transactions.component';
 import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
+import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 
 const routes: Routes = [
   {
@@ -28,6 +29,10 @@ const routes: Routes = [
           {path: 'merchants-details/:id', component: MerchantDetailsComponent } , // Replace with actual component
            {path: 'charges', component: ChargesComponent } , 
                {path: 'orders', component: AdminOrdersComponent } , 
+   
+    
+        { path: 'kyc-verification', component: ApproveKybKycComponent },
+ 
     ]
   }
 ];

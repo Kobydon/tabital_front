@@ -9,6 +9,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { LoginComponent } from './auth/login/login.component';
 import { SignupComponent } from './auth/signup/signup.component';
 import { AuthInterceptor } from './auth/auth';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 
 // Interceptors - FIXED PATH (added .interceptor)
 
@@ -24,7 +25,8 @@ import { AuthInterceptor } from './auth/auth';
   declarations: [
     AppComponent,
     LoginComponent,
-    SignupComponent
+    SignupComponent,
+    ForgotPasswordComponent
   ],
   imports: [
     BrowserModule,

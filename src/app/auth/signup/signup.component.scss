@@ -320,4 +320,63 @@
     font-size: 0.9rem;
     padding: 0.6rem;
   }
+}// Add these styles for duplicate error handling
+
+.duplicate-error {
+  color: #dc2626;
+  font-weight: 500;
+  
+  .error-link {
+    color: #6366f1;
+    text-decoration: underline;
+    cursor: pointer;
+    
+    &:hover {
+      color: #4f46e5;
+    }
+  }
+}
+
+.general-error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  
+  .error-icon {
+    font-size: 18px;
+  }
+}
+
+.form-field input.error,
+.form-field select.error,
+.form-field textarea.error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+}
+
+.error-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+// Optional: Add shake animation for error fields
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.form-field input.error:focus,
+.form-field select.error:focus,
+.form-field textarea.error:focus {
+  animation: shake 0.3s ease-in-out;
 }

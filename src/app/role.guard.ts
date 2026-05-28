@@ -1,58 +1,116 @@
+// ============================================
+// role.guard.ts - FIXED (No navigation during guard)
+// ============================================
+
 import { Injectable } from '@angular/core';
-import { Router, CanActivate, ActivatedRouteSnapshot } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivate,
+  Router,
+  UrlTree
+} from '@angular/router';
+
+import { Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+
 import { AuthService } from './auth/auth.service';
 import { AdminService } from './admin/admin.service';
-import { map, Observable } from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class RoleGuard implements CanActivate {
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private adminService: AdminService
   ) {}
 
-  canActivate(route: ActivatedRouteSnapshot): Observable<boolean> | boolean {
+  canActivate(
+    route: ActivatedRouteSnapshot
+  ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+
     const expectedRole = route.data['role'];
     
-    // Check if user is already stored in localStorage
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      const currentUser = JSON.parse(storedUser);
-      if (currentUser && currentUser.role === expectedRole) {
-        return true;
-      }
-      
-      // Redirect based on role
-      if (currentUser?.role === 'admin') {
-        this.router.navigate(['/admin']);
-      } else if (currentUser?.role === 'merchant') {
-        this.router.navigate(['/merchant']);
-      } else {
-        this.router.navigate(['/login']);
-      }
-      return false;
+    console.log('🔒 RoleGuard - Expected Role:', expectedRole);
+    console.log('🔒 RoleGuard - Current URL:', this.router.url);
+
+    // CHECK TOKEN FIRST
+    const token = this.authService.getToken();
+    if (!token) {
+      console.log('❌ No token found');
+      return this.router.parseUrl('/login');
     }
+
+    // CHECK LOCAL USER
+    const storedUser = localStorage.getItem('currentUser');
     
-    // Fetch current user from API if not stored
-    return this.adminService.getCurrentUser().pipe(
-      map((user: any) => {
-        if (user && user.role === expectedRole) {
-          // Store user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          return true;
+    if (storedUser) {
+      try {
+        const currentUser = JSON.parse(storedUser);
+        console.log('📦 Stored User Role:', currentUser?.role);
+        
+        // Check if user is approved
+        if (currentUser?.status === 'suspended' || currentUser?.status === 'banned') {
+          console.log('❌ User is suspended/banned');
+          this.authService.logout();
+          return this.router.parseUrl('/login');
         }
         
-        // Redirect based on role
-        if (user?.role === 'admin') {
-          this.router.navigate(['/admin']);
-        } else if (user?.role === 'merchant') {
-          this.router.navigate(['/merchant']);
+        // ROLE MATCH
+        if (currentUser?.role === expectedRole) {
+          console.log('✅✅✅ Role matches! Access GRANTED ✅✅✅');
+          return true;
         } else {
-          this.router.navigate(['/login']);
+          console.log(`❌ Role mismatch! Expected: ${expectedRole}, Got: ${currentUser?.role}`);
+          // IMPORTANT: Return UrlTree instead of calling navigate directly
+          return this.getRedirectUrl(currentUser?.role);
         }
-        return false;
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+      }
+    }
+
+    // FETCH FROM API IF NO STORED USER
+    console.log('🔄 No stored user, fetching from API...');
+    return this.adminService.getCurrentUser().pipe(
+      tap((user: any) => {
+        if (user && user.role) {
+          localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+      }),
+      map((user: any) => {
+        if (user?.role === expectedRole) {
+          return true;
+        }
+        return this.getRedirectUrl(user?.role);
+      }),
+      catchError((err) => {
+        console.error('❌ Error fetching user:', err);
+        this.authService.logout();
+        return of(this.router.parseUrl('/login'));
       })
     );
+  }
+
+  // ============================================
+  // GET REDIRECT URL (returns UrlTree instead of navigating)
+  // ============================================
+
+  private getRedirectUrl(role: string): UrlTree {
+    console.log('🔄 Getting redirect URL for role:', role);
+    
+    switch (role) {
+      case 'admin':
+        return this.router.parseUrl('/admin/dashboard');
+      case 'merchant':
+        return this.router.parseUrl('/merchant/dashboard');
+      case 'customer':
+        return this.router.parseUrl('/customer/dashboard');
+      default:
+        this.authService.logout();
+        return this.router.parseUrl('/login');
+    }
   }
 }
