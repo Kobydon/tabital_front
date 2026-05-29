@@ -52,11 +52,29 @@ export class CustomerDocumentComponent implements OnInit {
   proofOfAddressPreview: string | null = null;
   proofOfAddressFile: File | null = null;
   
+  // Upload Restriction State
+  canUploadDocuments = true;
+  uploadBlockReason: string | null = null;
+  hasPendingDocuments = false;
+  hasVerifiedDocuments = false;
+  hasRejectedDocuments = false;
+  
   // Verification Status
   verificationSteps = [
     { step: 1, name: 'Upload Documents', icon: '📄', completed: false },
     { step: 2, name: 'Under Review', icon: '🔍', completed: false },
     { step: 3, name: 'Verification Complete', icon: '✅', completed: false }
+  ];
+
+  // File Validation Settings
+  readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  readonly ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+  readonly ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png', 
+    'image/jpg',
+    'image/webp',
+    'application/pdf'
   ];
 
   constructor(
@@ -74,6 +92,59 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   // ============================================
+  // CHECK UPLOAD PERMISSIONS BASED ON DOCUMENT STATUS
+  // ============================================
+
+  checkUploadPermissions(): void {
+    this.hasPendingDocuments = false;
+    this.hasVerifiedDocuments = false;
+    this.hasRejectedDocuments = false;
+    
+    for (const doc of this.documents) {
+      if (doc.status === 'pending') {
+        this.hasPendingDocuments = true;
+      }
+      if (doc.status === 'verified') {
+        this.hasVerifiedDocuments = true;
+      }
+      if (doc.status === 'rejected') {
+        this.hasRejectedDocuments = true;
+      }
+    }
+    
+    // If ANY document is pending → CANNOT upload
+    if (this.hasPendingDocuments) {
+      this.canUploadDocuments = false;
+      this.uploadBlockReason = 'You have documents currently under review. Please wait for the review to complete before uploading new documents.';
+      return;
+    }
+    
+    // If documents are verified → CANNOT upload
+    if (this.hasVerifiedDocuments && this.documents.length >= 4) {
+      this.canUploadDocuments = false;
+      this.uploadBlockReason = 'Your documents have been verified. No further uploads are required.';
+      return;
+    }
+    
+    // If documents were rejected → CAN upload new documents
+    if (this.hasRejectedDocuments) {
+      this.canUploadDocuments = true;
+      this.uploadBlockReason = null;
+      return;
+    }
+    
+    // No documents uploaded yet → CAN upload
+    if (this.documents.length === 0) {
+      this.canUploadDocuments = true;
+      this.uploadBlockReason = null;
+      return;
+    }
+    
+    this.canUploadDocuments = true;
+    this.uploadBlockReason = null;
+  }
+
+  // ============================================
   // DATA LOADING
   // ============================================
 
@@ -84,6 +155,7 @@ export class CustomerDocumentComponent implements OnInit {
       next: (response: any) => {
         this.documents = response.documents || [];
         this.updateVerificationSteps();
+        this.checkUploadPermissions();
         this.isLoading = false;
       },
       error: (error) => {
@@ -111,9 +183,13 @@ export class CustomerDocumentComponent implements OnInit {
         this.verificationSteps[0].completed = true;
         this.verificationSteps[1].completed = true;
         this.verificationSteps[2].completed = true;
-      } else if (this.kycStatus.status === 'pending') {
+      } else if (this.kycStatus.status === 'pending' && this.hasPendingDocuments) {
         this.verificationSteps[0].completed = true;
         this.verificationSteps[1].completed = true;
+        this.verificationSteps[2].completed = false;
+      } else if (this.hasRejectedDocuments) {
+        this.verificationSteps[0].completed = false;
+        this.verificationSteps[1].completed = false;
         this.verificationSteps[2].completed = false;
       } else {
         this.verificationSteps[0].completed = false;
@@ -124,17 +200,24 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   // ============================================
-  // VALIDATION METHODS
+  // FILE VALIDATION METHODS
   // ============================================
 
   private isValidFile(file: File): boolean {
-    if (!file.type.match(/image\/(jpeg|png|jpg|webp)|application\/pdf/)) {
-      alert('Please upload a valid file (JPEG, PNG, WEBP, or PDF)');
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (!extension || !this.ALLOWED_EXTENSIONS.includes(extension)) {
+      alert(`Invalid file type. Please upload ${this.ALLOWED_EXTENSIONS.join(', ')} files only.`);
       return false;
     }
     
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+    if (file.size === 0) {
+      alert('File is empty. Please select a valid file.');
+      return false;
+    }
+    
+    if (file.size > this.MAX_FILE_SIZE) {
+      alert(`File size exceeds ${this.MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please compress your file.`);
       return false;
     }
     
@@ -146,6 +229,11 @@ export class CustomerDocumentComponent implements OnInit {
   // ============================================
 
   onFrontImageSelected(event: Event): void {
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
@@ -161,6 +249,11 @@ export class CustomerDocumentComponent implements OnInit {
   }
 
   onBackImageSelected(event: Event): void {
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
@@ -190,6 +283,11 @@ export class CustomerDocumentComponent implements OnInit {
   // ============================================
 
   onSalaryCertificateSelected(event: Event): void {
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
@@ -204,7 +302,7 @@ export class CustomerDocumentComponent implements OnInit {
         };
         reader.readAsDataURL(file);
       } else {
-        this.salaryCertificatePreview = 'assets/pdf-icon.png';
+        this.salaryCertificatePreview = 'pdf';
       }
     }
   }
@@ -219,6 +317,11 @@ export class CustomerDocumentComponent implements OnInit {
   // ============================================
 
   onBankStatementSelected(event: Event): void {
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
@@ -233,7 +336,7 @@ export class CustomerDocumentComponent implements OnInit {
         };
         reader.readAsDataURL(file);
       } else {
-        this.bankStatementPreview = 'assets/pdf-icon.png';
+        this.bankStatementPreview = 'pdf';
       }
     }
   }
@@ -260,8 +363,6 @@ export class CustomerDocumentComponent implements OnInit {
         this.passportPhotoPreview = reader.result as string;
       };
       reader.readAsDataURL(file);
-      
-      this.uploadOptionalDocument(file, 'passport_photo', 'Passport Photo');
     }
   }
 
@@ -280,10 +381,8 @@ export class CustomerDocumentComponent implements OnInit {
         };
         reader.readAsDataURL(file);
       } else {
-        this.proofOfAddressPreview = 'assets/pdf-icon.png';
+        this.proofOfAddressPreview = 'pdf';
       }
-      
-      this.uploadOptionalDocument(file, 'proof_of_address', 'Proof of Address');
     }
   }
 
@@ -301,24 +400,12 @@ export class CustomerDocumentComponent implements OnInit {
   // UPLOAD METHODS
   // ============================================
 
-  uploadOptionalDocument(file: File, documentType: string, documentName: string): void {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('document_type', documentType);
-    formData.append('document_name', documentName);
-    
-    this.customerService.uploadOptionalDocument(formData).subscribe({
-      next: (response) => {
-        console.log(`${documentName} uploaded successfully`);
-        this.loadDocuments();
-      },
-      error: (error) => {
-        console.error(`Error uploading ${documentName}:`, error);
-      }
-    });
-  }
-
   uploadDocuments(): void {
+    if (!this.canUploadDocuments) {
+      alert(this.uploadBlockReason);
+      return;
+    }
+    
     // Check required documents
     if (!this.frontImageFile || !this.backImageFile) {
       alert('Please upload both front and back images of your Ghana Card');
@@ -338,10 +425,8 @@ export class CustomerDocumentComponent implements OnInit {
     this.isUploading = true;
     
     const formData = new FormData();
-    // Ghana Card
     formData.append('front_image', this.frontImageFile);
     formData.append('back_image', this.backImageFile);
-    // Additional documents
     formData.append('salary_certificate', this.salaryCertificateFile);
     formData.append('bank_statement', this.bankStatementFile);
     formData.append('notes', this.documentForm.value.notes || '');
@@ -349,7 +434,7 @@ export class CustomerDocumentComponent implements OnInit {
     this.customerService.uploadKycDocuments(formData).subscribe({
       next: (response) => {
         this.isUploading = false;
-        alert('Documents uploaded successfully! Your verification is pending.');
+        alert('✅ Documents uploaded successfully! Your verification is pending.');
         this.resetForm();
         this.loadDocuments();
         this.loadKYCStatus();
@@ -357,32 +442,29 @@ export class CustomerDocumentComponent implements OnInit {
       error: (error) => {
         console.error('Error uploading documents:', error);
         this.isUploading = false;
-        alert('Failed to upload documents. Please try again.');
+        alert('❌ Failed to upload documents. Please try again.');
       }
     });
   }
 
   resetForm(): void {
-    // Ghana Card
     this.frontImageFile = null;
     this.backImageFile = null;
     this.frontImagePreview = null;
     this.backImagePreview = null;
-    // Salary Certificate
     this.salaryCertificateFile = null;
     this.salaryCertificatePreview = null;
-    // Bank Statement
     this.bankStatementFile = null;
     this.bankStatementPreview = null;
-    // Optional Documents
     this.passportPhotoFile = null;
     this.passportPhotoPreview = null;
     this.proofOfAddressFile = null;
     this.proofOfAddressPreview = null;
-    // Form
-    this.documentForm.reset({
-      notes: ''
-    });
+    this.documentForm.reset({ notes: '' });
+  }
+
+  isPdfPreview(preview: string | null): boolean {
+    return preview === 'pdf';
   }
 
   // ============================================
@@ -455,7 +537,7 @@ export class CustomerDocumentComponent implements OnInit {
     switch (this.kycStatus.status) {
       case 'verified': return 'Verification Complete';
       case 'pending': return 'Verification in Progress';
-      case 'rejected': return 'Verification Failed';
+      case 'rejected': return 'Verification Failed - Please Re-upload';
       default: return 'Not Started';
     }
   }
@@ -466,4 +548,5 @@ export class CustomerDocumentComponent implements OnInit {
            !!this.salaryCertificateFile && 
            !!this.bankStatementFile;
   }
+  
 }

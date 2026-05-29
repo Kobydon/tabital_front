@@ -1,0 +1,419 @@
+<div class="kyc-approval-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>
+        <i class="fas fa-users"></i>
+        Customer KYC Verification
+      </h1>
+      <p class="subtitle">Review and verify customer identity applications</p>
+    </div>
+    <div class="header-right">
+      <div class="stats">
+        <div class="stat-card pending">
+          <span class="stat-value">{{ stats.pending }}</span>
+          <span class="stat-label">Pending</span>
+        </div>
+        <div class="stat-card verified">
+          <span class="stat-value">{{ stats.verified }}</span>
+          <span class="stat-label">Verified</span>
+        </div>
+        <div class="stat-card rejected">
+          <span class="stat-value">{{ stats.rejected }}</span>
+          <span class="stat-label">Rejected</span>
+        </div>
+        <div class="stat-card total">
+          <span class="stat-value">{{ stats.totalDocuments }}</span>
+          <span class="stat-label">Documents</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="switchTab('pending')">
+      <i class="fas fa-clock"></i> Pending Review
+      <span class="badge" *ngIf="stats.pending > 0">{{ stats.pending }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'verified'" (click)="switchTab('verified')">
+      <i class="fas fa-check-circle"></i> Verified
+      <span class="badge verified" *ngIf="stats.verified > 0">{{ stats.verified }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'rejected'" (click)="switchTab('rejected')">
+      <i class="fas fa-times-circle"></i> Rejected
+      <span class="badge rejected" *ngIf="stats.rejected > 0">{{ stats.rejected }}</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading verification requests...</p>
+  </div>
+
+  <!-- Pending Tab -->
+  <div *ngIf="!isLoading && activeTab === 'pending'" class="tab-content">
+    <div *ngIf="pendingCustomers.length === 0" class="empty-state">
+      <div class="empty-icon">✅</div>
+      <h3>No Pending Verifications</h3>
+      <p>All customer applications have been processed</p>
+    </div>
+
+    <div class="customers-grid" *ngIf="pendingCustomers.length > 0">
+      <div class="customer-card" *ngFor="let customer of pendingCustomers">
+        <div class="card-header">
+          <div class="customer-icon">
+            <span>👤</span>
+          </div>
+          <div class="customer-info">
+            <h3>{{ customer.customer_name || 'N/A' }}</h3>
+            <p class="email">{{ customer.email || 'N/A' }}</p>
+          </div>
+          <div class="status-badge pending">
+            <span class="status-icon">⏳</span>
+            Pending
+          </div>
+        </div>
+
+        <div class="card-details">
+          <div class="detail-row">
+            <span class="label">📞 Phone:</span>
+            <span>{{ customer.phone || 'N/A' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">📧 Email:</span>
+            <span>{{ customer.email || 'N/A' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">📅 Submitted:</span>
+            <span>{{ formatDate(customer.submitted_at) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">📄 Documents:</span>
+            <span class="doc-count">{{ customer.documents.length || 0 }} uploaded</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">🔒 Verification Level:</span>
+            <span>{{ (customer.verification_level | titlecase) || 'Basic' }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-view" (click)="viewCustomerDetails(customer!)">
+            <i class="fas fa-eye"></i> Review Documents
+          </button>
+          <button class="btn-reject" (click)="openRejectModalForCustomer(customer!)">
+            <i class="fas fa-times"></i> Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verified Tab -->
+  <div *ngIf="!isLoading && activeTab === 'verified'" class="tab-content">
+    <div *ngIf="verifiedCustomers.length === 0" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <h3>No Verified Customers</h3>
+      <p>Verified customers will appear here</p>
+    </div>
+
+    <div class="customers-list" *ngIf="verifiedCustomers.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Customer Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Verified On</th>
+            <th>Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of verifiedCustomers">
+            <td><strong>{{ customer.customer_name || 'N/A' }}</strong></td>
+            <td>{{ customer.phone || 'N/A' }}</td>
+            <td>{{ customer.email || 'N/A' }}</td>
+            <td>{{ formatDate(customer.verified_at) }}</td>
+            <td><span class="level-badge">{{ customer.verification_level || 'Basic' }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rejected Tab -->
+  <div *ngIf="!isLoading && activeTab === 'rejected'" class="tab-content">
+    <div *ngIf="rejectedCustomers.length === 0" class="empty-state">
+      <div class="empty-icon">✨</div>
+      <h3>No Rejected Applications</h3>
+      <p>All applications have been processed</p>
+    </div>
+
+    <div class="customers-list" *ngIf="rejectedCustomers.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Customer Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Rejection Reason</th>
+            <th>Rejected On</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of rejectedCustomers">
+            <td><strong>{{ customer.customer_name || 'N/A' }}</strong></td>
+            <td>{{ customer.phone || 'N/A' }}</td>
+            <td>{{ customer.email || 'N/A' }}</td>
+            <td class="rejection-reason">{{ customer.rejection_reason || 'No reason provided' }}</td>
+            <td>{{ formatDate(customer.rejected_at) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Customer Details Modal -->
+  <div class="modal-overlay" *ngIf="showCustomerModal" (click)="closeAllModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-user-check"></i>
+          Customer Verification Details
+        </h2>
+        <button class="close-btn" (click)="closeAllModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedCustomer">
+        <!-- Customer Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-info-circle"></i> Personal Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Full Name:</label>
+              <span>{{ selectedCustomer.customer_name || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone Number:</label>
+              <span>{{ selectedCustomer.phone || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email Address:</label>
+              <span>{{ selectedCustomer.email || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Submitted:</label>
+              <span>{{ formatDate(selectedCustomer.submitted_at) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span class="status-badge pending">Pending Review</span>
+            </div>
+            <div class="info-item">
+              <label>Verification Level:</label>
+              <span>{{ (selectedCustomer.verification_level | titlecase) || 'Basic' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="info-section">
+          <h3><i class="fas fa-file-alt"></i> Uploaded Documents</h3>
+          <div class="documents-grid">
+            <div class="document-card" *ngFor="let doc of selectedCustomer.documents">
+              <div class="document-icon">
+                <span>{{ getDocumentIcon(doc.document_type || '') }}</span>
+              </div>
+              <div class="document-info">
+                <h4>{{ getDocumentTypeName(doc.document_type || '') }}</h4>
+                <p class="file-name">{{ doc.file_name || 'Unknown' }}</p>
+                <p class="file-size">{{ formatFileSize(doc.file_size) }}</p>
+                <p class="upload-date">Uploaded: {{ formatDate(doc.uploaded_at) }}</p>
+              </div>
+              <div class="document-status">
+                <span class="status-badge" [class]="getStatusClass(doc.status || '')">
+                  {{ getStatusIcon(doc.status || '') }} {{ getStatusText(doc.status || '') }}
+                </span>
+              </div>
+              <div class="document-actions">
+                <button class="btn-view-doc" (click)="viewDocument(doc!)">
+                  <i class="fas fa-eye"></i> View
+                </button>
+                <button class="btn-approve-doc" (click)="approveDocument()" *ngIf="doc.status === 'pending'">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn-reject-doc" (click)="openRejectModalForDocument(doc!)" *ngIf="doc.status === 'pending'">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAllModals()">Close</button>
+        <button class="btn-approve" (click)="approveCustomer()" [disabled]="isProcessing">
+          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+          <span *ngIf="!isProcessing"><i class="fas fa-check-circle"></i> Approve All</span>
+        </button>
+        <button class="btn-reject" (click)="openRejectModalForCustomer(selectedCustomer!)" *ngIf="selectedCustomer">
+          <i class="fas fa-times-circle"></i> Reject All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Modal -->
+  <div class="modal-overlay" *ngIf="showDocumentModal" (click)="closeAllModals()">
+    <div class="modal-container document-preview" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-file-alt"></i>
+          Document Preview
+        </h2>
+        <button class="close-btn" (click)="closeAllModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedDocument">
+        <div class="document-info-header">
+          <h3>{{ getDocumentTypeName(selectedDocument.document_type || '') }}</h3>
+          <p class="file-info">{{ selectedDocument.file_name || 'Unknown' }} ({{ formatFileSize(selectedDocument.file_size) }})</p>
+          <div class="document-meta-row">
+            <span class="meta-item">
+              <strong>Document ID:</strong> {{ selectedDocument.document_id || 'N/A' }}
+            </span>
+            <span class="meta-item">
+              <strong>Type:</strong> {{ getDocumentTypeName(selectedDocument.document_type || '') }}
+            </span>
+            <span class="meta-item">
+              <strong>Uploaded:</strong> {{ formatDate(selectedDocument.uploaded_at) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="document-preview-area">
+          <!-- Loading State -->
+          <div *ngIf="isPdfLoading" class="loading-preview">
+            <div class="spinner-small"></div>
+            <p>Loading document preview...</p>
+          </div>
+
+          <!-- PDF Preview -->
+          <div *ngIf="isPdf(selectedDocument.mime_type || '') && pdfUrl && !isPdfLoading" class="pdf-preview-container">
+            <iframe [src]="pdfUrl" 
+                    class="preview-pdf" 
+                    frameborder="0"
+                    (load)="isPdfLoading = false"
+                    (error)="onPdfError()">
+            </iframe>
+            <div class="preview-actions">
+              <button class="download-btn" (click)="downloadDocument()">
+                <i class="fas fa-download"></i> Download PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- PDF Error Fallback -->
+          <div *ngIf="pdfError && isPdf(selectedDocument.mime_type || '') && !isPdfLoading" class="pdf-error-container">
+            <i class="fas fa-file-pdf fa-5x"></i>
+            <p>Unable to preview PDF in your browser.</p>
+            <button class="download-btn" (click)="downloadDocument()">
+              <i class="fas fa-download"></i> Download PDF to view
+            </button>
+          </div>
+
+          <!-- Image Preview -->
+          <div *ngIf="isImage(selectedDocument.mime_type || '') && imageUrl && !isPdfLoading" class="image-preview-container">
+            <img [src]="imageUrl" 
+                 [alt]="selectedDocument.document_name" 
+                 class="preview-image"
+                 (error)="onPdfError()">
+            <div class="preview-actions">
+              <button class="download-btn" (click)="downloadDocument()">
+                <i class="fas fa-download"></i> Download Image
+              </button>
+            </div>
+          </div>
+
+          <!-- No File Data -->
+          <div *ngIf="!selectedDocument.file_data && !isPdfLoading" class="unsupported-preview">
+            <i class="fas fa-file-alt fa-5x"></i>
+            <p>Document data not available</p>
+            <p class="file-info">{{ selectedDocument.file_name || 'Unknown' }} ({{ formatFileSize(selectedDocument.file_size) }})</p>
+          </div>
+        </div>
+
+        <div class="document-meta">
+          <div class="meta-item" *ngIf="selectedDocument.status === 'rejected' && selectedDocument.rejection_reason">
+            <label>Rejection Reason:</label>
+            <span class="rejection-text">{{ selectedDocument.rejection_reason }}</span>
+          </div>
+          <div class="meta-item" *ngIf="selectedDocument.verified_at">
+            <label>Verified At:</label>
+            <span>{{ formatDate(selectedDocument.verified_at) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAllModals()">Close</button>
+        <button class="btn-approve" (click)="approveDocument()" *ngIf="selectedDocument?.status === 'pending'" [disabled]="isProcessing">
+          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+          <span *ngIf="!isProcessing"><i class="fas fa-check"></i> Approve Document</span>
+        </button>
+        <button class="btn-reject" (click)="openRejectModalForDocument(selectedDocument!)" *ngIf="selectedDocument?.status === 'pending'">
+          <i class="fas fa-times"></i> Reject Document
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Reason Modal -->
+  <div class="modal-overlay" *ngIf="showRejectModal" (click)="closeAllModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exclamation-triangle"></i>
+          Reject Verification
+        </h2>
+        <button class="close-btn" (click)="closeAllModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="warning-text">
+          Please provide a reason for rejecting this verification. This will be shared with the customer.
+        </p>
+
+        <form [formGroup]="rejectForm">
+          <div class="form-group">
+            <label>Rejection Reason *</label>
+            <textarea formControlName="rejection_reason" 
+                      rows="4" 
+                      placeholder="Explain why the verification is being rejected..."></textarea>
+            <small class="error-text" *ngIf="rejectForm.get('rejection_reason')?.invalid && rejectForm.get('rejection_reason')?.touched">
+              Rejection reason is required (minimum 10 characters)
+            </small>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAllModals()">Cancel</button>
+        <button class="btn-reject" (click)="confirmRejection()" 
+                [disabled]="rejectForm.invalid || isProcessing">
+          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
+          <span *ngIf="!isProcessing"><i class="fas fa-times-circle"></i> Confirm Rejection</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

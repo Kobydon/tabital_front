@@ -141,7 +141,6 @@ export class CustomerShopComponent implements OnInit {
           verification_level: profile.verification_level || 'standard',
           kyc_completed_on: profile.kyc_completed_on || null
         };
-        // Only allow if status is 'verified' - NOT 'approved'
         this.isKYCPending = this.customerKYC.kyc_status !== 'verified';
       },
       error: (error) => {
@@ -220,7 +219,7 @@ export class CustomerShopComponent implements OnInit {
     this.installmentOptions = [
       { months: 1, label: 'Full Payment', interest_rate: 0, is_active: true },
       { months: 2, label: '2 Months - 50% Down, 50% Later', interest_rate: 0, is_active: true },
-      { months: 3, label: '3 Months - 50% Down, 25% + 25% Later', interest_rate: 0, is_active: true },
+      { months: 3, label: '3 Months - 50% Down, 50% Remaining', interest_rate: 0, is_active: true },
       { months: 4, label: '4 Months - 40% Down', interest_rate: 0, is_active: true },
       { months: 6, label: '6 Months', interest_rate: 0, is_active: false, coming_soon: true }
     ];
@@ -250,39 +249,46 @@ export class CustomerShopComponent implements OnInit {
     const totalPrice = product.price * quantity;
     const serviceFee = 0;
     const lateFeePercentage = 10;
+    const deliveryFee = 50; // GHS 50 delivery fee
+    const subtotal = totalPrice;
     
     let downPaymentPercentage = 0;
+    let downPaymentAmount = 0;
     let remainingBalanceAfterDown = 0;
     let totalInstallments = 0;
     let remainingInstallments = 0;
     let installmentAmount = 0;
     
+    // Calculate total with delivery fee
+    const totalWithDelivery = subtotal + deliveryFee;
+    
     if (months === 1) {
+      // 1 Installment: Down Payment (Full Payment) = 100% of product cost
       downPaymentPercentage = 100;
-      const downPaymentAmount = totalPrice;
+      downPaymentAmount = totalPrice;
       remainingBalanceAfterDown = 0;
       totalInstallments = 1;
       remainingInstallments = 0;
       installmentAmount = 0;
       
-      const totalPayable = totalPrice + serviceFee;
+      const totalPayable = totalWithDelivery + serviceFee;
       
       const paymentSchedule: PaymentSchedule[] = [];
       const currentDate = new Date();
       
       paymentSchedule.push({
         installment_number: 1,
-        amount: downPaymentAmount,
+        amount: downPaymentAmount + deliveryFee,
         due_date: currentDate.toISOString(),
         status: 'due_now',
-        description: `Full Payment (100% upfront)`
+        description: `Full Payment (100% upfront) + Delivery Fee`
       });
       
       this.calculation = {
         product_price: totalPrice,
         down_payment: {
           percentage: downPaymentPercentage,
-          amount: downPaymentAmount
+          amount: downPaymentAmount + deliveryFee
         },
         remaining_balance: remainingBalanceAfterDown,
         installment_details: {
@@ -307,24 +313,25 @@ export class CustomerShopComponent implements OnInit {
     }
     
     if (months === 2) {
+      // 2 Installments: Down Payment = 50% of product price, then remaining 50%
       downPaymentPercentage = 50;
-      const downPaymentAmount = totalPrice * 0.5;
+      downPaymentAmount = totalPrice * 0.5;
       remainingBalanceAfterDown = totalPrice - downPaymentAmount;
       totalInstallments = 2;
       remainingInstallments = 1;
       installmentAmount = remainingBalanceAfterDown / remainingInstallments;
       
-      const totalPayable = totalPrice + serviceFee;
+      const totalPayable = totalWithDelivery + serviceFee;
       
       const paymentSchedule: PaymentSchedule[] = [];
       const currentDate = new Date();
       
       paymentSchedule.push({
         installment_number: 1,
-        amount: downPaymentAmount,
+        amount: downPaymentAmount + deliveryFee,
         due_date: currentDate.toISOString(),
         status: 'due_now',
-        description: `Down Payment (50% of product price)`
+        description: `Down Payment (50% of product price) + Delivery Fee`
       });
       
       const secondDueDate = new Date(currentDate);
@@ -341,7 +348,7 @@ export class CustomerShopComponent implements OnInit {
         product_price: totalPrice,
         down_payment: {
           percentage: downPaymentPercentage,
-          amount: downPaymentAmount
+          amount: downPaymentAmount + deliveryFee
         },
         remaining_balance: remainingBalanceAfterDown,
         installment_details: {
@@ -366,23 +373,26 @@ export class CustomerShopComponent implements OnInit {
     }
     
     if (months === 3) {
+      // 3 Installments: Down Payment = 50% of product price, remaining 50% split into 2 payments of 25% each
       downPaymentPercentage = 50;
-      const downPaymentAmount = totalPrice * 0.5;
+      downPaymentAmount = totalPrice * 0.5;
       const remainingAmount = totalPrice - downPaymentAmount;
-      const subsequentPaymentAmount = remainingAmount / 2;
+      const subsequentPaymentAmount = remainingAmount / 2; // 25% each
       
       totalInstallments = 3;
       remainingInstallments = 2;
+      
+      const totalPayable = totalWithDelivery + serviceFee;
       
       const paymentSchedule: PaymentSchedule[] = [];
       const currentDate = new Date();
       
       paymentSchedule.push({
         installment_number: 1,
-        amount: downPaymentAmount,
+        amount: downPaymentAmount + deliveryFee,
         due_date: currentDate.toISOString(),
         status: 'due_now',
-        description: `Down Payment (50% of product price)`
+        description: `Down Payment (50% of product price) + Delivery Fee`
       });
       
       const secondDueDate = new Date(currentDate);
@@ -405,13 +415,11 @@ export class CustomerShopComponent implements OnInit {
         description: `Final Payment (25% of product price)`
       });
       
-      const totalPayable = totalPrice + serviceFee;
-      
       this.calculation = {
         product_price: totalPrice,
         down_payment: {
           percentage: downPaymentPercentage,
-          amount: downPaymentAmount
+          amount: downPaymentAmount + deliveryFee
         },
         remaining_balance: remainingAmount,
         installment_details: {
@@ -436,24 +444,25 @@ export class CustomerShopComponent implements OnInit {
     }
     
     if (months === 4) {
+      // 4 Installments: Down Payment = 40% of product price, remaining 60% split into 3 equal payments of 20% each
       downPaymentPercentage = 40;
-      const downPaymentAmount = totalPrice * 0.4;
+      downPaymentAmount = totalPrice * 0.4;
       remainingBalanceAfterDown = totalPrice - downPaymentAmount;
       totalInstallments = 4;
       remainingInstallments = 3;
       installmentAmount = remainingBalanceAfterDown / remainingInstallments;
       
-      const totalPayable = totalPrice + serviceFee;
+      const totalPayable = totalWithDelivery + serviceFee;
       
       const paymentSchedule: PaymentSchedule[] = [];
       const currentDate = new Date();
       
       paymentSchedule.push({
         installment_number: 1,
-        amount: downPaymentAmount,
+        amount: downPaymentAmount + deliveryFee,
         due_date: currentDate.toISOString(),
         status: 'due_now',
-        description: `Down Payment (40% of product price)`
+        description: `Down Payment (40% of product price) + Delivery Fee`
       });
       
       for (let i = 1; i <= remainingInstallments; i++) {
@@ -472,7 +481,7 @@ export class CustomerShopComponent implements OnInit {
         product_price: totalPrice,
         down_payment: {
           percentage: downPaymentPercentage,
-          amount: downPaymentAmount
+          amount: downPaymentAmount + deliveryFee
         },
         remaining_balance: remainingBalanceAfterDown,
         installment_details: {
@@ -705,4 +714,29 @@ export class CustomerShopComponent implements OnInit {
     if (stock < 10) return 'low';
     return 'in';
   }
+  // Add this method to calculate Due Now amount including delivery fee
+// Add this method to calculate Due Now amount including delivery fee
+getDueNowAmount(productPrice: number, months: number): number {
+  let downPaymentPercentage = 0;
+  
+  switch(months) {
+    case 1:
+      downPaymentPercentage = 100;
+      break;
+    case 2:
+    case 3:
+      downPaymentPercentage = 50;
+      break;
+    case 4:
+      downPaymentPercentage = 40;
+      break;
+    default:
+      downPaymentPercentage = 0;
+  }
+  
+  const downPaymentAmount = productPrice * downPaymentPercentage / 100;
+  const deliveryFee = 50;
+  
+  return downPaymentAmount + deliveryFee;
+}
 }

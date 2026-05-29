@@ -135,15 +135,22 @@ export class CustomerService {
   private API = 'https://tabital.onrender.com';
 
   constructor(private http: HttpClient) {}
+private getAuthHeaders(isFormData: boolean = false): HttpHeaders {
+  const token = localStorage.getItem('access_token');
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('access_token');
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    });
+  let headers = new HttpHeaders({
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json'
+  });
+
+  // IMPORTANT:
+  // Never manually set Content-Type for FormData
+  if (!isFormData) {
+    headers = headers.set('Content-Type', 'application/json');
   }
+
+  return headers;
+}
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('API Error:', error);
@@ -367,13 +374,26 @@ exportTransactions(filters?: any): Observable<Blob> {
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  uploadKycDocument(file: File, documentType: string): Observable<any> {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('document_type', documentType);
-    return this.http.post(`${this.API}/customer/kyc/upload`, formData, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
+ // ============================================
+// KYC DOCUMENT UPLOAD
+// ============================================
+
+uploadKycDocument(file: File, documentType: string): Observable<any> {
+  const formData = new FormData();
+
+  formData.append('document', file);
+  formData.append('document_type', documentType);
+
+  return this.http.post(
+    `${this.API}/customer/kyc/upload`,
+    formData,
+    {
+      headers: this.getAuthHeaders(true)
+    }
+  ).pipe(
+    catchError(this.handleError.bind(this))
+  );
+}
 
   getKycCustomerStatus(): Observable<any> {
     return this.http.get(`${this.API}/customer/kyc/status`, { headers: this.getAuthHeaders() })
@@ -722,18 +742,49 @@ getCustomerDocuments(): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// src/app/services/customer.service.ts
+
 uploadKycDocuments(formData: FormData): Observable<any> {
+  console.log('Uploading KYC documents...');
+  console.log('FormData entries:');
+  
+  // Log FormData contents for debugging
+  formData.forEach((value, key) => {
+    if (value instanceof File) {
+      console.log(`${key}: ${value.name} (${value.size} bytes, type: ${value.type})`);
+    } else {
+      console.log(`${key}: ${value}`);
+    }
+  });
+  
+  // IMPORTANT: Do NOT set any Content-Type header for FormData
+  // Create headers without Content-Type
+  const token = localStorage.getItem('access_token');
+  let headers = new HttpHeaders();
+  headers = headers.set('Authorization', `Bearer ${token}`);
+  headers = headers.set('Accept', 'application/json');
+  // DO NOT set Content-Type - let browser handle it
+  
   return this.http.post(`${this.API}/customer/documents/upload`, formData, { 
-    headers: this.getAuthHeaders() 
+    headers: headers
   }).pipe(catchError(this.handleError.bind(this)));
 }
 // customers.service.ts - Add these methods
 // Add these methods to customers.service.ts
+// ============================================
+// OPTIONAL DOCUMENTS UPLOAD
+// ============================================
 
 uploadOptionalDocument(formData: FormData): Observable<any> {
-  return this.http.post(`${this.API}/customer/documents/upload-optional`, formData, { 
-    headers: this.getAuthHeaders() 
-  }).pipe(catchError(this.handleError.bind(this)));
+  return this.http.post(
+    `${this.API}/customer/documents/upload-optional`,
+    formData,
+    {
+      headers: this.getAuthHeaders(true)
+    }
+  ).pipe(
+    catchError(this.handleError.bind(this))
+  );
 }
 getCustomerNotifications(filters?: any): Observable<any> {
   let url = `${this.API}/notifications`;

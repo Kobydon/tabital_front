@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <!-- KYC Warning Banner (Shows when KYC is pending or rejected) -->
+  <!-- KYC Warning Banner -->
   <div class="kyc-warning-banner" *ngIf="isKYCPending && customerKYC">
     <div class="banner-icon" [class.warning]="customerKYC.kyc_status === 'pending'" [class.danger]="customerKYC.kyc_status === 'rejected'">
       <i class="fas" [class.fa-clock]="customerKYC.kyc_status === 'pending'" [class.fa-exclamation-triangle]="customerKYC.kyc_status === 'rejected'"></i>
@@ -118,7 +118,7 @@
         
         <div class="installment-teaser">
           <i class="fas fa-calendar-alt"></i>
-          From {{ formatCurrency(product.price) }}/full payment
+          <span>Delivery Fee: GHS 50.00 added to first payment</span>
         </div>
         
         <button class="btn-view" (click)="viewProduct(product)" [disabled]="product.stock_quantity <= 0">
@@ -211,6 +211,11 @@
         <div class="installment-section">
           <h3><i class="fas fa-calendar-alt"></i> Choose Your Installment Plan</h3>
           
+          <div class="delivery-fee-note">
+            <i class="fas fa-truck"></i>
+            <span>Delivery Fee of <strong>GHS 50.00</strong> will be added to your first payment (Due Now) for ALL plans</span>
+          </div>
+          
           <div class="installment-options">
             <button 
               *ngFor="let option of installmentOptions"
@@ -222,10 +227,13 @@
               <div class="plan-details">
                 <span class="months">{{ option.months }}</span>
                 <span class="period">{{ option.months === 1 ? 'Month (Full Payment)' : 'Months' }}</span>
-                <span class="plan-type" *ngIf="option.months === 1">100% Down</span>
-                <span class="plan-type" *ngIf="option.months === 2">50% Down + 50%</span>
-                <span class="plan-type" *ngIf="option.months === 3">50% Down + 25% + 25%</span>
-                <span class="plan-type" *ngIf="option.months === 4">40% Down + 20% + 20% + 20%</span>
+                <!-- <span class="plan-type" *ngIf="option.months === 1">100% Down + Delivery</span>
+                <span class="plan-type" *ngIf="option.months === 2">50% Down + Delivery + 50% Later</span>
+                <span class="plan-type" *ngIf="option.months === 3">50% Down + Delivery + 25% + 25%</span>
+                <span class="plan-type" *ngIf="option.months === 4">40% Down + Delivery + 20% + 20% + 20%</span> -->
+              </div>
+              <div class="due-now-info">
+                <!-- <small>Due Now: {{ formatCurrency(getDueNowAmount(selectedProduct.price || 0, option.months)) }}</small> -->
               </div>
               <span *ngIf="option.coming_soon" class="coming-soon-badge">
                 <i class="fas fa-clock"></i> Coming Soon
@@ -235,6 +243,7 @@
 
           <!-- Calculation Display -->
           <div *ngIf="calculation" class="calculation-preview">
+            
             <!-- Payment Schedule Preview -->
             <div class="payment-schedule-preview" *ngIf="calculation.payment_schedule">
               <h4><i class="fas fa-calendar-alt"></i> Payment Schedule</h4>
@@ -245,35 +254,37 @@
                   <span>Due Date</span>
                   <span>Status</span>
                 </div>
-                <div class="schedule-row" *ngFor="let payment of calculation.payment_schedule">
+                <div class="schedule-row" *ngFor="let payment of calculation.payment_schedule; let idx = index">
                   <span>
                     <strong>Payment {{ payment.installment_number }}</strong>
                     <small *ngIf="payment.description" class="payment-desc">{{ payment.description }}</small>
                   </span>
                   <span class="amount">{{ formatCurrency(payment.amount) }}</span>
-                  <span>{{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Immediately' : formatDate(payment.due_date) }}</span>
-                  <span class="payment-status-badge" [class]="payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'status-due' : 'status-pending'">
-                    {{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Due Now' : 'Pending' }}
+                  <span>{{ idx === 0 ? 'Immediately' : formatDate(payment.due_date) }}</span>
+                  <span class="payment-status-badge" [class]="idx === 0 ? 'status-due' : 'status-pending'">
+                    {{ idx === 0 ? 'Due Now' : 'Pending' }}
                   </span>
                 </div>
               </div>
               <div class="payment-note">
                 <i class="fas fa-info-circle"></i>
                 <span *ngIf="calculation.down_payment.percentage === 100">
-                  Full payment of {{ formatCurrency(calculation.down_payment.amount) }} is required now to complete your purchase.
+                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price + 50) }} (Full payment {{ formatCurrency(calculation.product_price) }} + Delivery Fee GHS 50)
                 </span>
                 <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 2">
-                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (50%) will be charged now.
-                  Remaining 50% ({{ formatCurrency(calculation.remaining_balance) }}) will be due in 1 month.
+                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.5 + 50) }} (50% of product = {{ formatCurrency(calculation.product_price * 0.5) }} + Delivery Fee GHS 50)<br>
+                  <strong>Month 1:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (Remaining 50% = {{ formatCurrency(calculation.product_price * 0.5) }})
                 </span>
                 <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 3">
-                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (50%) will be charged now.
-                  Second payment of 25% ({{ formatCurrency(calculation.payment_schedule[1].amount) }}) due in 1 month.
-                  Final payment of 25% ({{ formatCurrency(calculation.payment_schedule[2].amount) }}) due in 2 months.
+                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.5 + 50) }} (50% of product = {{ formatCurrency(calculation.product_price * 0.5) }} + Delivery Fee GHS 50)<br>
+                  <strong>Month 1:</strong> {{ formatCurrency(calculation.payment_schedule[1]?.amount || 0) }} (25% = {{ formatCurrency(calculation.product_price * 0.25) }})<br>
+                  <strong>Month 2:</strong> {{ formatCurrency(calculation.payment_schedule[2]?.amount || 0) }} (25% = {{ formatCurrency(calculation.product_price * 0.25) }})
                 </span>
                 <span *ngIf="calculation.down_payment.percentage === 40 && calculation.installment_details.total_installments === 4">
-                  Down payment of {{ formatCurrency(calculation.down_payment.amount) }} (40%) will be charged now.
-                  Remaining 60% will be split into 3 equal monthly payments of {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% each).
+                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.4 + 50) }} (40% of product = {{ formatCurrency(calculation.product_price * 0.4) }} + Delivery Fee GHS 50)<br>
+                  <strong>Month 1:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})<br>
+                  <strong>Month 2:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})<br>
+                  <strong>Month 3:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})
                 </span>
               </div>
             </div>
@@ -305,25 +316,34 @@
         <div class="checkout-summary">
           <div class="summary-product">
             <h4>{{ selectedProduct.name }}</h4>
-            <p>Price: {{ formatCurrency(selectedProduct.price) }} × {{ purchaseForm.value.quantity }} = {{ formatCurrency(calculation.product_price) }}</p>
+            <p>Product Price: {{ formatCurrency(selectedProduct.price) }} × {{ purchaseForm.value.quantity }}</p>
+            <p class="product-total">Product Total: {{ formatCurrency(calculation.product_price) }}</p>
+            <p class="delivery-fee">Delivery Fee: <strong>GHS 50.00</strong> (Added to first payment)</p>
           </div>
           
           <div class="summary-breakdown">
-            <div class="breakdown-row" *ngIf="calculation.down_payment.amount > 0">
-              <span>Down Payment ({{ calculation.down_payment.percentage }}%):</span>
-              <strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong>
+            <div class="breakdown-header">
+              <strong>Payment Breakdown</strong>
+            </div>
+            <div class="breakdown-row" *ngIf="calculation.down_payment.percentage">
+              <span>Product Down Payment ({{ calculation.down_payment.percentage }}%):</span>
+              <strong>{{ formatCurrency(calculation.product_price * calculation.down_payment.percentage / 100) }}</strong>
+            </div>
+            <div class="breakdown-row delivery-row">
+              <span>Delivery Fee (Added to first payment):</span>
+              <strong>GHS 50.00</strong>
+            </div>
+            <div class="breakdown-row total-due-now">
+              <span><strong>Total Due Now:</strong></span>
+              <strong class="due-now-amount">{{ formatCurrency(calculation.down_payment.amount) }}</strong>
             </div>
             <div class="breakdown-row" *ngIf="calculation.installment_details.installment_amount > 0">
-              <span>Installment Amount:</span>
+              <span>Remaining Installments ({{ calculation.installment_details.remaining_installments }} payments):</span>
               <strong>{{ formatCurrency(calculation.installment_details.installment_amount) }}/month</strong>
             </div>
-            <div class="breakdown-row">
-              <span>Number of Installments:</span>
-              <strong>{{ calculation.installment_details.total_installments }} payment(s)</strong>
-            </div>
             <div class="breakdown-row total">
-              <span>Total Payable:</span>
-              <strong>{{ formatCurrency(calculation.totals.total_payable) }}</strong>
+              <span>Total Payable (Product + Delivery):</span>
+              <strong>{{ formatCurrency(calculation.product_price + 50) }}</strong>
             </div>
           </div>
           
@@ -331,11 +351,11 @@
           <div class="checkout-schedule" *ngIf="calculation.payment_schedule">
             <h5>Payment Schedule</h5>
             <div class="mini-schedule">
-              <div *ngFor="let payment of calculation.payment_schedule" class="mini-schedule-item">
+              <div *ngFor="let payment of calculation.payment_schedule; let idx = index" class="mini-schedule-item">
                 <span>Payment {{ payment.installment_number }}:</span>
                 <span>{{ formatCurrency(payment.amount) }}</span>
                 <span class="due-date">
-                  {{ payment.installment_number === 1 && calculation.down_payment.amount > 0 ? 'Due Now' : 'Due ' + formatDate(payment.due_date) }}
+                  {{ idx === 0 ? 'Due Now (includes GHS 50 delivery fee)' : 'Due ' + formatDate(payment.due_date) }}
                 </span>
               </div>
             </div>
@@ -361,42 +381,32 @@
             </small>
           </div>
 
-          <div class="payment-note warning" *ngIf="calculation.down_payment.percentage === 100">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>
-              Full payment of {{ formatCurrency(calculation.down_payment.amount) }} will be charged immediately.
-              No further payments required.
-            </span>
-          </div>
-
-          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 2">
-            <i class="fas fa-info-circle"></i>
-            <span>
-              Payment Schedule:
-              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (50% down)
-              • Month 1: {{ formatCurrency(calculation.installment_details.installment_amount) }} (50% final)
-            </span>
-          </div>
-
-          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 3">
-            <i class="fas fa-info-circle"></i>
-            <span>
-              Payment Schedule:
-              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (50% down)
-              • Month 1: {{ formatCurrency(calculation.payment_schedule[1]?.amount || 0) }} (25%)
-              • Month 2: {{ formatCurrency(calculation.payment_schedule[2]?.amount || 0) }} (25% final)
-            </span>
-          </div>
-
-          <div class="payment-note info" *ngIf="calculation.down_payment.percentage === 40 && calculation.installment_details.total_installments === 4">
-            <i class="fas fa-info-circle"></i>
-            <span>
-              Payment Schedule:
-              • Now: {{ formatCurrency(calculation.down_payment.amount) }} (40% down)
-              • Month 1: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
-              • Month 2: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
-              • Month 3: {{ formatCurrency(calculation.installment_details.installment_amount) }} (20%)
-            </span>
+          <div class="payment-summary-card">
+            <h4>Payment Summary</h4>
+            <div class="summary-line">
+              <span>Subtotal:</span>
+              <span>{{ formatCurrency(calculation.product_price) }}</span>
+            </div>
+            <div class="summary-line">
+              <span>Delivery Fee:</span>
+              <span>GHS 50.00</span>
+            </div>
+            <div class="summary-line total">
+              <span>Total Inc. Delivery:</span>
+              <span>{{ formatCurrency(calculation.product_price + 50) }}</span>
+            </div>
+            <div class="summary-line down-payment-line" *ngIf="calculation.down_payment.percentage !== 100">
+              <span>Down Payment ({{ calculation.down_payment.percentage }}% of product):</span>
+              <span>{{ formatCurrency(calculation.product_price * calculation.down_payment.percentage / 100) }}</span>
+            </div>
+            <div class="summary-line due-now-line">
+              <span><strong>Amount Due Now (Down Payment + Delivery):</strong></span>
+              <span><strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong></span>
+            </div>
+            <div class="summary-line" *ngIf="calculation.installment_details.installment_amount > 0">
+              <span>Monthly Installment ({{ calculation.installment_details.remaining_installments }} months):</span>
+              <span>{{ formatCurrency(calculation.installment_details.installment_amount) }}</span>
+            </div>
           </div>
 
           <div class="modal-actions">

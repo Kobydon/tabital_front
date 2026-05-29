@@ -107,9 +107,14 @@
       </div>
 
       <!-- Add this inside the nav-menu section -->
+<a routerLink="kyb-verification" routerLinkActive="active">
+  <span class="icon">✅</span>
+  <span class="label" *ngIf="!isCollapsed">KYB Verification</span>
+</a>
+
 <a routerLink="kyc-verification" routerLinkActive="active">
   <span class="icon">✅</span>
-  <span class="label" *ngIf="!isCollapsed">KYC/KYB Verification</span>
+  <span class="label" *ngIf="!isCollapsed">KYC Verification</span>
 </a>
 
       <!-- Settings Dropdown -->

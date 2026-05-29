@@ -58,7 +58,7 @@ export class MakePaymentComponent implements OnInit {
   }
 
   loadPlanDetails(): void {
-    this.customerService.getPlanOneDetails(this.planId!).subscribe({
+    this.customerService.getPlanDetails(this.planId!).subscribe({
       next: (response) => {
         this.instalmentPlan = response;
         this.planName = this.instalmentPlan.product_name;

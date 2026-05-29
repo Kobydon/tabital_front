@@ -10,6 +10,7 @@ import { MerchantDetailsComponent } from './merchant-details/merchant-details.co
 import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
 import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
+import { ApproveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
 
 const routes: Routes = [
   {
@@ -31,7 +32,8 @@ const routes: Routes = [
                {path: 'orders', component: AdminOrdersComponent } , 
    
     
-        { path: 'kyc-verification', component: ApproveKybKycComponent },
+        { path: 'kyb-verification', component: ApproveKybKycComponent },
+             { path: 'kyc-verification', component: ApproveCustomerKycComponent },
  
     ]
   }

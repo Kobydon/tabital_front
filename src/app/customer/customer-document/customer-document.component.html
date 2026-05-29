@@ -13,6 +13,22 @@
     </div>
   </div>
 
+  <!-- Upload Blocked Message -->
+  <div class="upload-blocked-card" *ngIf="!canUploadDocuments && uploadBlockReason">
+    <div class="blocked-icon">
+      <i class="fas fa-lock"></i>
+    </div>
+    <div class="blocked-content">
+      <h4>Upload Restricted</h4>
+      <p>{{ uploadBlockReason }}</p>
+      <div class="blocked-actions" *ngIf="hasPendingDocuments">
+        <button class="btn-view-status" (click)="switchTab('history')">
+          <i class="fas fa-clock"></i> Check Review Status
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Verification Progress -->
   <div class="verification-progress">
     <div class="progress-steps">
@@ -42,7 +58,7 @@
 
   <!-- Upload Tab -->
   <div class="tab-content" *ngIf="activeTab === 'upload'">
-    <div class="upload-section">
+    <div class="upload-section" *ngIf="canUploadDocuments">
       <div class="info-card">
         <i class="fas fa-info-circle"></i>
         <div class="info-content">
@@ -54,8 +70,8 @@
             <li><strong>Required:</strong> 3 months Bank Statement</li>
             <li><strong>Optional:</strong> Passport Photo, Proof of Address</li>
             <li>Make sure all documents are clear and readable</li>
-            <li>File size should be less than 5MB per document</li>
-            <li>Accepted formats: JPG, PNG, WEBP, PDF</li>
+            <li>Maximum file size: <strong>5MB per document</strong></li>
+            <li>Accepted formats: <strong>JPG, PNG, WEBP, PDF</strong></li>
           </ul>
         </div>
       </div>
@@ -72,14 +88,15 @@
           </div>
           
           <div class="upload-area" (click)="frontImageInput.click()" *ngIf="!frontImagePreview">
-            <input type="file" #frontImageInput (change)="onFrontImageSelected($event)" accept="image/*,application/pdf" hidden>
+            <input type="file" #frontImageInput (change)="onFrontImageSelected($event)" accept=".jpg,.jpeg,.png,.webp,.pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload front side</p>
             <small>JPG, PNG, PDF (max 5MB)</small>
           </div>
           
           <div class="file-preview" *ngIf="frontImagePreview">
-            <img [src]="frontImagePreview" alt="Front of Ghana Card">
+            <img *ngIf="!isPdfPreview(frontImagePreview)" [src]="frontImagePreview" alt="Front of Ghana Card">
+            <i *ngIf="isPdfPreview(frontImagePreview)" class="fas fa-file-pdf fa-3x"></i>
             <button class="remove-btn" (click)="removeFrontImage()">
               <i class="fas fa-times-circle"></i>
             </button>
@@ -95,14 +112,15 @@
           </div>
           
           <div class="upload-area" (click)="backImageInput.click()" *ngIf="!backImagePreview">
-            <input type="file" #backImageInput (change)="onBackImageSelected($event)" accept="image/*,application/pdf" hidden>
+            <input type="file" #backImageInput (change)="onBackImageSelected($event)" accept=".jpg,.jpeg,.png,.webp,.pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload back side</p>
             <small>JPG, PNG, PDF (max 5MB)</small>
           </div>
           
           <div class="file-preview" *ngIf="backImagePreview">
-            <img [src]="backImagePreview" alt="Back of Ghana Card">
+            <img *ngIf="!isPdfPreview(backImagePreview)" [src]="backImagePreview" alt="Back of Ghana Card">
+            <i *ngIf="isPdfPreview(backImagePreview)" class="fas fa-file-pdf fa-3x"></i>
             <button class="remove-btn" (click)="removeBackImage()">
               <i class="fas fa-times-circle"></i>
             </button>
@@ -122,14 +140,15 @@
           </div>
           
           <div class="upload-area" (click)="salaryInput.click()" *ngIf="!salaryCertificatePreview">
-            <input type="file" #salaryInput (change)="onSalaryCertificateSelected($event)" accept="image/*,application/pdf" hidden>
+            <input type="file" #salaryInput (change)="onSalaryCertificateSelected($event)" accept=".jpg,.jpeg,.png,.webp,.pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload salary certificate</p>
             <small>Recent salary certificate from employer</small>
           </div>
           
           <div class="file-preview" *ngIf="salaryCertificatePreview">
-            <img [src]="salaryCertificatePreview" alt="Salary Certificate">
+            <img *ngIf="!isPdfPreview(salaryCertificatePreview)" [src]="salaryCertificatePreview" alt="Salary Certificate">
+            <i *ngIf="isPdfPreview(salaryCertificatePreview)" class="fas fa-file-pdf fa-3x"></i>
             <button class="remove-btn" (click)="removeSalaryCertificate()">
               <i class="fas fa-times-circle"></i>
             </button>
@@ -145,14 +164,15 @@
           </div>
           
           <div class="upload-area" (click)="bankInput.click()" *ngIf="!bankStatementPreview">
-            <input type="file" #bankInput (change)="onBankStatementSelected($event)" accept="image/*,application/pdf" hidden>
+            <input type="file" #bankInput (change)="onBankStatementSelected($event)" accept=".jpg,.jpeg,.png,.webp,.pdf" hidden>
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Click to upload bank statement</p>
             <small>Bank statement for last 3 months</small>
           </div>
           
           <div class="file-preview" *ngIf="bankStatementPreview">
-            <img [src]="bankStatementPreview" alt="Bank Statement">
+            <img *ngIf="!isPdfPreview(bankStatementPreview)" [src]="bankStatementPreview" alt="Bank Statement">
+            <i *ngIf="isPdfPreview(bankStatementPreview)" class="fas fa-file-pdf fa-3x"></i>
             <button class="remove-btn" (click)="removeBankStatement()">
               <i class="fas fa-times-circle"></i>
             </button>
@@ -191,12 +211,13 @@
               <span>Proof of Address</span>
             </div>
             <div *ngIf="!proofOfAddressPreview" class="optional-upload" (click)="addressInput.click()">
-              <input type="file" #addressInput hidden (change)="onAddressSelected($event)" accept="image/*,application/pdf">
+              <input type="file" #addressInput hidden (change)="onAddressSelected($event)" accept=".jpg,.jpeg,.png,.webp,.pdf">
               <i class="fas fa-cloud-upload-alt"></i>
               <p>Click to upload</p>
             </div>
             <div *ngIf="proofOfAddressPreview" class="optional-preview">
-              <img [src]="proofOfAddressPreview" alt="Proof of Address">
+              <img *ngIf="!isPdfPreview(proofOfAddressPreview)" [src]="proofOfAddressPreview" alt="Proof of Address">
+              <i *ngIf="isPdfPreview(proofOfAddressPreview)" class="fas fa-file-pdf fa-3x"></i>
               <button class="remove-optional" (click)="removeProofOfAddress()">
                 <i class="fas fa-times-circle"></i>
               </button>
@@ -233,7 +254,7 @@
     <div class="documents-list" *ngIf="!isLoading && documents.length > 0">
       <div class="document-card" *ngFor="let doc of documents">
         <div class="document-icon">
-          <i class="fas" [class.fa-id-card]="doc.document_type.includes('kyc')"
+          <i class="fas" [class.fa-id-card]="doc.document_type === 'kyc_front' || doc.document_type === 'kyc_back'"
              [class.fa-file-alt]="doc.document_type === 'salary_certificate'"
              [class.fa-university]="doc.document_type === 'bank_statement'"
              [class.fa-camera]="doc.document_type === 'passport_photo'"
@@ -242,6 +263,9 @@
         <div class="document-info">
           <div class="document-name">{{ doc.document_name }}</div>
           <div class="document-date">Uploaded: {{ formatDate(doc.uploaded_at) }}</div>
+          <div class="document-reason" *ngIf="doc.rejection_reason">
+            <small>Reason: {{ doc.rejection_reason }}</small>
+          </div>
         </div>
         <div class="document-status">
           <span class="status-badge" [class]="getStatusClass(doc.status)">
@@ -255,20 +279,31 @@
       <div class="empty-icon">📄</div>
       <h3>No documents found</h3>
       <p>You haven't uploaded any documents yet</p>
-      <button class="btn-primary" (click)="switchTab('upload')">Upload Documents</button>
+      <button class="btn-primary" (click)="switchTab('upload')" [disabled]="!canUploadDocuments">
+        Upload Documents
+      </button>
+      <div class="upload-disabled-note" *ngIf="!canUploadDocuments && uploadBlockReason">
+        <small>{{ uploadBlockReason }}</small>
+      </div>
     </div>
   </div>
 
-  <!-- KYC Status Card -->
+  <!-- KYC Status Card - Rejected -->
   <div class="kyc-status-card" *ngIf="kycStatus && kycStatus.status === 'rejected'">
     <div class="status-icon warning">⚠️</div>
     <div class="status-content">
       <h4>Verification Failed</h4>
       <p>{{ kycStatus.rejection_reason || 'Your documents were rejected. Please upload clear, valid documents.' }}</p>
-      <button class="btn-retry" (click)="switchTab('upload')">Upload Again</button>
+      <button class="btn-retry" (click)="switchTab('upload')" *ngIf="canUploadDocuments">
+        Upload Again
+      </button>
+      <div class="retry-disabled" *ngIf="!canUploadDocuments">
+        <small><i class="fas fa-info-circle"></i> {{ uploadBlockReason }}</small>
+      </div>
     </div>
   </div>
 
+  <!-- KYC Status Card - Verified -->
   <div class="kyc-status-card success" *ngIf="kycStatus && kycStatus.status === 'verified'">
     <div class="status-icon">✅</div>
     <div class="status-content">
@@ -277,6 +312,18 @@
       <div class="verified-date" *ngIf="kycStatus.verified_at">
         <i class="fas fa-calendar-check"></i> Verified on {{ formatDate(kycStatus.verified_at) }}
       </div>
+    </div>
+  </div>
+
+  <!-- KYC Status Card - Pending -->
+  <div class="kyc-status-card info" *ngIf="kycStatus && kycStatus.status === 'pending' && !hasPendingDocuments">
+    <div class="status-icon">⏳</div>
+    <div class="status-content">
+      <h4>Verification in Progress</h4>
+      <p>Your documents are currently under review. This usually takes 1-2 business days.</p>
+      <button class="btn-view-status" (click)="switchTab('history')">
+        <i class="fas fa-clock"></i> Track Progress
+      </button>
     </div>
   </div>
 </div>

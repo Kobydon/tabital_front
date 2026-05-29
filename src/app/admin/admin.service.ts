@@ -407,7 +407,51 @@ getPendingKYC(): Observable<any> {
     return this.http.put(`${this.API}/admin/kyc/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() });
   }
 
+// Add these methods to your AdminService
 
+// ============================================
+// CUSTOMER KYC MANAGEMENT
+// ============================================
+
+getPendingCustomerKYC(): Observable<any> {
+  return this.http.get(`${this.API}/admin/kyc/customers/pending`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getVerifiedCustomerKYC(): Observable<any> {
+  return this.http.get(`${this.API}/admin/kyc/customers/verified`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getRejectedCustomerKYC(): Observable<any> {
+  return this.http.get(`${this.API}/admin/kyc/customers/rejected`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getCustomerKYCDetail(customerId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/kyc/customer/${customerId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+approveCustomerKYC(customerId: number): Observable<any> {
+  return this.http.put(`${this.API}/admin/kyc/customer/approve/${customerId}`, {}, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+rejectCustomerKYC(customerId: number, rejectionReason: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/kyc/customer/reject/${customerId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+approveCustomerDocument(documentId: number): Observable<any> {
+  return this.http.put(`${this.API}/admin/kyc/customer/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+rejectCustomerDocument(documentId: number, rejectionReason: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/kyc/customer/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
 
 }
 
