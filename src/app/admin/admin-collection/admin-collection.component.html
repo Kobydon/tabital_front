@@ -1,0 +1,458 @@
+<div class="collection-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Collections</span>
+      </div>
+      <h1 class="title">Collections Management</h1>
+      <p class="subtitle">Monitor and manage overdue payments and recovery activities</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportOverduePayments()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <span class="stat-emoji">{{ stat.icon }}</span>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">
+          <span *ngIf="!stat.isCurrency">{{ formatNumber(stat.value) }}</span>
+          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
+        </p>
+        <span class="stat-trend" [class]="getTrendClass(stat.growth)">
+          <i class="fas" [class.fa-arrow-up]="stat.growth > 0" [class.fa-arrow-down]="stat.growth < 0"></i>
+          {{ Math.abs(stat.growth) }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by customer name, phone or plan ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedOverdueRange" (change)="applyFilters()">
+          <option *ngFor="let opt of overdueRangeOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading overdue payments...</p>
+  </div>
+
+  <!-- Overdue Payments Table -->
+  <div *ngIf="!isLoading" class="payments-table-container">
+    <div class="table-header">
+      <h3>Overdue Accounts ({{ totalItems }})</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="payments-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Merchant</th>
+            <th>Plan</th>
+            <th>Overdue Amount</th>
+            <th>Days Overdue</th>
+            <th>Next Action</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of overduePayments">
+            <td>
+              <div class="customer-info">
+                <strong>{{ payment.customer_name }}</strong>
+                <small>{{ payment.customer_phone }}</small>
+              </div>
+            </td>
+            <td>{{ payment.merchant_name }}</td>
+            <td class="plan-id">{{ payment.plan_id }}</td>
+            <td class="amount">{{ formatCurrency(payment.total_due) }}</td>
+            <td class="days-overdue">
+              <span class="overdue-badge" [class]="getOverdueRangeClass(payment.overdue_range)">
+                {{ payment.days_overdue }} days
+              </span>
+            </td>
+            <td>{{ formatDate(payment.due_date) }}</td>
+            <td>
+              <span class="status-badge" [class]="getOverdueRangeClass(payment.overdue_range)">
+                {{ payment.overdue_range }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="action-btn view" (click)="viewPaymentDetails(payment)" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn reminder" (click)="openReminderModal(payment)" title="Send Reminder">
+                <i class="fas fa-bell"></i>
+              </button>
+              <button class="action-btn mark" (click)="openMarkReceivedModal(payment)" title="Mark Received">
+                <i class="fas fa-check-circle"></i>
+              </button>
+              <button class="action-btn plan" (click)="openPaymentPlanModal(payment)" title="Set Payment Plan">
+                <i class="fas fa-calendar-alt"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="overduePayments.length === 0">
+            <td colspan="8" class="empty-row">
+              <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <p>No overdue payments found</p>
+                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} overdue payments
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Details Modal -->
+  <div class="modal-overlay" *ngIf="showPaymentModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-receipt"></i>
+          Overdue Payment Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedPayment">
+        <!-- Customer & Payment Info -->
+        <div class="info-section">
+          <div class="info-grid two-columns">
+            <div class="info-card">
+              <h4><i class="fas fa-user"></i> Customer Information</h4>
+              <div class="info-item">
+                <label>Name:</label>
+                <span>{{ selectedPayment.customer?.name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Phone:</label>
+                <span>{{ selectedPayment.customer?.phone }}</span>
+              </div>
+              <div class="info-item">
+                <label>Email:</label>
+                <span>{{ selectedPayment.customer?.email }}</span>
+              </div>
+            </div>
+            <div class="info-card">
+              <h4><i class="fas fa-store"></i> Merchant Information</h4>
+              <div class="info-item">
+                <label>Business Name:</label>
+                <span>{{ selectedPayment.merchant?.name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Phone:</label>
+                <span>{{ selectedPayment.merchant?.phone }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="info-section">
+          <h3><i class="fas fa-info-circle"></i> Payment Details</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Payment ID:</label>
+              <span>{{ selectedPayment.payment?.payment_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Plan ID:</label>
+              <span>{{ selectedPayment.plan?.plan_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Installment #:</label>
+              <span>{{ selectedPayment.payment?.installment_number }}</span>
+            </div>
+            <div class="info-item">
+              <label>Original Amount:</label>
+              <span>{{ formatCurrency(selectedPayment.payment?.amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Late Fee:</label>
+              <span class="late-fee">{{ formatCurrency(selectedPayment.payment?.late_fee) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Total Due:</label>
+              <span class="total-due">{{ formatCurrency(selectedPayment.payment?.total_due) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Due Date:</label>
+              <span>{{ formatDate(selectedPayment.payment?.due_date) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Days Overdue:</label>
+              <span class="days-overdue">{{ selectedPayment.payment?.days_overdue }} days</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Schedule -->
+        <div class="info-section">
+          <h3><i class="fas fa-calendar-alt"></i> Payment Schedule</h3>
+          <div class="schedule-table">
+            <div class="schedule-header">
+              <span>#</span>
+              <span>Due Date</span>
+              <span>Amount</span>
+              <span>Late Fee</span>
+              <span>Status</span>
+            </div>
+            <div class="schedule-row" *ngFor="let payment of selectedPayment.payment_schedule">
+              <span>{{ payment.installment_number }}</span>
+              <span>{{ formatDate(payment.due_date) }}</span>
+              <span>{{ formatCurrency(payment.amount) }}</span>
+              <span class="late-fee" *ngIf="payment.late_fee > 0">{{ formatCurrency(payment.late_fee) }}</span>
+              <span *ngIf="payment.late_fee == 0">-</span>
+              <span class="status-badge" [class]="payment.status === 'paid' ? 'status-paid' : 'status-overdue'">
+                {{ payment.status | titlecase }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collection Timeline -->
+        <div class="info-section">
+          <h3><i class="fas fa-timeline"></i> Collection Timeline</h3>
+          <div class="timeline">
+            <div class="timeline-item" *ngFor="let stage of selectedPayment.collection_timeline">
+              <div class="timeline-icon" [class.completed]="stage.completed">
+                <i class="fas" [class.fa-check]="stage.completed" [class.fa-clock]="!stage.completed"></i>
+              </div>
+              <div class="timeline-content">
+                <h4>{{ stage.stage }}</h4>
+                <p *ngIf="stage.completed_date">Completed: {{ formatDate(stage.completed_date) }}</p>
+                <ul>
+                  <li *ngFor="let action of stage.actions">{{ action }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openReminderModal(selectedPayment.payment)">
+          <i class="fas fa-bell"></i> Send Reminder
+        </button>
+        <button class="btn-success" (click)="openMarkReceivedModal(selectedPayment.payment)">
+          <i class="fas fa-check-circle"></i> Mark Received
+        </button>
+        <button class="btn-warning" (click)="openPaymentPlanModal(selectedPayment.payment)">
+          <i class="fas fa-calendar-alt"></i> Set Payment Plan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send Reminder Modal -->
+  <div class="modal-overlay" *ngIf="showReminderModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-bell"></i>
+          Send Payment Reminder
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Send reminder to <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
+        </p>
+        <p>Amount Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
+
+        <form [formGroup]="reminderForm">
+          <div class="form-group">
+            <label>Reminder Type *</label>
+            <div class="reminder-options">
+              <label *ngFor="let type of reminderTypeOptions" class="reminder-option">
+                <input type="radio" formControlName="reminder_type" [value]="type.value">
+                <i class="fab {{ type.icon }}"></i>
+                <span>{{ type.label }}</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="sendReminder()" [disabled]="reminderForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Sending...' : 'Send Reminder' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Received Modal -->
+  <div class="modal-overlay" *ngIf="showMarkReceivedModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-check-circle"></i>
+          Mark Payment Received
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Mark payment as received for <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
+        </p>
+        <p>Total Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
+
+        <form [formGroup]="markReceivedForm">
+          <div class="form-group">
+            <label>Amount Received *</label>
+            <input type="number" formControlName="amount_received" step="0.01" placeholder="Enter amount received">
+          </div>
+
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select formControlName="payment_method">
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="card">Card</option>
+              <option value="manual">Manual Entry</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Reference</label>
+            <input type="text" formControlName="payment_reference" placeholder="Transaction ID or Reference">
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-success" (click)="markAsReceived()" [disabled]="markReceivedForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Processing...' : 'Mark as Received' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set Payment Plan Modal -->
+  <div class="modal-overlay" *ngIf="showPaymentPlanModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-calendar-alt"></i>
+          Set Payment Plan
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Arrange payment plan for <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
+        </p>
+        <p>Amount Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
+
+        <form [formGroup]="paymentPlanForm">
+          <div class="form-group">
+            <label>Plan Type *</label>
+            <select formControlName="plan_type">
+              <option value="installments">Installments</option>
+              <option value="extension">Due Date Extension</option>
+              <option value="partial">Partial Payment</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="paymentPlanForm.get('plan_type')?.value === 'extension'">
+            <label>New Due Date *</label>
+            <input type="date" formControlName="new_due_date">
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="3" placeholder="Additional notes..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="setPaymentPlan()" [disabled]="paymentPlanForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Processing...' : 'Set Payment Plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

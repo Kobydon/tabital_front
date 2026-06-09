@@ -1,0 +1,358 @@
+<!-- system-settings.component.html -->
+<div class="system-settings-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>System Settings</h1>
+      <p class="description">Configure platform preferences, integrations and operational settings.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="resetSettings()">
+        <i class="icon-reset"></i> Reset
+      </button>
+      <button class="btn btn-primary" (click)="saveSettings()" [disabled]="isLoading">
+        <i class="icon-save"></i> {{ isLoading ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">⚙️</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.activeGroups }}</div>
+        <div class="stat-label">Active settings groups</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🟢</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.systemStatus }}</div>
+        <div class="stat-label">System Status</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔒</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.securityScore }}%</div>
+        <div class="stat-label">Security Score</div>
+        <div class="stat-progress">
+          <div class="progress-bar" [style.width.%]="stats.securityScore"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💾</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.lastBackup }}</div>
+        <div class="stat-label">Last Backup</div>
+        <button class="btn-link" (click)="triggerBackup()">Backup now</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔌</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.activeIntegrations }}</div>
+        <div class="stat-label">Active Integrations</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-layout">
+    <!-- Sidebar Categories -->
+    <div class="settings-sidebar">
+      <nav class="settings-nav">
+        <a href="#" class="nav-item active" data-section="general">General Settings</a>
+        <a href="#" class="nav-item" data-section="fees">Fee Configuration</a>
+        <a href="#" class="nav-item" data-section="installments">Installment Plans</a>
+        <a href="#" class="nav-item" data-section="api">API Settings</a>
+        <a href="#" class="nav-item" data-section="security">Security</a>
+        <a href="#" class="nav-item" data-section="notifications">Notifications</a>
+        <a href="#" class="nav-item" data-section="payout">Payout Settings</a>
+      </nav>
+      
+      <!-- System Status Widget -->
+      <div class="system-status-widget">
+        <h3>System Status</h3>
+        <div class="status-item">
+          <span class="status-indicator operational"></span>
+          <span>All Systems Operational</span>
+          <span class="status-value">Uptime: {{ systemUptime }}</span>
+        </div>
+      </div>
+      
+      <!-- Recent Changes Widget -->
+      <div class="recent-changes-widget">
+        <h3>Recent Changes</h3>
+        <div class="changes-list">
+          <div class="change-item" *ngFor="let change of recentChanges">
+            <div class="change-action">{{ change.action }}</div>
+            <div class="change-meta">by {{ change.user }} • {{ change.date }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="settings-content">
+      <form [formGroup]="settingsForm">
+        <!-- General Settings Section -->
+        <section id="general" class="settings-section">
+          <h2>General Settings</h2>
+          <p class="section-desc">Manage basic platform settings and preferences.</p>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Platform Name</label>
+              <input type="text" formControlName="platformName" class="form-control">
+              <small>The name of your platform</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Default Currency</label>
+              <select formControlName="defaultCurrency" class="form-control">
+                <option value="GHS">Ghana Cedi (GHS)</option>
+                <option value="NGN">Nigerian Naira (NGN)</option>
+                <option value="USD">US Dollar (USD)</option>
+                <option value="EUR">Euro (EUR)</option>
+              </select>
+              <small>Default currency for all transactions</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Timezone</label>
+              <select formControlName="timezone" class="form-control">
+                <option value="Africa/Accra">Africa/Accra</option>
+                <option value="Africa/Lagos">Africa/Lagos</option>
+                <option value="Africa/Nairobi">Africa/Nairobi</option>
+                <option value="UTC">UTC</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label>Date Format</label>
+              <select formControlName="dateFormat" class="form-control">
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label>Time Format</label>
+              <select formControlName="timeFormat" class="form-control">
+                <option value="12h">12-hour (AM/PM)</option>
+                <option value="24h">24-hour</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label>Language</label>
+              <select formControlName="language" class="form-control">
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="pt">Portuguese</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="maintenanceMode">
+              <span>Maintenance Mode</span>
+            </label>
+            <small>Put the platform in maintenance mode</small>
+          </div>
+        </section>
+
+        <!-- Fee Configuration Section -->
+        <section id="fees" class="settings-section">
+          <h2>Fee Configuration</h2>
+          <p class="section-desc">Configure merchant fees, late fees and service charges.</p>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Merchant Fee (%)</label>
+              <input type="number" formControlName="merchantFeePercentage" class="form-control" step="0.1">
+              <small>Percentage charged to merchants per transaction</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Late Fee (%)</label>
+              <input type="number" formControlName="lateFeePercentage" class="form-control" step="0.1">
+              <small>Percentage charged on overdue payments</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Service Fee</label>
+              <input type="number" formControlName="serviceFee" class="form-control">
+              <small>Fixed service fee per transaction (in {{ settingsForm.get('defaultCurrency')?.value }})</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Late Fee Grace Period (Days)</label>
+              <input type="number" formControlName="lateFeeGracePeriodDays" class="form-control">
+              <small>Days after due date before late fee applies</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Installment Plans Section -->
+        <section id="installments" class="settings-section">
+          <h2>Installment Plans</h2>
+          <p class="section-desc">Configure available installment plan options for customers.</p>
+          
+          <div class="installment-options" [formGroup]="installmentOptionsForm">
+            <div class="installment-header">
+              <div>Months</div>
+              <div>Down Payment %</div>
+              <div>Interest Rate %</div>
+              <div>Enabled</div>
+              <div></div>
+            </div>
+            
+            <div formArrayName="options">
+              <div *ngFor="let option of installmentOptionsArray.controls; let i = index" 
+                   class="installment-row" [formGroupName]="i">
+                <div class="months-badge">{{ option.get('months')?.value }} months</div>
+                <input type="number" formControlName="downPayment" step="1" class="form-control small">
+                <input type="number" formControlName="interestRate" step="0.1" class="form-control small">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="enabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <button type="button" class="btn-icon" (click)="removeInstallmentOption(i)" *ngIf="i >= 4">
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <button type="button" class="btn-secondary" (click)="addInstallmentOption()">
+              + Add Installment Plan
+            </button>
+          </div>
+          
+          <div class="installment-presets">
+            <h4>Preset Plans</h4>
+            <div class="preset-buttons">
+              <button *ngFor="let preset of installmentPresets" 
+                      class="btn-outline" 
+                      (click)="applyPreset(preset)">
+                {{ preset.months }} Month{{ preset.months > 1 ? 's' : '' }} - {{ preset.downPayment }}% Down
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- API Settings Section -->
+        <section id="api" class="settings-section">
+          <h2>API Settings</h2>
+          <p class="section-desc">Configure API rate limits and access controls.</p>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Rate Limit (requests per window)</label>
+              <input type="number" formControlName="apiRateLimit" class="form-control">
+              <small>Maximum API requests per window</small>
+            </div>
+            
+            <div class="form-field">
+              <label>Rate Limit Window (seconds)</label>
+              <input type="number" formControlName="apiRateLimitWindow" class="form-control">
+              <small>Time window for rate limiting</small>
+            </div>
+          </div>
+          
+          <button type="button" class="btn-secondary" (click)="testApiConnection()">
+            Test API Connection
+          </button>
+        </section>
+
+        <!-- Security Settings Section -->
+        <section id="security" class="settings-section">
+          <h2>Security Settings</h2>
+          <p class="section-desc">Configure security policies and access controls.</p>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Session Timeout (minutes)</label>
+              <input type="number" formControlName="sessionTimeout" class="form-control">
+            </div>
+            
+            <div class="form-field">
+              <label>Max Login Attempts</label>
+              <input type="number" formControlName="maxLoginAttempts" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="twoFactorRequired">
+              <span>Require Two-Factor Authentication for all admin users</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Notification Settings -->
+        <section id="notifications" class="settings-section">
+          <h2>Notification Settings</h2>
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="emailNotifications">
+              <span>Enable Email Notifications</span>
+            </label>
+          </div>
+          
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="smsNotifications">
+              <span>Enable SMS Notifications</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Payout Settings -->
+        <section id="payout" class="settings-section">
+          <h2>Payout Settings</h2>
+          
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Minimum Payout Amount</label>
+              <input type="number" formControlName="minimumPayoutAmount" class="form-control">
+            </div>
+            
+            <div class="form-field">
+              <label>Payout Schedule</label>
+              <select formControlName="payoutSchedule" class="form-control">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="autoPayoutEnabled">
+              <span>Enable Automatic Payouts</span>
+            </label>
+          </div>
+        </section>
+      </form>
+      
+      <div class="settings-footer">
+        <div class="warning-message">
+          ⚠️ Changes to system settings may affect platform operations. Please review carefully before saving.
+        </div>
+        <div class="footer-actions">
+          <button class="btn-secondary" (click)="exportSettings()">Export Settings</button>
+          <button class="btn-primary" (click)="saveSettings()" [disabled]="isLoading">
+            {{ isLoading ? 'Saving...' : 'Save All Changes' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

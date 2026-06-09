@@ -1,0 +1,433 @@
+<div class="merchant-overview-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Merchants</span>
+      </div>
+      <h1 class="title">Merchant Overview</h1>
+      <p class="subtitle">View and manage merchant accounts, performance, risk and settlement</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportMerchants()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <i class="fas {{ stat.icon }}"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">
+          <span *ngIf="!stat.isCurrency">{{ formatNumber(stat.value) }}{{ stat.suffix }}</span>
+          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
+        </p>
+        <span class="stat-trend" [class]="getTrendClass(stat.growth)">
+          <i class="fas" [class.fa-arrow-up]="stat.growth > 0" [class.fa-arrow-down]="stat.growth < 0"></i>
+          {{ Math.abs(stat.growth) }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by business name, owner, phone, email or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedRiskLevel" (change)="applyFilters()">
+          <option *ngFor="let opt of riskLevelOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedMerchantStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of merchantStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading merchants...</p>
+  </div>
+
+  <!-- Merchants Table -->
+  <div *ngIf="!isLoading" class="merchants-table-container">
+    <div class="table-header">
+      <h3>Merchants ({{ totalItems }})</h3>
+    </div>
+    <table class="merchants-table">
+      <thead>
+        <tr>
+          <th (click)="onSort('merchant_id')" class="sortable">
+            Merchant ID
+            <i class="fas" [class.fa-sort]="sortBy !== 'merchant_id'" 
+               [class.fa-sort-up]="sortBy === 'merchant_id' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'merchant_id' && sortOrder === 'desc'"></i>
+          </th>
+          <th (click)="onSort('business_name')" class="sortable">
+            Merchant Name
+            <i class="fas" [class.fa-sort]="sortBy !== 'business_name'" 
+               [class.fa-sort-up]="sortBy === 'business_name' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'business_name' && sortOrder === 'desc'"></i>
+          </th>
+          <th>Business Type</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Risk Level</th>
+          <th (click)="onSort('total_gmv')" class="sortable">
+            GMV (30 Days)
+            <i class="fas" [class.fa-sort]="sortBy !== 'total_gmv'" 
+               [class.fa-sort-up]="sortBy === 'total_gmv' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'total_gmv' && sortOrder === 'desc'"></i>
+          </th>
+          <th>Payout Cycle</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let merchant of merchants">
+          <td class="merchant-id">{{ merchant.merchant_id }}</td>
+          <td class="merchant-name">
+            <strong>{{ merchant.business_name }}</strong>
+          </td>
+          <td>{{ merchant.business_type }}</td>
+          <td>{{ merchant.business_email }}</td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(merchant.status)">
+              {{ merchant.status | titlecase }}
+            </span>
+          </td>
+          <td>
+            <span class="risk-badge" [class]="getRiskClass(merchant.risk_level)">
+              {{ merchant.risk_level }}
+            </span>
+          </td>
+          <td class="amount">{{ formatCurrency(merchant.total_gmv) }}</td>
+          <td>T+1</td>
+          <td class="actions">
+            <button class="action-btn view" (click)="viewMerchantDetails(merchant)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="action-btn edit" (click)="openUpdateStatusModal(merchant)" title="Update Status">
+              <i class="fas fa-user-edit"></i>
+            </button>
+            <button class="action-btn commission" (click)="openUpdateCommissionModal(merchant)" title="Update Commission">
+              <i class="fas fa-percent"></i>
+            </button>
+            <button class="action-btn transactions" (click)="viewTransactions(merchant)" title="View Transactions">
+              <i class="fas fa-receipt"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="merchants.length === 0">
+          <td colspan="9" class="empty-row">
+            <div class="empty-state">
+              <i class="fas fa-store"></i>
+              <p>No merchants found</p>
+              <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} merchants
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Merchant Details Modal -->
+  <div class="modal-overlay" *ngIf="showMerchantModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-store"></i>
+          Merchant Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedMerchant">
+        <!-- Merchant Profile -->
+        <div class="profile-section">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fas fa-store fa-4x"></i>
+            </div>
+            <div class="profile-info">
+              <h3>{{ selectedMerchant.merchant?.business_name }}</h3>
+              <p class="merchant-id">ID: {{ selectedMerchant.merchant?.merchant_id }}</p>
+              <div class="profile-meta">
+                <span class="status-badge" [class]="getStatusClass(selectedMerchant.merchant?.status)">
+                  {{ selectedMerchant.merchant?.status | titlecase }}
+                </span>
+                <span class="risk-badge" [class]="getRiskClass(selectedMerchant.merchant?.risk_level || 'Low')">
+                  Risk: {{ selectedMerchant.merchant?.risk_level || 'Low' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-details">
+            <div class="detail-item">
+              <label>Owner Name:</label>
+              <span>{{ selectedMerchant.merchant?.owner_name }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Phone:</label>
+              <span>{{ selectedMerchant.merchant?.phone }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Email:</label>
+              <span>{{ selectedMerchant.merchant?.business_email }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Business Type:</label>
+              <span>{{ selectedMerchant.merchant?.business_type }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Date Joined:</label>
+              <span>{{ formatDate(selectedMerchant.merchant?.created_at) }}</span>
+            </div>
+            <div class="detail-item">
+              <label>KYC Status:</label>
+              <span class="kyc-badge" [class]="getKYCStatusClass(selectedMerchant.merchant?.kyc_status)">
+                {{ selectedMerchant.merchant?.kyc_status | titlecase }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Overview -->
+        <div class="financial-section">
+          <h3><i class="fas fa-chart-line"></i> Financial Overview</h3>
+          <div class="financial-grid">
+            <div class="financial-card">
+              <span class="label">Total GMV</span>
+              <span class="value">{{ formatCurrency(selectedMerchant.financial?.total_gmv) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Outstanding</span>
+              <span class="value">{{ formatCurrency(selectedMerchant.financial?.total_outstanding) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Commission</span>
+              <span class="value">{{ formatCurrency(selectedMerchant.financial?.total_commission) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Commission Rate</span>
+              <span class="value">{{ selectedMerchant.financial?.commission_rate }}%</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Products</span>
+              <span class="value">{{ selectedMerchant.financial?.total_products || 0 }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Active Plans</span>
+              <span class="value">{{ selectedMerchant.financial?.active_plans || 0 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="bank-section" *ngIf="selectedMerchant.bank_details">
+          <h3><i class="fas fa-university"></i> Bank Account Details</h3>
+          <div class="bank-grid">
+            <div class="bank-item">
+              <label>Bank Name:</label>
+              <span>{{ selectedMerchant.bank_details?.bank_name || 'N/A' }}</span>
+            </div>
+            <div class="bank-item">
+              <label>Account Name:</label>
+              <span>{{ selectedMerchant.bank_details?.account_name || 'N/A' }}</span>
+            </div>
+            <div class="bank-item">
+              <label>Account Number:</label>
+              <span>{{ selectedMerchant.bank_details?.account_number || 'N/A' }}</span>
+            </div>
+            <div class="bank-item">
+              <label>Branch:</label>
+              <span>{{ selectedMerchant.bank_details?.branch_name || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="transactions-section">
+          <h3><i class="fas fa-history"></i> Recent Transactions</h3>
+          <div class="transactions-list">
+            <div class="transaction-item" *ngFor="let tx of selectedMerchant.recent_transactions">
+              <div class="transaction-info">
+                <span class="transaction-id">{{ tx.plan_id }}</span>
+                <span class="customer-name">{{ tx.customer_name }}</span>
+              </div>
+              <div class="transaction-amount">{{ formatCurrency(tx.amount) }}</div>
+              <div class="transaction-status" [class]="tx.status">
+                {{ tx.status | titlecase }}
+              </div>
+              <div class="transaction-date">{{ tx.created_at }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openUpdateStatusModal(selectedMerchant.merchant)">
+          <i class="fas fa-user-edit"></i> Update Status
+        </button>
+        <button class="btn-primary" (click)="viewTransactions(selectedMerchant.merchant)">
+          <i class="fas fa-receipt"></i> View Transactions
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-user-edit"></i>
+          Update Merchant Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update status for <strong>{{ selectedMerchant?.merchant?.business_name }}</strong>
+        </p>
+
+        <form [formGroup]="updateStatusForm">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option value="active">Active</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="restricted">Restricted</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateMerchantStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Commission Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateCommissionModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-percent"></i>
+          Update Commission Rate
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update commission rate for <strong>{{ selectedMerchant?.merchant?.business_name }}</strong>
+        </p>
+        <p class="current-rate">Current Rate: <strong>{{ selectedMerchant?.merchant?.commission_rate || 10 }}%</strong></p>
+
+        <form [formGroup]="updateCommissionForm">
+          <div class="form-group">
+            <label>New Commission Rate (%) *</label>
+            <input type="number" formControlName="commission_rate" placeholder="Enter commission rate" step="0.5">
+            <small class="hint">Range: 0% - 100%</small>
+            <small *ngIf="updateCommissionForm.get('commission_rate')?.invalid && updateCommissionForm.get('commission_rate')?.touched" class="error">
+              Commission rate must be between 0 and 100
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for rate change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateCommissionRate()" [disabled]="updateCommissionForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Rate' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

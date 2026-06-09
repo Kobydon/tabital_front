@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -8,14 +8,61 @@ import { Router } from '@angular/router';
 })
 export class LayoutComponent {
   isCollapsed = false;
+  isMobileOpen = false;  // New state for mobile sidebar visibility
   activeDropdown: string | null = null;
   showUserMenu = false;
+  isMobile = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) {
+    this.checkScreenSize();
+  }
+
+  ngOnInit() {
+    this.checkScreenSize();
+  }
+
+  @HostListener('window:resize', [])
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  checkScreenSize() {
+    this.isMobile = window.innerWidth <= 768;
+    
+    if (!this.isMobile) {
+      // On desktop, reset mobile state
+      this.isMobileOpen = false;
+    } else {
+      // On mobile, ensure sidebar is closed by default
+      if (!this.isMobileOpen) {
+        this.isMobileOpen = false;
+      }
+    }
+  }
 
   toggleSidebar() {
-    this.isCollapsed = !this.isCollapsed;
-    if (this.isCollapsed) {
+    if (this.isMobile) {
+      // On mobile: toggle the sidebar visibility
+      this.isMobileOpen = !this.isMobileOpen;
+      // Close dropdowns when sidebar closes
+      if (!this.isMobileOpen) {
+        this.activeDropdown = null;
+        this.showUserMenu = false;
+      }
+    } else {
+      // On desktop: toggle collapsed state
+      this.isCollapsed = !this.isCollapsed;
+      if (this.isCollapsed) {
+        this.activeDropdown = null;
+        this.showUserMenu = false;
+      }
+    }
+  }
+
+  // Method to close sidebar on mobile (when clicking overlay)
+  closeSidebar() {
+    if (this.isMobile) {
+      this.isMobileOpen = false;
       this.activeDropdown = null;
       this.showUserMenu = false;
     }

@@ -1,1 +1,445 @@
-<p>all-users works!</p>
+<div class="all-users-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">All Users</span>
+      </div>
+      <h1 class="title">User Management</h1>
+      <p class="subtitle">View and manage all users across the platform</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportUsers()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <span class="stat-emoji">{{ stat.icon }}</span>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">{{ formatNumber(stat.value) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, phone, email, or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedRole" (change)="applyFilters()">
+          <option *ngFor="let opt of roleOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading users...</p>
+  </div>
+
+  <!-- Users Table -->
+  <div *ngIf="!isLoading" class="users-table-container">
+    <div class="table-header">
+      <h3>All Users ({{ totalItems }})</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th (click)="onSort('user_id')" class="sortable">
+              User ID
+              <i class="fas" [class.fa-sort]="sortBy !== 'user_id'" 
+                 [class.fa-sort-up]="sortBy === 'user_id' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'user_id' && sortOrder === 'desc'"></i>
+            </th>
+            <th (click)="onSort('full_name')" class="sortable">
+              Name
+              <i class="fas" [class.fa-sort]="sortBy !== 'full_name'" 
+                 [class.fa-sort-up]="sortBy === 'full_name' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'full_name' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>KYC Status</th>
+            <th>City</th>
+            <th (click)="onSort('created_at')" class="sortable">
+              Joined
+              <i class="fas" [class.fa-sort]="sortBy !== 'created_at'" 
+                 [class.fa-sort-up]="sortBy === 'created_at' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'created_at' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td class="user-id">{{ user.user_id }}</td>
+            <td class="user-name">
+              <strong>{{ user.full_name }}</strong>
+            </td>
+            <td>{{ user.phone }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="role-badge" [class]="getRoleClass(user.role)">
+                {{ user.role | titlecase }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(user.status)">
+                {{ user.status | titlecase }}
+              </span>
+            </td>
+            <td>
+              <span class="kyc-badge" [class]="getKYCStatusClass(user.kyc_status)">
+                {{ user.kyc_status | titlecase }}
+              </span>
+            </td>
+            <td>{{ user.city }}</td>
+            <td>{{ formatDate(user.created_at) }}</td>
+            <td class="actions">
+              <button class="action-btn view" (click)="viewUserDetails(user)" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn edit" (click)="openUpdateStatusModal(user)" title="Update Status">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" (click)="openDeleteConfirmModal(user)" title="Deactivate User">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="users.length === 0">
+            <td colspan="10" class="empty-row">
+              <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>No users found</p>
+                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} users
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Details Modal -->
+  <div class="modal-overlay" *ngIf="showUserModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-user-circle"></i>
+          User Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedUser">
+        <!-- User Profile -->
+        <div class="profile-section">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fas fa-user-circle fa-4x"></i>
+            </div>
+            <div class="profile-info">
+              <h3>{{ selectedUser.full_name || selectedUser.business_name }}</h3>
+              <p class="user-id">ID: {{ selectedUser.user_id }}</p>
+              <div class="profile-meta">
+                <span class="role-badge" [class]="getRoleClass(selectedUser.role)">
+                  {{ selectedUser.role | titlecase }}
+                </span>
+                <span class="status-badge" [class]="getStatusClass(selectedUser.status)">
+                  {{ selectedUser.status | titlecase }}
+                </span>
+                <span class="kyc-badge" [class]="getKYCStatusClass(selectedUser.kyc_status)">
+                  {{ selectedUser.kyc_status | titlecase }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Basic Info -->
+          <div class="info-section">
+            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Phone:</label>
+                <span>{{ selectedUser.phone }}</span>
+              </div>
+              <div class="info-item">
+                <label>Email:</label>
+                <span>{{ selectedUser.email }}</span>
+              </div>
+              <div class="info-item">
+                <label>City:</label>
+                <span>{{ selectedUser.city || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Joined:</label>
+                <span>{{ formatDate(selectedUser.created_at) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Last Updated:</label>
+                <span>{{ formatDate(selectedUser.updated_at) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Details -->
+          <div class="info-section" *ngIf="selectedUser.role === 'customer'">
+            <h3><i class="fas fa-user"></i> Customer Details</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Full Name:</label>
+                <span>{{ selectedUser.full_name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Date of Birth:</label>
+                <span>{{ selectedUser.dob || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Address:</label>
+                <span>{{ selectedUser.address || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>GPS:</label>
+                <span>{{ selectedUser.gps || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Income Range:</label>
+                <span>{{ selectedUser.income_range || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Designation:</label>
+                <span>{{ selectedUser.designation || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Company:</label>
+                <span>{{ selectedUser.company || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Reference Name:</label>
+                <span>{{ selectedUser.ref_name || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Reference Phone:</label>
+                <span>{{ selectedUser.ref_phone || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Reference Relationship:</label>
+                <span>{{ selectedUser.ref_relationship || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Merchant Details -->
+          <div class="info-section" *ngIf="selectedUser.role === 'merchant'">
+            <h3><i class="fas fa-store"></i> Merchant Details</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Business Name:</label>
+                <span>{{ selectedUser.business_name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Owner Name:</label>
+                <span>{{ selectedUser.owner_name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Business Type:</label>
+                <span>{{ selectedUser.business_type || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Business Address:</label>
+                <span>{{ selectedUser.business_address || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Business Phone:</label>
+                <span>{{ selectedUser.business_phone || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Business Email:</label>
+                <span>{{ selectedUser.business_email || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Website:</label>
+                <span>{{ selectedUser.website || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Total Products:</label>
+                <span>{{ selectedUser.total_products || 0 }}</span>
+              </div>
+              <div class="info-item">
+                <label>Total Sales:</label>
+                <span>{{ formatCurrency(selectedUser.total_sales) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Rating:</label>
+                <span>{{ selectedUser.rating || 0 }} ⭐</span>
+              </div>
+              <div class="info-item">
+                <label>Commission Rate:</label>
+                <span>{{ selectedUser.commission_rate || 2.5 }}%</span>
+              </div>
+              <div class="info-item">
+                <label>Pending Payout:</label>
+                <span>{{ formatCurrency(selectedUser.pending_payout) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openUpdateStatusModal(selectedUser)">
+          <i class="fas fa-edit"></i> Update Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-edit"></i>
+          Update User Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update status for <strong>{{ selectedUser?.user?.full_name || selectedUser?.user?.business_name }}</strong>
+        </p>
+
+        <form [formGroup]="updateStatusForm">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option value="approved">Approved</option>
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="suspended">Suspended</option>
+              <option value="restricted">Restricted</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateUserStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exclamation-triangle"></i>
+          Deactivate User
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="warning-text">
+          Are you sure you want to deactivate <strong>{{ selectedUser?.user?.full_name || selectedUser?.user?.business_name }}</strong>?
+        </p>
+        <p class="warning-text small">
+          This action will suspend the user's account. They will not be able to log in or perform any actions until reactivated.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-danger" (click)="deleteUser()" [disabled]="isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Processing...' : 'Deactivate User' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

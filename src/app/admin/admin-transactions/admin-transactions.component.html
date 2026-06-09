@@ -1,0 +1,552 @@
+<div class="transactions-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Transactions</span>
+      </div>
+      <h1 class="title">Transaction Management</h1>
+      <p class="subtitle">View and manage all transactions, track payments and refunds</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportTransactions()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <span class="stat-emoji">{{ stat.icon }}</span>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">
+          <span *ngIf="!stat.isCurrency">{{ formatNumber(stat.value) }}{{ stat.suffix }}</span>
+          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
+        </p>
+        <span class="stat-trend" [class]="getTrendClass(stat.growth)" *ngIf="stat.growth !== 0">
+          <i class="fas" [class.fa-arrow-up]="stat.growth > 0" [class.fa-arrow-down]="stat.growth < 0"></i>
+          {{ Math.abs(stat.growth) }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by transaction ID, product, customer..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <input type="date" [(ngModel)]="selectedDateFrom" (change)="applyFilters()" placeholder="From Date">
+      </div>
+
+      <div class="filter-group">
+        <input type="date" [(ngModel)]="selectedDateTo" (change)="applyFilters()" placeholder="To Date">
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Transactions Table -->
+  <div *ngIf="!isLoading" class="transactions-table-container">
+    <div class="table-header">
+      <h3>Transactions ({{ totalItems }})</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="transactions-table">
+        <thead>
+          <tr>
+            <th (click)="onSort('transaction_id')" class="sortable">
+              Transaction ID
+              <i class="fas" [class.fa-sort]="sortBy !== 'transaction_id'" 
+                 [class.fa-sort-up]="sortBy === 'transaction_id' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'transaction_id' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Customer</th>
+            <th>Merchant</th>
+            <th (click)="onSort('amount')" class="sortable">
+              Amount
+              <i class="fas" [class.fa-sort]="sortBy !== 'amount'" 
+                 [class.fa-sort-up]="sortBy === 'amount' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'amount' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Product</th>
+            <th>Payment Method</th>
+            <th>Status</th>
+            <th>Delivery Status</th>
+            <th (click)="onSort('created_at')" class="sortable">
+              Date
+              <i class="fas" [class.fa-sort]="sortBy !== 'created_at'" 
+                 [class.fa-sort-up]="sortBy === 'created_at' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'created_at' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of transactions">
+            <td class="transaction-id">{{ transaction.transaction_id }}</td>
+            <td>
+              <div class="customer-info">
+                <strong>{{ transaction.customer_name }}</strong>
+                <small>{{ transaction.customer_phone }}</small>
+              </div>
+            </td>
+            <td>
+              <div class="merchant-info">
+                <strong>{{ transaction.merchant_name }}</strong>
+                <small>{{ transaction.merchant_phone }}</small>
+              </div>
+            </td>
+            <td class="amount">{{ formatCurrency(transaction.amount) }}</td>
+            <td>
+              <div class="product-info">
+                <strong>{{ transaction.product_name }}</strong>
+                <small>Qty: {{ transaction.quantity }}</small>
+              </div>
+            </td>
+            <td>{{ transaction.payment_method }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(transaction.status)">
+                {{ transaction.status | titlecase }}
+              </span>
+            </td>
+            <td>
+              <span class="delivery-badge" [class]="getDeliveryStatusClass(transaction.delivery_status)">
+                {{ transaction.delivery_status | titlecase }}
+              </span>
+            </td>
+            <td>{{ formatDate(transaction.created_at) }}</td>
+            <td class="actions">
+              <button class="action-btn view" (click)="viewTransactionDetails(transaction)" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn edit" (click)="openUpdateStatusModal(transaction)" title="Update Status">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delivery" (click)="openUpdateDeliveryModal(transaction)" title="Update Delivery">
+                <i class="fas fa-truck"></i>
+              </button>
+              <button class="action-btn refund" (click)="openRefundModal(transaction)" title="Refund" *ngIf="transaction.status === 'completed'">
+                <i class="fas fa-undo-alt"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="transactions.length === 0">
+            <td colspan="10" class="empty-row">
+              <div class="empty-state">
+                <i class="fas fa-receipt"></i>
+                <p>No transactions found</p>
+                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} transactions
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Details Modal -->
+  <div class="modal-overlay" *ngIf="showTransactionModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-receipt"></i>
+          Transaction Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedTransaction">
+        <!-- Transaction Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-info-circle"></i> Transaction Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Transaction ID:</label>
+              <span>{{ selectedTransaction.transaction?.transaction_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span class="status-badge" [class]="getStatusClass(selectedTransaction.transaction?.status)">
+                {{ selectedTransaction.transaction?.status | titlecase }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Amount:</label>
+              <span class="amount">{{ formatCurrency(selectedTransaction.transaction?.amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payout Amount:</label>
+              <span>{{ formatCurrency(selectedTransaction.transaction?.payout_amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payment Method:</label>
+              <span>{{ selectedTransaction.transaction?.payment_method }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payment Reference:</label>
+              <span>{{ selectedTransaction.transaction?.payment_reference }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payment Plan:</label>
+              <span>{{ selectedTransaction.transaction?.payment_plan }}</span>
+            </div>
+            <div class="info-item">
+              <label>Created At:</label>
+              <span>{{ formatDate(selectedTransaction.transaction?.created_at) }}</span>
+            </div>
+            <div class="info-item" *ngIf="selectedTransaction.transaction?.completion_date">
+              <label>Completed At:</label>
+              <span>{{ formatDate(selectedTransaction.transaction?.completion_date) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-user"></i> Customer Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Name:</label>
+              <span>{{ selectedTransaction.customer?.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ selectedTransaction.customer?.phone }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ selectedTransaction.customer?.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-store"></i> Merchant Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Business Name:</label>
+              <span>{{ selectedTransaction.merchant?.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ selectedTransaction.merchant?.phone }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ selectedTransaction.merchant?.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-box"></i> Product Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Product Name:</label>
+              <span>{{ selectedTransaction.transaction?.product_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Quantity:</label>
+              <span>{{ selectedTransaction.transaction?.quantity }}</span>
+            </div>
+            <div class="info-item">
+              <label>Description:</label>
+              <span>{{ selectedTransaction.transaction?.product_description }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-truck"></i> Delivery Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Delivery Status:</label>
+              <span class="delivery-badge" [class]="getDeliveryStatusClass(selectedTransaction.transaction?.delivery_status)">
+                {{ selectedTransaction.transaction?.delivery_status | titlecase }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Tracking Number:</label>
+              <span>{{ selectedTransaction.transaction?.tracking_number || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Delivery Address:</label>
+              <span>{{ selectedTransaction.transaction?.delivery_address }}</span>
+            </div>
+            <div class="info-item" *ngIf="selectedTransaction.transaction?.notes">
+              <label>Notes:</label>
+              <span>{{ selectedTransaction.transaction?.notes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instalment Plan -->
+        <div class="info-section" *ngIf="selectedTransaction.instalment_plan">
+          <h3><i class="fas fa-calendar-alt"></i> Instalment Plan</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Plan ID:</label>
+              <span>{{ selectedTransaction.instalment_plan?.plan_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Total Amount:</label>
+              <span>{{ formatCurrency(selectedTransaction.instalment_plan?.total_amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Remaining Amount:</label>
+              <span>{{ formatCurrency(selectedTransaction.instalment_plan?.remaining_amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Installments:</label>
+              <span>{{ selectedTransaction.instalment_plan?.number_of_installments }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span>{{ selectedTransaction.instalment_plan?.status | titlecase }}</span>
+            </div>
+          </div>
+
+          <!-- Payment Schedule -->
+          <div class="payment-schedule" *ngIf="selectedTransaction.payment_schedule?.length > 0">
+            <h4>Payment Schedule</h4>
+            <div class="schedule-table">
+              <div class="schedule-header">
+                <span>Installment</span>
+                <span>Due Date</span>
+                <span>Amount</span>
+                <span>Status</span>
+              </div>
+              <div class="schedule-row" *ngFor="let payment of selectedTransaction.payment_schedule">
+                <span>{{ payment.installment_number }}</span>
+                <span>{{ formatDate(payment.due_date) }}</span>
+                <span>{{ formatCurrency(payment.amount) }}</span>
+                <span class="status-badge" [class]="getStatusClass(payment.status)">
+                  {{ payment.status | titlecase }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openUpdateStatusModal(selectedTransaction.transaction)">
+          <i class="fas fa-edit"></i> Update Status
+        </button>
+        <button class="btn-primary" (click)="openUpdateDeliveryModal(selectedTransaction.transaction)">
+          <i class="fas fa-truck"></i> Update Delivery
+        </button>
+        <button class="btn-danger" (click)="openRefundModal(selectedTransaction.transaction)" *ngIf="selectedTransaction.transaction?.status === 'completed'">
+          <i class="fas fa-undo-alt"></i> Refund
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-edit"></i>
+          Update Transaction Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update status for transaction <strong>{{ selectedTransaction?.transaction?.transaction_id }}</strong>
+        </p>
+
+        <form [formGroup]="updateStatusForm">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateTransactionStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Delivery Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateDeliveryModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-truck"></i>
+          Update Delivery Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update delivery for transaction <strong>{{ selectedTransaction?.transaction?.transaction_id }}</strong>
+        </p>
+
+        <form [formGroup]="updateDeliveryForm">
+          <div class="form-group">
+            <label>Delivery Status *</label>
+            <select formControlName="delivery_status">
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Tracking Number</label>
+            <input type="text" formControlName="tracking_number" placeholder="Enter tracking number">
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateDeliveryStatus()" [disabled]="updateDeliveryForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Delivery' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refund Modal -->
+  <div class="modal-overlay" *ngIf="showRefundModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-undo-alt"></i>
+          Process Refund
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Process refund for transaction <strong>{{ selectedTransaction?.transaction?.transaction_id }}</strong>
+        </p>
+        <p class="transaction-amount">Transaction Amount: <strong>{{ formatCurrency(selectedTransaction?.transaction?.amount) }}</strong></p>
+
+        <form [formGroup]="refundForm">
+          <div class="form-group">
+            <label>Refund Amount *</label>
+            <input type="number" formControlName="refund_amount" step="0.01" placeholder="Enter refund amount">
+            <small class="hint">Maximum refund amount: {{ formatCurrency(selectedTransaction?.transaction?.amount) }}</small>
+            <small *ngIf="refundForm.get('refund_amount')?.invalid && refundForm.get('refund_amount')?.touched" class="error">
+              Valid refund amount is required
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for refund..."></textarea>
+            <small *ngIf="refundForm.get('reason')?.invalid && refundForm.get('reason')?.touched" class="error">
+              Reason is required
+            </small>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-danger" (click)="processRefund()" [disabled]="refundForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Processing...' : 'Process Refund' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

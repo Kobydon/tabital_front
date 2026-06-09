@@ -1,0 +1,428 @@
+<div class="product-plans-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Products & Plans</span>
+      </div>
+      <h1 class="title">Products & Plans</h1>
+      <p class="subtitle">Manage products, instalment plans, and product inventory</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportProducts()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <span class="stat-emoji">{{ stat.icon }}</span>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">
+          <span *ngIf="!stat.isCurrency">{{ formatNumber(stat.value) }}</span>
+          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, brand, model, or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedCategory" (change)="applyFilters()">
+          <option *ngFor="let opt of categoryOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Products Table -->
+  <div *ngIf="!isLoading" class="products-table-container">
+    <div class="table-header">
+      <h3>Products ({{ totalItems }})</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th (click)="onSort('product_id')" class="sortable">
+              Product ID
+              <i class="fas" [class.fa-sort]="sortBy !== 'product_id'" 
+                 [class.fa-sort-up]="sortBy === 'product_id' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'product_id' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Brand/Model</th>
+            <th (click)="onSort('price')" class="sortable">
+              Price
+              <i class="fas" [class.fa-sort]="sortBy !== 'price'" 
+                 [class.fa-sort-up]="sortBy === 'price' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'price' && sortOrder === 'desc'"></i>
+            </th>
+            <th (click)="onSort('stock_quantity')" class="sortable">
+              Stock
+              <i class="fas" [class.fa-sort]="sortBy !== 'stock_quantity'" 
+                 [class.fa-sort-up]="sortBy === 'stock_quantity' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'stock_quantity' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Status</th>
+            <th>Featured</th>
+            <th>Merchant</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td class="product-id">{{ product.product_id }}</td>
+            <td class="product-name">
+              <div class="product-info">
+                <img *ngIf="product.main_image" [src]="product.main_image" class="product-thumb" alt="{{ product.name }}">
+                <div class="product-details">
+                  <strong>{{ truncateText(product.name, 30) }}</strong>
+                  <small>{{ truncateText(product.description, 50) }}</small>
+                </div>
+              </div>
+            </td>
+            <td>{{ product.category }}</td>
+            <td>
+              <div>{{ product.brand }}</div>
+              <small>{{ product.model }}</small>
+            </td>
+            <td class="price">{{ formatCurrency(product.price) }}</td>
+            <td>
+              <span class="stock-badge" [class]="getStockClass(product.stock_quantity)">
+                {{ product.stock_quantity }} units
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(product.status)">
+                {{ product.status | titlecase }}
+              </span>
+            </td>
+            <td>
+              <button class="featured-btn" [class.active]="product.is_featured" (click)="toggleFeatured(product)">
+                <i class="fas" [class.fa-star]="product.is_featured" [class.fa-star-o]="!product.is_featured"></i>
+              </button>
+            </td>
+            <td>{{ product.merchant_name }}</td>
+            <td class="actions">
+              <button class="action-btn view" (click)="viewProductDetails(product)" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn edit" (click)="openUpdateStatusModal(product)" title="Update Status">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn stock" (click)="openUpdateStockModal(product)" title="Update Stock">
+                <i class="fas fa-boxes"></i>
+              </button>
+             </td>
+           </tr>
+          <tr *ngIf="products.length === 0">
+            <td colspan="10" class="empty-row">
+              <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>No products found</p>
+                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} products
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Details Modal -->
+  <div class="modal-overlay" *ngIf="showProductModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-box"></i>
+          Product Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedProduct">
+        <!-- Product Gallery -->
+        <div class="product-gallery">
+          <div class="main-image">
+            <img [src]="selectedProduct.product?.main_image || 'assets/default-product.png'" alt="{{ selectedProduct.product?.name }}">
+          </div>
+          <div class="gallery" *ngIf="selectedProduct.product?.gallery_images?.length > 0">
+            <div class="gallery-item" *ngFor="let img of selectedProduct.product?.gallery_images">
+              <img [src]="img" alt="Gallery image">
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-info-circle"></i> Product Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Product ID:</label>
+              <span>{{ selectedProduct.product?.product_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Name:</label>
+              <span>{{ selectedProduct.product?.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Category:</label>
+              <span>{{ selectedProduct.product?.category }}</span>
+            </div>
+            <div class="info-item">
+              <label>Brand:</label>
+              <span>{{ selectedProduct.product?.brand || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Model:</label>
+              <span>{{ selectedProduct.product?.model || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Year:</label>
+              <span>{{ selectedProduct.product?.year || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Price:</label>
+              <span class="price">{{ formatCurrency(selectedProduct.product?.price) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Stock:</label>
+              <span [class]="getStockClass(selectedProduct.product?.stock_quantity)">
+                {{ selectedProduct.product?.stock_quantity }} units
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span class="status-badge" [class]="getStatusClass(selectedProduct.product?.status)">
+                {{ selectedProduct.product?.status | titlecase }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Featured:</label>
+              <span>{{ selectedProduct.product?.is_featured ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="info-item">
+              <label>New:</label>
+              <span>{{ selectedProduct.product?.is_new ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Description:</label>
+              <span class="description">{{ selectedProduct.product?.description }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-store"></i> Merchant Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Business Name:</label>
+              <span>{{ selectedProduct.merchant?.business_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Owner:</label>
+              <span>{{ selectedProduct.merchant?.owner_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ selectedProduct.merchant?.phone }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ selectedProduct.merchant?.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instalment Plans -->
+        <div class="info-section" *ngIf="selectedProduct.instalment_plans?.length > 0">
+          <h3><i class="fas fa-calendar-alt"></i> Instalment Plans</h3>
+          <div class="plans-table">
+            <div class="plan-header">
+              <span>Plan ID</span>
+              <span>Total Amount</span>
+              <span>Remaining</span>
+              <span>Installments</span>
+              <span>Monthly</span>
+              <span>Status</span>
+            </div>
+            <div class="plan-row" *ngFor="let plan of selectedProduct.instalment_plans">
+              <span>{{ plan.plan_id }}</span>
+              <span>{{ formatCurrency(plan.total_amount) }}</span>
+              <span>{{ formatCurrency(plan.remaining_amount) }}</span>
+              <span>{{ plan.number_of_installments }}</span>
+              <span>{{ formatCurrency(plan.installment_amount) }}</span>
+              <span class="status-badge" [class]="getStatusClass(plan.status)">
+                {{ plan.status | titlecase }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openUpdateStatusModal(selectedProduct.product)">
+          <i class="fas fa-edit"></i> Update Status
+        </button>
+        <button class="btn-primary" (click)="openUpdateStockModal(selectedProduct.product)">
+          <i class="fas fa-boxes"></i> Update Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-edit"></i>
+          Update Product Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update status for <strong>{{ selectedProduct?.product?.name }}</strong>
+        </p>
+
+        <form [formGroup]="updateStatusForm">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="out_of_stock">Out of Stock</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateProductStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Stock Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStockModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-boxes"></i>
+          Update Stock Quantity
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update stock for <strong>{{ selectedProduct?.product?.name }}</strong>
+        </p>
+        <p class="current-stock">Current Stock: <strong>{{ selectedProduct?.product?.stock_quantity }} units</strong></p>
+
+        <form [formGroup]="updateStockForm">
+          <div class="form-group">
+            <label>New Stock Quantity *</label>
+            <input type="number" formControlName="stock_quantity" placeholder="Enter new stock quantity">
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for stock change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateProductStock()" [disabled]="updateStockForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Stock' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

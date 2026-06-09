@@ -10,7 +10,8 @@ import { LoginComponent } from './auth/login/login.component';
 import { SignupComponent } from './auth/signup/signup.component';
 import { AuthInterceptor } from './auth/auth';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
-
+import { AdminModule } from './admin/admin.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // ✅ Add this
 // Interceptors - FIXED PATH (added .interceptor)
 
 
@@ -33,7 +34,8 @@ import { ForgotPasswordComponent } from './forgot-password/forgot-password.compo
     AppRoutingModule,      // This handles routing (including lazy loading)
     HttpClientModule,
     ReactiveFormsModule,
-    FormsModule
+        BrowserAnimationsModule, 
+    FormsModule,
     // ❌ REMOVE AdminModule from here for lazy loading
     // AdminModule
   ],

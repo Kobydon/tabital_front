@@ -1,52 +1,257 @@
-<!-- admin/dashboard/dashboard.component.html -->
 <div class="dashboard-container">
-  <div class="stats-grid">
-    <div class="stat-card">
-      <h3>Total Users</h3>
-      <p class="stat-number">{{ stats.total }}</p>
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-title">
+      <!-- <h1>Dashboard</h1>
+      <p class="subtitle">Real-time overview of Tabital Pay operations</p> -->
     </div>
-    <div class="stat-card">
-      <h3>Customers</h3>
-      <p class="stat-number">{{ stats.customers }}</p>
-    </div>
-    <div class="stat-card">
-      <h3>Merchants</h3>
-      <p class="stat-number">{{ stats.merchants }}</p>
-    </div>
-    <div class="stat-card">
-      <h3>Pending</h3>
-      <p class="stat-number">{{ stats.pending }}</p>
+    <div class="header-actions">
+      <div class="date-range">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Last 30 days</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
     </div>
   </div>
 
-  <div class="users-table" *ngIf="!loading">
-    <h2>Pending Approvals</h2>
-    <table>
-      <thead>
-        <tr><th>Name</th>
-          <th>Phone</th>
-  
-          <th>City </th>
-          <th>Income Range</th>
-                  <th>Role</th> 
-          <th>Joined</th>
-          <th>Action</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of users">
-          <td>{{ user.full_name || user.business_name }}</td>
-          <td>{{ user.phone }}</td>
-          <td>{{ user.city }}</td>
-          <td>{{ user.income_range }}</td>
-          <td>{{ user.role }}</td>
-          <td>{{user.created_at | date:'short'}}</td>
-          
-          <td>
-            <button class="approve" (click)="approve(user.id)">Approve</button>
-            <button class="reject" (click)="reject(user.id)">Reject</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading dashboard data...</p>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">💰</div>
+        <div class="stat-info">
+          <h3>Total Financed (All Time)</h3>
+          <p class="stat-value">{{ formatCurrency(stats.total_financed) }}</p>
+          <span class="stat-trend positive">
+            <i class="fas fa-arrow-up"></i> {{ stats.total_financed_growth }}% vs last 30 days
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon green">👥</div>
+        <div class="stat-info">
+          <h3>Active Customers</h3>
+          <p class="stat-value">{{ formatNumber(stats.active_customers) }}</p>
+          <span class="stat-trend positive">
+            <i class="fas fa-arrow-up"></i> {{ stats.active_customers_growth }}% vs last 30 days
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon purple">🏪</div>
+        <div class="stat-info">
+          <h3>Active Merchants</h3>
+          <p class="stat-value">{{ formatNumber(stats.active_merchants) }}</p>
+          <span class="stat-trend positive">
+            <i class="fas fa-arrow-up"></i> {{ stats.active_merchants_growth }}% vs last 30 days
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-info">
+          <h3>Repayment Rate</h3>
+          <p class="stat-value">{{ stats.repayment_rate }}%</p>
+          <span class="stat-trend positive">
+            <i class="fas fa-arrow-up"></i> {{ stats.repayment_rate_growth }}pp vs last 30 days
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon red">⚠️</div>
+        <div class="stat-info">
+          <h3>Default Rate</h3>
+          <p class="stat-value">{{ stats.default_rate }}%</p>
+          <span class="stat-trend neutral">vs last 30 days</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon orange">📊</div>
+        <div class="stat-info">
+          <h3>Revenue (MTD)</h3>
+          <p class="stat-value">{{ formatCurrency(stats.revenue_mtd) }}</p>
+          <span class="stat-trend positive">
+            <i class="fas fa-arrow-up"></i> {{ stats.revenue_growth }}% vs last 30 days
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Overview & Alerts Row -->
+    <div class="two-columns">
+      <!-- Portfolio Overview -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📊 Portfolio Overview</h3>
+        </div>
+        <div class="portfolio-content">
+          <div class="portfolio-stats">
+            <div class="portfolio-item">
+              <span class="portfolio-label">Total Exposure</span>
+              <span class="portfolio-value">{{ formatCurrency(portfolio.total_exposure) }}</span>
+            </div>
+            <div class="portfolio-item">
+              <span class="portfolio-label">Early (31-60 days)</span>
+              <span class="portfolio-value">{{ formatCurrency(portfolio.early_risk) }}</span>
+              <span class="portfolio-percent">{{ portfolio.early_percentage }}%</span>
+            </div>
+            <div class="portfolio-item">
+              <span class="portfolio-label">Late (61-90 days)</span>
+              <span class="portfolio-value">{{ formatCurrency(portfolio.late_risk) }}</span>
+              <span class="portfolio-percent">{{ portfolio.late_percentage }}%</span>
+            </div>
+            <div class="portfolio-item">
+              <span class="portfolio-label">Default (90+ days)</span>
+              <span class="portfolio-value">{{ formatCurrency(portfolio.default_risk) }}</span>
+              <span class="portfolio-percent">{{ portfolio.default_percentage }}%</span>
+            </div>
+          </div>
+          <div class="portfolio-chart">
+            <canvas id="portfolioChart" width="200" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts - FIXED: Using alertsList instead of alerts | keyvalue -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>🔔 Alerts</h3>
+          <a class="view-all" (click)="navigateTo('/admin/alerts')">View all</a>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item" *ngFor="let alert of alertsList">
+            <div class="alert-icon" [style.backgroundColor]="getAlertColor(alert.key)">
+              <i class="fas {{ getAlertIcon(alert.key) }}"></i>
+            </div>
+            <div class="alert-info">
+              <span class="alert-title">{{ getAlertTitle(alert.key) }}</span>
+              <span class="alert-count">{{ alert.value }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Approvals & Installment Status Row -->
+    <div class="two-columns">
+      <!-- Pending Approvals -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>⏳ Pending Approvals</h3>
+          <a class="view-all" (click)="navigateTo('/admin/approvals')">View all</a>
+        </div>
+        <div class="approvals-list">
+          <div class="approval-item">
+            <span>KYC Verifications</span>
+            <span class="approval-count">{{ pendingApprovals.kyc_verifications }}</span>
+          </div>
+          <div class="approval-item">
+            <span>Merchant Onboarding</span>
+            <span class="approval-count">{{ pendingApprovals.merchant_onboarding }}</span>
+          </div>
+          <div class="approval-item">
+            <span>Transaction Approvals</span>
+            <span class="approval-count">{{ pendingApprovals.transaction_approvals }}</span>
+          </div>
+          <div class="approval-item">
+            <span>Refund Requests</span>
+            <span class="approval-count">{{ pendingApprovals.refund_requests }}</span>
+          </div>
+          <div class="approval-item">
+            <span>Limit Increase Requests</span>
+            <span class="approval-count">{{ pendingApprovals.limit_increase_requests }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Installment Status -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>📈 Installment Status</h3>
+          <a class="view-all" (click)="navigateTo('/admin/installments')">View all</a>
+        </div>
+        <div class="installment-chart">
+          <canvas id="installmentChart" height="200"></canvas>
+        </div>
+        <div class="installment-stats">
+          <div class="stat-badge paid">
+            <span>Paid On Time</span>
+            <strong>{{ installmentStatus.paid_on_time_percentage }}%</strong>
+          </div>
+          <div class="stat-badge late">
+            <span>Paid Late</span>
+            <strong>{{ installmentStatus.paid_late_percentage }}%</strong>
+          </div>
+          <div class="stat-badge upcoming">
+            <span>Upcoming</span>
+            <strong>{{ installmentStatus.upcoming_percentage }}%</strong>
+          </div>
+          <div class="stat-badge overdue">
+            <span>Overdue</span>
+            <strong>{{ installmentStatus.overdue_percentage }}%</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Merchants -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>🏆 Top Merchants (by GMV)</h3>
+        <a class="view-all" (click)="navigateTo('/admin/merchants')">View all</a>
+      </div>
+      <div class="merchants-list">
+        <div class="merchant-item" *ngFor="let merchant of topMerchants; let i = index">
+          <span class="merchant-rank">{{ i + 1 }}</span>
+          <span class="merchant-name">{{ merchant.name }}</span>
+          <span class="merchant-gmv">{{ formatCurrency(merchant.gmv) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>📋 Recent Transactions</h3>
+        <a class="view-all" (click)="navigateTo('/admin/transactions')">View all</a>
+      </div>
+      <div class="transactions-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Txn ID</th>
+              <th>Customer</th>
+              <th>Merchant</th>
+              <th>Amount</th>
+              <th>Plan</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of recentTransactions">
+              <td class="txn-id">{{ tx.txn_id }}</td>
+              <td>{{ tx.customer }}</td>
+              <td>{{ tx.merchant }}</td>
+              <td>{{ formatCurrency(tx.amount) }}</td>
+              <td>{{ tx.plan }}</td>
+              <td><span class="status-badge" [class]="getStatusClass(tx.status)">{{ tx.status }}</span></td>
+              <td>{{ tx.time }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>

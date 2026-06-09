@@ -228,8 +228,9 @@ export class ApproveCustomerKycComponent implements OnInit {
   // ============================================
   // DOCUMENT MODAL WITH PREVIEW
   // ============================================
+// In approve-customer-kyc.component.ts
 
-  viewDocument(document: CustomerDocument): void {
+viewDocument(document: CustomerDocument): void {
     console.log('Viewing document:', document);
     this.selectedDocument = document;
     this.pdfError = false;
@@ -237,28 +238,33 @@ export class ApproveCustomerKycComponent implements OnInit {
     
     // Clear previous previews
     if (this.currentPdfUrl) {
-      URL.revokeObjectURL(this.currentPdfUrl);
-      this.currentPdfUrl = null;
+        URL.revokeObjectURL(this.currentPdfUrl);
+        this.currentPdfUrl = null;
     }
     this.pdfUrl = null;
     this.imageUrl = null;
     
+    // Check if file_data exists
     if (document.file_data) {
-      if (document.mime_type === 'application/pdf') {
-        this.displayPdfPreview(document.file_data);
-      } else if (document.mime_type?.startsWith('image/')) {
-        this.imageUrl = `data:${document.mime_type};base64,${document.file_data}`;
-        this.isPdfLoading = false;
-      } else {
-        this.isPdfLoading = false;
-      }
+        console.log('File data available, length:', document.file_data.length);
+        // Process file data as before
+        if (document.mime_type === 'application/pdf') {
+            this.displayPdfPreview(document.file_data);
+        } else if (document.mime_type?.startsWith('image/')) {
+            this.imageUrl = `data:${document.mime_type};base64,${document.file_data}`;
+            this.isPdfLoading = false;
+        } else {
+            this.isPdfLoading = false;
+        }
     } else {
-      this.isPdfLoading = false;
+        console.error('No file data available for document:', document.id, document.file_name);
+        this.isPdfLoading = false;
+        // Show a message to the user
+        alert(`Document file not found on server: ${document.file_name || 'Unknown file'}\n\nPlease check that the file was uploaded correctly.`);
     }
     
     this.showDocumentModal = true;
-  }
-
+}
   displayPdfPreview(base64Data: string): void {
     try {
       const binaryString = atob(base64Data);

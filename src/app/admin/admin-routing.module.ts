@@ -11,6 +11,16 @@ import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
 import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 import { ApproveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
+import { CustomersOverviewComponent } from './customers-overview/customers-overview.component';
+import { MerchantOverviewComponent } from './merchant-overview/merchant-overview.component';
+import { AdminTransactionsComponent } from './admin-transactions/admin-transactions.component';
+import { AdminInstalmentsComponent } from './admin-instalments/admin-instalments.component';
+import { AdminCollectionComponent } from './admin-collection/admin-collection.component';
+import { SettlementsComponent } from './settlements/settlements.component';
+import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
+import { ProductPlansComponent } from './product-plans/product-plans.component';
+import { AllUsersComponent } from './all-users/all-users.component';
+import { SystemSettingsComponent } from './system-settings/system-settings.component';
 
 const routes: Routes = [
   {
@@ -34,7 +44,16 @@ const routes: Routes = [
     
         { path: 'kyb-verification', component: ApproveKybKycComponent },
              { path: 'kyc-verification', component: ApproveCustomerKycComponent },
- 
+    { path: 'customer-overview', component: CustomersOverviewComponent },
+     { path: 'merchant-overview', component: MerchantOverviewComponent   },
+      { path: 'all-transactions', component: AdminTransactionsComponent   },
+       { path: 'all-installments', component: AdminInstalmentsComponent   },
+        { path: 'collections', component: AdminCollectionComponent   },
+         { path: 'settlements', component: SettlementsComponent   },
+          { path: 'all-reports', component: ReportsAnalyticsComponent   },
+            { path: 'product-plans', component: ProductPlansComponent   },
+                 { path: 'all-users', component: AllUsersComponent   },
+                 { path: 'system-settings', component: SystemSettingsComponent   },
     ]
   }
 ];

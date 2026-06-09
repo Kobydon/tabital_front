@@ -1,0 +1,510 @@
+<div class="customers-overview-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Customers</span>
+      </div>
+      <h1 class="title">Customer Overview</h1>
+      <p class="subtitle">View and manage customer information, limits, activity and repayment behavior</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportCustomers()">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards - Using customerStats, NOT stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Total Customers</h3>
+        <p class="stat-value">{{ formatNumber(customerStats.total_customers) }}</p>
+        <span class="stat-trend positive">
+          <i class="fas fa-arrow-up"></i> {{ customerStats.total_customers_growth || 0 }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Active Customers</h3>
+        <p class="stat-value">{{ formatNumber(customerStats.active_customers) }}</p>
+        <span class="stat-trend positive">
+          <i class="fas fa-arrow-up"></i> {{ customerStats.active_customers_growth || 0 }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <div class="stat-info">
+        <h3>New Customers (30 Days)</h3>
+        <p class="stat-value">{{ formatNumber(customerStats.new_customers) }}</p>
+        <span class="stat-trend positive">
+          <i class="fas fa-arrow-up"></i> {{ customerStats.new_customers_growth || 0 }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon orange">
+        <i class="fas fa-sync-alt"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Repeat Purchase Rate</h3>
+        <p class="stat-value">{{ customerStats.repeat_purchase_rate || 0 }}%</p>
+        <span class="stat-trend positive">
+          <i class="fas fa-arrow-up"></i> {{ customerStats.repeat_purchase_rate_growth || 0 }}pp vs last 30 days
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <i class="fas fa-money-bill-wave"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Total Outstanding</h3>
+        <p class="stat-value">{{ formatCurrency(customerStats.total_outstanding) }}</p>
+        <span class="stat-trend down">
+          <i class="fas fa-arrow-down"></i> {{ Math.abs(customerStats.outstanding_growth || 0) }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by name, phone, email or ID..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedRiskLevel" (change)="applyFilters()">
+          <option *ngFor="let opt of riskLevelOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedCustomerStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of customerStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading customers...</p>
+  </div>
+
+  <!-- Customers Table -->
+  <div *ngIf="!isLoading" class="customers-table-container">
+    <div class="table-header">
+      <h3>Customers ({{ totalItems }})</h3>
+    </div>
+    <table class="customers-table">
+      <thead>
+        <tr>
+          <th (click)="onSort('customer_id')" class="sortable">
+            Customer ID
+            <i class="fas" [class.fa-sort]="sortBy !== 'customer_id'" 
+               [class.fa-sort-up]="sortBy === 'customer_id' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'customer_id' && sortOrder === 'desc'"></i>
+          </th>
+          <th (click)="onSort('full_name')" class="sortable">
+            Name
+            <i class="fas" [class.fa-sort]="sortBy !== 'full_name'" 
+               [class.fa-sort-up]="sortBy === 'full_name' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'full_name' && sortOrder === 'desc'"></i>
+          </th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>KYC Status</th>
+          <th>Risk Level</th>
+          <th (click)="onSort('credit_limit')" class="sortable">
+            Credit Limit
+            <i class="fas" [class.fa-sort]="sortBy !== 'credit_limit'" 
+               [class.fa-sort-up]="sortBy === 'credit_limit' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'credit_limit' && sortOrder === 'desc'"></i>
+          </th>
+          <th (click)="onSort('outstanding')" class="sortable">
+            Outstanding
+            <i class="fas" [class.fa-sort]="sortBy !== 'outstanding'" 
+               [class.fa-sort-up]="sortBy === 'outstanding' && sortOrder === 'asc'"
+               [class.fa-sort-down]="sortBy === 'outstanding' && sortOrder === 'desc'"></i>
+          </th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of customers">
+          <td class="customer-id">{{ customer.customer_id }}</td>
+          <td class="customer-name">
+            <strong>{{ customer.full_name }}</strong>
+          </td>
+          <td>{{ customer.phone }}</td>
+          <td>{{ customer.business_email }}</td>
+          <td>
+            <span class="kyc-badge" [class]="getKYCStatusClass(customer.kyc_status)">
+              {{ customer.kyc_status | titlecase }}
+            </span>
+          </td>
+          <td>
+            <span class="risk-badge" [class]="getRiskClass(customer.risk_level)">
+              {{ customer.risk_level }}
+            </span>
+          </td>
+          <td class="amount">{{ formatCurrency(customer.credit_limit) }}</td>
+          <td class="amount">{{ formatCurrency(customer.outstanding) }}</td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(customer.status)">
+              {{ customer.status | titlecase }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="action-btn view" (click)="viewCustomerDetails(customer)" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="action-btn edit" (click)="openUpdateStatusModal(customer)" title="Update Status">
+              <i class="fas fa-user-edit"></i>
+            </button>
+            <button class="action-btn limit" (click)="openUpdateLimitModal(customer)" title="Update Limit">
+              <i class="fas fa-chart-line"></i>
+            </button>
+            <button class="action-btn note" (click)="openAddNoteModal(customer)" title="Add Note">
+              <i class="fas fa-sticky-note"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="customers.length === 0">
+          <td colspan="10" class="empty-row">
+            <div class="empty-state">
+              <i class="fas fa-users"></i>
+              <p>No customers found</p>
+              <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} customers
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Details Modal -->
+  <div class="modal-overlay" *ngIf="showCustomerModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-user-circle"></i>
+          Customer Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedCustomer">
+        <!-- Customer Profile -->
+        <div class="profile-section">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fas fa-user-circle fa-4x"></i>
+            </div>
+            <div class="profile-info">
+              <h3>{{ selectedCustomer.customer?.full_name }}</h3>
+              <p class="customer-id">ID: {{ selectedCustomer.customer?.customer_id }}</p>
+              <div class="profile-meta">
+                <span class="status-badge" [class]="getStatusClass(selectedCustomer.customer?.status)">
+                  {{ selectedCustomer.customer?.status | titlecase }}
+                </span>
+                <span class="risk-badge" [class]="getRiskClass(selectedCustomer.customer?.risk_level || 'Low')">
+                  Risk: {{ selectedCustomer.customer?.risk_level || 'Low' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-details">
+            <div class="detail-item">
+              <label>Phone:</label>
+              <span>{{ selectedCustomer.customer?.phone }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Business Email:</label>
+              <span>{{ selectedCustomer.customer?.business_email }}</span>
+            </div>
+            <div class="detail-item">
+              <label>City:</label>
+              <span>{{ selectedCustomer.customer?.city || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Address:</label>
+              <span>{{ selectedCustomer.customer?.address || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Income Range:</label>
+              <span>{{ selectedCustomer.customer?.income_range || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>KYC Status:</label>
+              <span class="kyc-badge" [class]="getKYCStatusClass(selectedCustomer.customer?.kyc_status)">
+                {{ selectedCustomer.customer?.kyc_status | titlecase }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Overview -->
+        <div class="financial-section">
+          <h3><i class="fas fa-chart-line"></i> Financial Overview</h3>
+          <div class="financial-grid">
+            <div class="financial-card">
+              <span class="label">Current Credit Limit</span>
+              <span class="value">{{ formatCurrency(selectedCustomer.financial?.credit_limit) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Outstanding</span>
+              <span class="value">{{ formatCurrency(selectedCustomer.financial?.outstanding) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Paid</span>
+              <span class="value">{{ formatCurrency(selectedCustomer.financial?.total_paid) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Total Financed</span>
+              <span class="value">{{ formatCurrency(selectedCustomer.financial?.total_financed) }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Next Payment Due</span>
+              <span class="value">{{ selectedCustomer.financial?.next_payment_due || 'N/A' }}</span>
+            </div>
+            <div class="financial-card">
+              <span class="label">Active Plans</span>
+              <span class="value">{{ selectedCustomer.financial?.active_plans_count || 0 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-section">
+          <h3><i class="fas fa-history"></i> Recent Activity</h3>
+          <div class="activity-timeline">
+            <div class="activity-item" *ngFor="let activity of selectedCustomer.recent_activity">
+              <div class="activity-icon" [class]="activity.type">
+                <i class="fas" [class.fa-credit-card]="activity.type === 'payment'"
+                   [class.fa-file-alt]="activity.type === 'plan'"
+                   [class.fa-user-plus]="activity.type === 'account'"></i>
+              </div>
+              <div class="activity-content">
+                <p class="activity-description">{{ activity.description }}</p>
+                <span class="activity-date">{{ activity.date }}</span>
+              </div>
+              <div class="activity-status" [class]="activity.status">
+                {{ activity.status | titlecase }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openUpdateStatusModal(selectedCustomer.customer)">
+          <i class="fas fa-user-edit"></i> Update Status
+        </button>
+        <button class="btn-primary" (click)="openUpdateLimitModal(selectedCustomer.customer)">
+          <i class="fas fa-chart-line"></i> Update Limit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-user-edit"></i>
+          Update Customer Status
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update status for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
+        </p>
+
+        <form [formGroup]="updateStatusForm">
+          <div class="form-group">
+            <label>Status *</label>
+            <select formControlName="status">
+              <option value="active">Active</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="restricted">Restricted</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateCustomerStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Credit Limit Modal -->
+  <div class="modal-overlay" *ngIf="showUpdateLimitModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-chart-line"></i>
+          Update Credit Limit
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Update credit limit for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
+        </p>
+        <p class="current-limit">Current Limit: <strong>{{ formatCurrency(selectedCustomer?.customer?.credit_limit) }}</strong></p>
+
+        <form [formGroup]="updateLimitForm">
+          <div class="form-group">
+            <label>New Credit Limit (GHS) *</label>
+            <input type="number" formControlName="credit_limit" placeholder="Enter new credit limit" step="100">
+            <small *ngIf="updateLimitForm.get('credit_limit')?.invalid && updateLimitForm.get('credit_limit')?.touched" class="error">
+              Credit limit must be at least GHS 100
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Reason (Optional)</label>
+            <textarea formControlName="reason" rows="3" placeholder="Provide reason for limit change..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="updateCreditLimit()" [disabled]="updateLimitForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Updating...' : 'Update Limit' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Note Modal -->
+  <div class="modal-overlay" *ngIf="showAddNoteModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-sticky-note"></i>
+          Add Customer Note
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text">
+          Add note for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
+        </p>
+
+        <form [formGroup]="addNoteForm">
+          <div class="form-group">
+            <label>Note *</label>
+            <textarea formControlName="note" rows="4" placeholder="Enter your note here..."></textarea>
+            <small *ngIf="addNoteForm.get('note')?.invalid && addNoteForm.get('note')?.touched" class="error">
+              Note is required (minimum 10 characters)
+            </small>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="addCustomerNote()" [disabled]="addNoteForm.invalid || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Adding...' : 'Add Note' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

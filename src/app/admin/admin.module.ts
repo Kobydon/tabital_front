@@ -15,7 +15,18 @@ import { AdminOrdersComponent } from './orders/orders.component';
 // import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 import { ApproveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
 import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
-// import { AppoveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
+import { CustomersOverviewComponent } from './customers-overview/customers-overview.component';
+import { MerchantOverviewComponent } from './merchant-overview/merchant-overview.component';
+import { AdminTransactionsComponent } from './admin-transactions/admin-transactions.component';
+import { AdminInstalmentsComponent } from './admin-instalments/admin-instalments.component';
+import { AdminCollectionComponent } from './admin-collection/admin-collection.component';
+import { SettlementsComponent } from './settlements/settlements.component';
+import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
+import { ProductPlansComponent } from './product-plans/product-plans.component';
+import { SystemSettingsComponent } from './system-settings/system-settings.component';
+// ✅ CORRECT - Use this instead
+import { ToastrModule } from 'ngx-toastr';
+import { AdminProfileComponent } from './admin-profile/admin-profile.component';// import { AppoveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
 // import { OrdersComponent } from './orders/orders.component';
 
 
@@ -31,13 +42,25 @@ import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.compon
     ChargesComponent,
     AdminOrdersComponent,
     ApproveKybKycComponent,
-    ApproveCustomerKycComponent
+    ApproveCustomerKycComponent,
+    CustomersOverviewComponent,
+    MerchantOverviewComponent,
+    AdminTransactionsComponent,
+    AdminInstalmentsComponent,
+    AdminCollectionComponent,
+    SettlementsComponent,
+    ReportsAnalyticsComponent,
+    ProductPlansComponent,
+    SystemSettingsComponent,
+    AdminProfileComponent
 
   ],
   imports: [
     CommonModule,ReactiveFormsModule,FormsModule,
     RouterModule,DecimalPipe,FormsModule,TitleCasePipe,
-    AdminRoutingModule  // ✅ This is correct
+    AdminRoutingModule , // ✅ This is correct
+       
+    // other imports
   ],
   exports: [
     AdminRoutingModule  // ✅ Export this instead of LayoutComponent

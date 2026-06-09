@@ -1,0 +1,390 @@
+<div class="settlements-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a routerLink="/admin/dashboard">Dashboard</a>
+        <span class="separator">></span>
+        <span class="current">Settlements</span>
+      </div>
+      <h1 class="title">Settlement Management</h1>
+      <p class="subtitle">Manage merchant payouts and settlement processing</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportSettlements()">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <button class="btn-process" (click)="openProcessModal()" [disabled]="selectedSettlementIds.length === 0">
+        <i class="fas fa-play-circle"></i> Process Selected ({{ selectedSettlementIds.length }})
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of statsCards">
+      <div class="stat-icon" [class]="stat.color">
+        <span class="stat-emoji">{{ stat.icon }}</span>
+      </div>
+      <div class="stat-info">
+        <h3>{{ stat.label }}</h3>
+        <p class="stat-value">
+          <span *ngIf="!stat.isCurrency">{{ stat.value }}{{ stat.suffix }}</span>
+          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
+        </p>
+        <span class="stat-trend" *ngIf="stat.growth !== 0" [class]="stat.growth > 0 ? 'trend-up' : 'trend-down'">
+          <i class="fas" [class.fa-arrow-up]="stat.growth > 0" [class.fa-arrow-down]="stat.growth < 0"></i>
+          {{ Math.abs(stat.growth) }}% vs last 30 days
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search by transaction ID, merchant, product..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+        />
+        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <select [(ngModel)]="selectedStatus" (change)="applyFilters()">
+          <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <input type="date" [(ngModel)]="selectedDateFrom" (change)="applyFilters()" placeholder="From Date">
+      </div>
+
+      <div class="filter-group">
+        <input type="date" [(ngModel)]="selectedDateTo" (change)="applyFilters()" placeholder="To Date">
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <i class="fas fa-undo-alt"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading settlements...</p>
+  </div>
+
+  <!-- Settlements Table -->
+  <div *ngIf="!isLoading" class="settlements-table-container">
+    <div class="table-header">
+      <h3>Settlements ({{ totalItems }})</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="settlements-table">
+        <thead>
+          <tr>
+            <th class="checkbox-col">
+              <input type="checkbox" [checked]="selectAll" (change)="toggleSelectAll()">
+            </th>
+            <th (click)="onSort('transaction_id')" class="sortable">
+              Transaction ID
+              <i class="fas" [class.fa-sort]="sortBy !== 'transaction_id'" 
+                 [class.fa-sort-up]="sortBy === 'transaction_id' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'transaction_id' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Merchant</th>
+            <th>Product</th>
+            <th (click)="onSort('amount')" class="sortable">
+              Amount
+              <i class="fas" [class.fa-sort]="sortBy !== 'amount'" 
+                 [class.fa-sort-up]="sortBy === 'amount' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'amount' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Commission</th>
+            <th>Payout Amount</th>
+            <th>Status</th>
+            <th (click)="onSort('completion_date')" class="sortable">
+              Completion Date
+              <i class="fas" [class.fa-sort]="sortBy !== 'completion_date'" 
+                 [class.fa-sort-up]="sortBy === 'completion_date' && sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortBy === 'completion_date' && sortOrder === 'desc'"></i>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let settlement of settlements">
+            <td class="checkbox-col">
+              <input type="checkbox" 
+                     [checked]="selectedSettlementIds.includes(settlement.id)"
+                     (change)="toggleSelection(settlement.id)"
+                     [disabled]="settlement.payment_status !== 'completed'">
+            </td>
+            <td class="transaction-id">{{ settlement.transaction_id }}</td>
+            <td class="merchant-name">{{ settlement.merchant_name }}</td>
+            <td>{{ settlement.product_name }}</td>
+            <td class="amount">{{ formatCurrency(settlement.amount) }}</td>
+            <td class="commission">{{ formatCurrency(settlement.commission) }}</td>
+            <td class="payout-amount">{{ formatCurrency(settlement.payout_amount) }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(settlement.payment_status)">
+                {{ getStatusIcon(settlement.payment_status) }} {{ getStatusText(settlement.payment_status) }}
+              </span>
+            </td>
+            <td>{{ formatDate(settlement.completion_date) }}</td>
+            <td class="actions">
+              <button class="action-btn view" (click)="viewSettlementDetails(settlement)" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn process" 
+                      (click)="openProcessModal(settlement)" 
+                      *ngIf="settlement.payment_status === 'completed'"
+                      title="Process Settlement">
+                <i class="fas fa-play-circle"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="settlements.length === 0">
+            <td colspan="10" class="empty-row">
+              <div class="empty-state">
+                <i class="fas fa-receipt"></i>
+                <p>No settlements found</p>
+                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} settlements
+      </div>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number"
+            [class.active]="currentPage === page"
+            (click)="changePage(page)">
+            {{ page }}
+          </button>
+        </div>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settlement Details Modal -->
+  <div class="modal-overlay" *ngIf="showSettlementModal" (click)="closeModals()">
+    <div class="modal-container large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-receipt"></i>
+          Settlement Details
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedSettlement">
+        <!-- Settlement Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-info-circle"></i> Settlement Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Transaction ID:</label>
+              <span>{{ selectedSettlement.settlement?.transaction_id }}</span>
+            </div>
+            <div class="info-item">
+              <label>Product:</label>
+              <span>{{ selectedSettlement.settlement?.product_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Amount:</label>
+              <span class="amount">{{ formatCurrency(selectedSettlement.settlement?.amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Commission (10%):</label>
+              <span>{{ formatCurrency(selectedSettlement.settlement?.commission) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payout Amount:</label>
+              <span class="payout-amount">{{ formatCurrency(selectedSettlement.settlement?.payout_amount) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span class="status-badge" [class]="getStatusClass(selectedSettlement.settlement?.payment_status)">
+                {{ getStatusText(selectedSettlement.settlement?.payment_status) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Completion Date:</label>
+              <span>{{ formatDate(selectedSettlement.settlement?.completion_date) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-store"></i> Merchant Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Business Name:</label>
+              <span>{{ selectedSettlement.merchant?.business_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Owner Name:</label>
+              <span>{{ selectedSettlement.merchant?.owner_name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ selectedSettlement.merchant?.phone }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ selectedSettlement.merchant?.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="info-section" *ngIf="selectedSettlement.merchant?.bank_details">
+          <h3><i class="fas fa-university"></i> Bank Account Details</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Bank Name:</label>
+              <span>{{ selectedSettlement.merchant?.bank_details?.bank_name || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Account Name:</label>
+              <span>{{ selectedSettlement.merchant?.bank_details?.account_name || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Account Number:</label>
+              <span>{{ selectedSettlement.merchant?.bank_details?.account_number || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Branch:</label>
+              <span>{{ selectedSettlement.merchant?.bank_details?.branch_name || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Money Details -->
+        <div class="info-section" *ngIf="selectedSettlement.merchant?.momo_details">
+          <h3><i class="fas fa-mobile-alt"></i> Mobile Money Details</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Name:</label>
+              <span>{{ selectedSettlement.merchant?.momo_details?.momo_name || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Number:</label>
+              <span>{{ selectedSettlement.merchant?.momo_details?.momo_number || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="info-section">
+          <h3><i class="fas fa-user"></i> Customer Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Name:</label>
+              <span>{{ selectedSettlement.customer?.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Phone:</label>
+              <span>{{ selectedSettlement.customer?.phone }}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>{{ selectedSettlement.customer?.email }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Close</button>
+        <button class="btn-primary" (click)="openProcessModal(selectedSettlement.settlement)" *ngIf="selectedSettlement.settlement?.payment_status === 'completed'">
+          <i class="fas fa-play-circle"></i> Process Settlement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Process Settlement Modal -->
+  <div class="modal-overlay" *ngIf="showProcessModal" (click)="closeModals()">
+    <div class="modal-container small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-play-circle"></i>
+          {{ selectedSettlement ? 'Process Settlement' : 'Bulk Process Settlements' }}
+        </h2>
+        <button class="close-btn" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="info-text" *ngIf="selectedSettlement">
+          Process settlement for transaction <strong>{{ selectedSettlement.settlement?.transaction_id }}</strong>
+        </p>
+        <p class="info-text" *ngIf="!selectedSettlement">
+          Process <strong>{{ selectedSettlementIds.length }}</strong> selected settlements
+        </p>
+
+        <div *ngIf="selectedSettlement" class="settlement-summary">
+          <p>Amount: <strong>{{ formatCurrency(selectedSettlement.settlement?.payout_amount) }}</strong></p>
+          <p>Merchant: <strong>{{ selectedSettlement.settlement?.merchant_name }}</strong></p>
+        </div>
+
+        <form [formGroup]="selectedSettlement ? processForm : bulkProcessForm">
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select formControlName="payment_method">
+              <option *ngFor="let opt of paymentMethodOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="selectedSettlement">
+            <label>Payment Reference</label>
+            <input type="text" formControlName="payment_reference" placeholder="Transaction ID or Reference">
+          </div>
+
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <textarea formControlName="notes" rows="3" placeholder="Additional notes..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-primary" (click)="selectedSettlement ? processSingleSettlement() : processBulkSettlements()" 
+                [disabled]="(selectedSettlement ? processForm.invalid : bulkProcessForm.invalid) || isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ isSubmitting ? 'Processing...' : 'Confirm Settlement' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

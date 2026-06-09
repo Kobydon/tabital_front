@@ -103,13 +103,18 @@ export class AdminService {
 
   constructor(private http: HttpClient) {}
 
-  private getAuthHeaders(): HttpHeaders {
+  private getAuthHeaders(isFormData: boolean = false): HttpHeaders {
     const token = localStorage.getItem(this.TOKEN_KEY);
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
+    let headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json'
     });
+    
+    if (!isFormData) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+    
+    return headers;
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
@@ -126,6 +131,25 @@ export class AdminService {
       errorMessage = error.error.message;
     }
     return throwError(() => new Error(errorMessage));
+  }
+
+  // ============================================
+  // DASHBOARD STATS
+  // ============================================
+  
+  getDashboardStats(): Observable<any> {
+    return this.http.get(`${this.API}/admin/dashboard/stats`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getRecentTransactions(limit: number = 10): Observable<any> {
+    return this.http.get(`${this.API}/admin/dashboard/transactions?limit=${limit}`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getStats(): Observable<any> {
+    return this.http.get(`${this.API}/admin/stats`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   // ============================================
@@ -196,10 +220,10 @@ export class AdminService {
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  getMerchantStats(): Observable<any> {
-    return this.http.get<any>(`${this.API}/admin/merchants/stats`, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
+  // getMerchantStats(): Observable<any> {
+  //   return this.http.get<any>(`${this.API}/admin/merchants/stats`, { headers: this.getAuthHeaders() })
+  //     .pipe(catchError(this.handleError.bind(this)));
+  // }
 
   // ============================================
   // TRANSACTION ENDPOINTS
@@ -224,126 +248,33 @@ export class AdminService {
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  updateTransactionStatus(id: number, data: any): Observable<ApiResponse> {
-    return this.http.put<ApiResponse>(`${this.API}/transactions/${id}/status`, data, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
+  // updateTransactionStatus(id: number, data: any): Observable<ApiResponse> {
+  //   return this.http.put<ApiResponse>(`${this.API}/transactions/${id}/status`, data, { headers: this.getAuthHeaders() })
+  //     .pipe(catchError(this.handleError.bind(this)));
+  // }
 
-  getTransactionStats(): Observable<any> {
-    return this.http.get<any>(`${this.API}/transactions/stats`, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
+  // getTransactionStats(): Observable<any> {
+  //   return this.http.get<any>(`${this.API}/transactions/stats`, { headers: this.getAuthHeaders() })
+  //     .pipe(catchError(this.handleError.bind(this)));
+  // }
 
   deleteTransaction(id: number): Observable<ApiResponse> {
     return this.http.delete<ApiResponse>(`${this.API}/transactions/${id}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
-
-  // ============================================
-  // COMMON ENDPOINTS
-  // ============================================
-  
-  getPendingUsers(): Observable<Customer[]> {
-    return this.http.get<Customer[]>(`${this.API}/admin/pending-users`, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
-
-  
-  approveUser(id: number): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API}/admin/approve/${id}`, {}, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
-
-  rejectUser(id: number): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API}/admin/reject/${id}`, {}, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
-
-  getStats(): Observable<any> {
-    return this.http.get<any>(`${this.API}/admin/stats`, { headers: this.getAuthHeaders() })
-      .pipe(catchError(this.handleError.bind(this)));
-  }
-
-  // ============================================
-  // AUTHENTICATION
-  // ============================================
-  
-  setAuthToken(token: string): void { localStorage.setItem(this.TOKEN_KEY, token); }
-  clearAuthToken(): void { localStorage.removeItem(this.TOKEN_KEY); }
-  isAuthenticated(): boolean { return !!localStorage.getItem(this.TOKEN_KEY); }
-  getToken(): string | null { return localStorage.getItem(this.TOKEN_KEY); }
-
-
-  // Add to AdminService class
+// Add to AdminService class
 
 // ============================================
-// DOCUMENT ENDPOINTS
+// INSTALMENT MANAGEMENT ENDPOINTS
 // ============================================
 
-getMerchantDocuments(merchantId: number): Observable<any[]> {
-  const headers = this.getAuthHeaders();
-  return this.http.get<any[]>(`${this.API}/admin/merchants/${merchantId}/documents`, { headers })
+getInstalmentStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/instalments/stats`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-uploadDocument(merchantId: number, documentData: any): Observable<ApiResponse> {
-  const headers = this.getAuthHeaders();
-  return this.http.post<ApiResponse>(`${this.API}/admin/merchants/${merchantId}/documents/upload`, documentData, { headers })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-verifyDocument(documentId: number, data: any): Observable<ApiResponse> {
-  const headers = this.getAuthHeaders();
-  return this.http.put<ApiResponse>(`${this.API}/admin/documents/${documentId}/verify`, data, { headers })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-deleteDocument(documentId: number): Observable<ApiResponse> {
-  const headers = this.getAuthHeaders();
-  return this.http.delete<ApiResponse>(`${this.API}/admin/documents/${documentId}`, { headers })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-
-getCurrentUser(): Observable<Merchant> {
-  return this.http.get<Merchant>(
-    `${this.API}/admin/get_current_user`,
-    {
-      headers: this.getAuthHeaders()
-    }
-  ).pipe(
-    catchError(this.handleError.bind(this))
-  );
-}
-// admin.service.ts - Add these methods
-
-// Get charge settings
-
-// Update installment options
-updateInstallmentOptions(options: any[]): Observable<any> {
-  return this.http.put(`${this.API}/admin/settings/installments`, { options }, { headers: this.getAuthHeaders() })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-// admin.service.ts - Add these methods
-
-// Get charge settings
-getChargeSettings(): Observable<any> {
-  return this.http.get(`${this.API}/admin/settings/charges`, { headers: this.getAuthHeaders() })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-// Update charge settings
-updateChargeSettings(settings: any): Observable<any> {
-  return this.http.put(`${this.API}/admin/settings/charges`, settings, { headers: this.getAuthHeaders() })
-    .pipe(catchError(this.handleError.bind(this)));
-}
-
-// admin.service.ts - Add these methods
-
-// Get admin orders
-getAdminOrders(filters?: any): Observable<any> {
-  let url = `${this.API}/admin/orders`;
+getAllInstalments(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/instalments`;
   if (filters) {
     const params = new URLSearchParams();
     Object.keys(filters).forEach(key => {
@@ -356,103 +287,761 @@ getAdminOrders(filters?: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-// Approve order
-approveOrder(orderId: number, data: any): Observable<any> {
-  return this.http.put(`${this.API}/admin/orders/${orderId}/approve`, data, { headers: this.getAuthHeaders() })
+getInstalmentDetail(planId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/instalments/${planId}`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-// Reject order
-rejectOrder(orderId: number, data: any): Observable<any> {
-  return this.http.put(`${this.API}/admin/orders/${orderId}/reject`, data, { headers: this.getAuthHeaders() })
+updateInstalmentStatus(planId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/instalments/${planId}/status`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-// Export admin orders
-exportAdminOrders(): Observable<Blob> {
-  return this.http.get(`${this.API}/admin/orders/export`, { 
+applyLateFee(paymentId: number): Observable<any> {
+  return this.http.post(`${this.API}/admin/instalments/payments/${paymentId}/apply-late-fee`, {}, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+waiveLateFee(paymentId: number, data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/instalments/payments/${paymentId}/waive-late-fee`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+markPaymentAsPaid(paymentId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/instalments/payments/${paymentId}/mark-paid`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportInstalments(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/instalments/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
     headers: this.getAuthHeaders(), 
     responseType: 'blob' 
   }).pipe(catchError(this.handleError.bind(this)));
 }
-getPendingKYC(): Observable<any> {
-    return this.http.get(`${this.API}/admin/kyc/pending`, { headers: this.getAuthHeaders() });
+  // ============================================
+  // USER MANAGEMENT (Pending Approvals)
+  // ============================================
+  
+  getPendingUsers(): Observable<Customer[]> {
+    return this.http.get<Customer[]>(`${this.API}/admin/pending-users`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  approveUser(id: number): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.API}/admin/approve/${id}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+// Add to AdminService class
+
+// ============================================
+// COLLECTION MANAGEMENT ENDPOINTS
+// ============================================
+
+getCollectionStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/collection/stats`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getOverduePayments(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/collection/overdue`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getOverduePaymentDetail(paymentId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/collection/overdue/${paymentId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+sendPaymentReminder(paymentId: number, data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/collection/${paymentId}/reminder`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+markPaymentReceived(paymentId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/collection/${paymentId}/mark-received`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+setPaymentPlan(paymentId: number, data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/collection/${paymentId}/payment-plan`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportOverduePayments(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/collection/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+  rejectUser(id: number): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.API}/admin/reject/${id}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+
+
+  // ============================================
+  // KYC MANAGEMENT (Merchant & Customer)
+  // ============================================
+  
+  // Merchant KYC
+  getPendingKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/pending`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   getVerifiedKYC(): Observable<any> {
-    return this.http.get(`${this.API}/admin/kyc/verified`, { headers: this.getAuthHeaders() });
+    return this.http.get(`${this.API}/admin/kyc/verified`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   getRejectedKYC(): Observable<any> {
-    return this.http.get(`${this.API}/admin/kyc/rejected`, { headers: this.getAuthHeaders() });
+    return this.http.get(`${this.API}/admin/kyc/rejected`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   getMerchantKYC(merchantId: number): Observable<any> {
-    return this.http.get(`${this.API}/admin/kyc/merchant/${merchantId}`, { headers: this.getAuthHeaders() });
+    return this.http.get(`${this.API}/admin/kyc/merchant/${merchantId}`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   approveMerchantKYC(merchantId: number): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, {}, { headers: this.getAuthHeaders() });
+    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   rejectMerchantKYC(merchantId: number, rejectionReason: string): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/reject/${merchantId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() });
+    return this.http.put(`${this.API}/admin/kyc/reject/${merchantId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   approveDocument(documentId: number): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() });
+    return this.http.put(`${this.API}/admin/kyc/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   rejectDocument(documentId: number, rejectionReason: string): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() });
+    return this.http.put(`${this.API}/admin/kyc/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
-// Add these methods to your AdminService
+  // Customer KYC
+  getPendingCustomerKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/customers/pending`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getVerifiedCustomerKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/customers/verified`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getRejectedCustomerKYC(): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/customers/rejected`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getCustomerKYCDetail(customerId: number): Observable<any> {
+    return this.http.get(`${this.API}/admin/kyc/customer/${customerId}`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  approveCustomerKYC(customerId: number): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/customer/approve/${customerId}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  rejectCustomerKYC(customerId: number, rejectionReason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/customer/reject/${customerId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  approveCustomerDocument(documentId: number): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/customer/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  rejectCustomerDocument(documentId: number, rejectionReason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/customer/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  // ============================================
+  // DOCUMENT MANAGEMENT
+  // ============================================
+
+  getMerchantDocuments(merchantId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API}/admin/merchants/${merchantId}/documents`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  uploadDocument(merchantId: number, documentData: any): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.API}/admin/merchants/${merchantId}/documents/upload`, documentData, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  verifyDocument(documentId: number, data: any): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.API}/admin/documents/${documentId}/verify`, data, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  deleteDocument(documentId: number): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.API}/admin/documents/${documentId}`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  // ============================================
+  // ORDERS MANAGEMENT
+  // ============================================
+
+  getAdminOrders(filters?: any): Observable<any> {
+    let url = `${this.API}/admin/orders`;
+    if (filters) {
+      const params = new URLSearchParams();
+      Object.keys(filters).forEach(key => {
+        if (filters[key]) params.append(key, filters[key]);
+      });
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+    }
+    return this.http.get(url, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  approveOrder(orderId: number, data: any): Observable<any> {
+    return this.http.put(`${this.API}/admin/orders/${orderId}/approve`, data, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  rejectOrder(orderId: number, data: any): Observable<any> {
+    return this.http.put(`${this.API}/admin/orders/${orderId}/reject`, data, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  exportAdminOrders(): Observable<Blob> {
+    return this.http.get(`${this.API}/admin/orders/export`, { 
+      headers: this.getAuthHeaders(), 
+      responseType: 'blob' 
+    }).pipe(catchError(this.handleError.bind(this)));
+  }
+
+  // ============================================
+  // SETTINGS MANAGEMENT
+  // ============================================
+
+  getChargeSettings(): Observable<any> {
+    return this.http.get(`${this.API}/admin/settings/charges`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+// Add to AdminService class
+
+exportCustomers(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/customers/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+  updateChargeSettings(settings: any): Observable<any> {
+    return this.http.put(`${this.API}/admin/settings/charges`, settings, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  updateInstallmentOptions(options: any[]): Observable<any> {
+    return this.http.put(`${this.API}/admin/settings/installments`, { options }, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  // ============================================
+  // AUTHENTICATION
+  // ============================================
+  
+  getCurrentUser(): Observable<Merchant> {
+    return this.http.get<Merchant>(`${this.API}/admin/get_current_user`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  setAuthToken(token: string): void { 
+    localStorage.setItem(this.TOKEN_KEY, token); 
+  }
+  
+  clearAuthToken(): void { 
+    localStorage.removeItem(this.TOKEN_KEY); 
+  }
+  
+  isAuthenticated(): boolean { 
+    return !!localStorage.getItem(this.TOKEN_KEY); 
+  }
+  
+  getToken(): string | null { 
+    return localStorage.getItem(this.TOKEN_KEY); 
+  }
+
+  // Add to admin.service.ts
 
 // ============================================
-// CUSTOMER KYC MANAGEMENT
+// CUSTOMER MANAGEMENT ENDPOINTS
 // ============================================
 
-getPendingCustomerKYC(): Observable<any> {
-  return this.http.get(`${this.API}/admin/kyc/customers/pending`, { headers: this.getAuthHeaders() })
+getCustomerStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/customers/stats`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-getVerifiedCustomerKYC(): Observable<any> {
-  return this.http.get(`${this.API}/admin/kyc/customers/verified`, { headers: this.getAuthHeaders() })
+getAllCustomers(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/customers`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-getRejectedCustomerKYC(): Observable<any> {
-  return this.http.get(`${this.API}/admin/kyc/customers/rejected`, { headers: this.getAuthHeaders() })
+getCustomerDetail(customerId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/customers/${customerId}`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-getCustomerKYCDetail(customerId: number): Observable<any> {
-  return this.http.get(`${this.API}/admin/kyc/customer/${customerId}`, { headers: this.getAuthHeaders() })
+updateCustomerStatus(customerId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/status`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-approveCustomerKYC(customerId: number): Observable<any> {
-  return this.http.put(`${this.API}/admin/kyc/customer/approve/${customerId}`, {}, { headers: this.getAuthHeaders() })
+updateCustomerCreditLimit(customerId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/credit-limit`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-rejectCustomerKYC(customerId: number, rejectionReason: string): Observable<any> {
-  return this.http.put(`${this.API}/admin/kyc/customer/reject/${customerId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+addCustomerNote(customerId: number, data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/customers/${customerId}/note`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+// Add to AdminService class
+
+// ============================================
+// MERCHANT MANAGEMENT ENDPOINTS
+// ============================================
+
+getMerchantStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/merchants/stats`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-approveCustomerDocument(documentId: number): Observable<any> {
-  return this.http.put(`${this.API}/admin/kyc/customer/document/approve/${documentId}`, {}, { headers: this.getAuthHeaders() })
+getAllMerchants(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/merchants`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
-rejectCustomerDocument(documentId: number, rejectionReason: string): Observable<any> {
-  return this.http.put(`${this.API}/admin/kyc/customer/document/reject/${documentId}`, { rejection_reason: rejectionReason }, { headers: this.getAuthHeaders() })
+getMerchantDetail(merchantId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/merchants/${merchantId}`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+updateMerchantStatus(merchantId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/merchants/${merchantId}/status`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
 }
 
+// updateMerchantCommission(merchantId: number, data: any): Observable<any> {
+//   return this.http.put(`${this.API}/admin/merchants/${merchantId}/commission`, data, { headers: this.getAuthHeaders() })
+//     .pipe(catchError(this.handleError.bind(this)));
+// }
 
+adjustMerchantReserve(merchantId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/merchants/${merchantId}/reserve`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportMerchants(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/merchants/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+// Add to AdminService class
+
+// ============================================
+// TRANSACTION MANAGEMENT ENDPOINTS
+// ============================================
+
+getTransactionStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/transactions/stats`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getAllTransactions(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/transactions`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getTransactionDetail(transactionId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/transactions/${transactionId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateTransactionStatus(transactionId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/transactions/${transactionId}/status`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateDeliveryStatus(transactionId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/transactions/${transactionId}/delivery`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+refundTransaction(transactionId: number, data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/transactions/${transactionId}/refund`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportTransactions(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/transactions/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+
+// Add to AdminService class
+
+// ============================================
+// SETTLEMENT MANAGEMENT ENDPOINTS
+// ============================================
+
+getSettlementStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/settlements/stats`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getAllSettlements(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/settlements`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getSettlementDetail(settlementId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/settlements/${settlementId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+processBulkSettlements(data: any): Observable<any> {
+  return this.http.post(`${this.API}/admin/settlements/process-bulk`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+processSingleSettlement(settlementId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/settlements/${settlementId}/process`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportSettlements(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/settlements/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+
+// Add to AdminService class
+
+// ============================================
+// REPORTS & ANALYTICS ENDPOINTS
+// ============================================
+
+getRevenueReport(params?: any): Observable<any> {
+  let url = `${this.API}/admin/reports/revenue`;
+  if (params) {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key]) queryParams.append(key, params[key]);
+    });
+    const qs = queryParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getTransactionReport(params?: any): Observable<any> {
+  let url = `${this.API}/admin/reports/transactions`;
+  if (params) {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key]) queryParams.append(key, params[key]);
+    });
+    const qs = queryParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getCustomerReport(params?: any): Observable<any> {
+  let url = `${this.API}/admin/reports/customers`;
+  if (params) {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key]) queryParams.append(key, params[key]);
+    });
+    const qs = queryParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getMerchantReport(params?: any): Observable<any> {
+  let url = `${this.API}/admin/reports/merchants`;
+  if (params) {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key]) queryParams.append(key, params[key]);
+    });
+    const qs = queryParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getInstalmentReport(params?: any): Observable<any> {
+  let url = `${this.API}/admin/reports/instalments`;
+  if (params) {
+    const queryParams = new URLSearchParams();
+    Object.keys(params).forEach(key => {
+      if (params[key]) queryParams.append(key, params[key]);
+    });
+    const qs = queryParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getDashboardKPIs(): Observable<any> {
+  return this.http.get(`${this.API}/admin/reports/kpis`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+downloadReport(params: any): Observable<Blob> {
+  let url = `${this.API}/admin/reports/download`;
+  const queryParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key]) queryParams.append(key, params[key]);
+  });
+  const qs = queryParams.toString();
+  if (qs) url += `?${qs}`;
+  
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+
+// Add to AdminService class
+
+// ============================================
+// PRODUCT PLANS ENDPOINTS
+// ============================================
+
+getProductStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/products/stats`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getAllProducts(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/products`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getProductDetail(productId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/products/${productId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateProductStatus(productId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/products/${productId}/status`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateProductFeatured(productId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/products/${productId}/featured`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateProductStock(productId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/products/${productId}/stock`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportProducts(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/products/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+// Add to AdminService class
+
+// ============================================
+// USER MANAGEMENT ENDPOINTS
+// ============================================
+
+getUserStats(): Observable<any> {
+  return this.http.get(`${this.API}/admin/users/stats`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getAllUsers(filters?: any): Observable<any> {
+  let url = `${this.API}/admin/users`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+getUserDetail(userId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/users/${userId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+updateUserStatus(userId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/users/${userId}/status`, data, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+deleteUser(userId: number): Observable<any> {
+  return this.http.delete(`${this.API}/admin/users/${userId}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+exportUsers(filters?: any): Observable<Blob> {
+  let url = `${this.API}/admin/users/export`;
+  if (filters) {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return this.http.get(url, { 
+    headers: this.getAuthHeaders(), 
+    responseType: 'blob' 
+  }).pipe(catchError(this.handleError.bind(this)));
+}
+}

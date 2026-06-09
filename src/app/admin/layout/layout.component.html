@@ -1,15 +1,32 @@
 <div class="admin-layout">
+  <!-- Sidebar Overlay for mobile -->
+  <div class="sidebar-overlay" 
+       [class.show]="isMobile && isMobileOpen" 
+       (click)="closeSidebar()">
+  </div>
+
   <!-- Sidebar -->
-  <aside class="sidebar" [class.collapsed]="isCollapsed">
+  <aside class="sidebar" 
+         [class.collapsed]="!isMobile && isCollapsed"
+         [class.mobile-open]="isMobile && isMobileOpen">
+    
     <!-- Toggle Button -->
     <button class="toggle-btn" (click)="toggleSidebar()">
-      <span class="icon">{{ isCollapsed ? '→' : '←' }}</span>
+      <span class="icon">
+        <!-- Different icons for mobile vs desktop -->
+        <ng-container *ngIf="isMobile">
+          {{ isMobileOpen ? '←' : '→' }}
+        </ng-container>
+        <ng-container *ngIf="!isMobile">
+          {{ isCollapsed ? '→' : '←' }}
+        </ng-container>
+      </span>
     </button>
 
     <!-- Logo -->
     <div class="logo">
       <div class="logo-icon">⚡</div>
-      <div class="logo-text" *ngIf="!isCollapsed">
+      <div class="logo-text" *ngIf="!isMobile || (isMobile && isMobileOpen)">
         <h2>AdminHub</h2>
         <p>Dashboard</p>
       </div>
@@ -18,36 +35,36 @@
     <!-- Navigation Menu -->
     <nav class="nav-menu">
       <!-- Dashboard -->
-      <a routerLink="dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+      <a routerLink="dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="isMobile && closeSidebar()">
         <span class="icon">📊</span>
-        <span class="label" *ngIf="!isCollapsed">Dashboard</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Dashboard</span>
       </a>
 
       <!-- Users Dropdown -->
       <div class="nav-dropdown">
         <div class="dropdown-trigger" (click)="toggleDropdown('users')" [class.active]="activeDropdown === 'users'">
           <span class="icon">👥</span>
-          <span class="label" *ngIf="!isCollapsed">User Management</span>
-          <span class="dropdown-icon" *ngIf="!isCollapsed">{{ activeDropdown === 'users' ? '▼' : '▶' }}</span>
+          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">User Management</span>
+          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'users' ? '▼' : '▶' }}</span>
         </div>
         <div class="dropdown-menu" [class.show]="activeDropdown === 'users'">
-          <a routerLink="users/all" routerLinkActive="active">
+          <a routerLink="all-users" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">📋</span>
             <span>All Users</span>
           </a>
-          <a routerLink="/admin/customers" routerLinkActive="active">
+          <a routerLink="/admin/customers" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">👤</span>
             <span>Customers</span>
           </a>
-          <a routerLink="/admin/merchants" routerLinkActive="active">
+          <a routerLink="/admin/merchants" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">🏪</span>
             <span>Merchants</span>
           </a>
-          <a routerLink="users/pending" routerLinkActive="active">
+          <!-- <a routerLink="users/pending" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">⏳</span>
             <span>Pending Approvals</span>
             <span class="badge">12</span>
-          </a>
+          </a> -->
         </div>
       </div>
 
@@ -55,19 +72,15 @@
       <div class="nav-dropdown">
         <div class="dropdown-trigger" (click)="toggleDropdown('products')" [class.active]="activeDropdown === 'products'">
           <span class="icon">🛍️</span>
-          <span class="label" *ngIf="!isCollapsed">Products</span>
-          <span class="dropdown-icon" *ngIf="!isCollapsed">{{ activeDropdown === 'products' ? '▼' : '▶' }}</span>
+          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Products</span>
+          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'products' ? '▼' : '▶' }}</span>
         </div>
         <div class="dropdown-menu" [class.show]="activeDropdown === 'products'">
-          <a routerLink="products/all" routerLinkActive="active">
+          <a routerLink="product-plans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">📦</span>
             <span>All Products</span>
           </a>
-          <a routerLink="products/categories" routerLinkActive="active">
-            <span class="icon">🏷️</span>
-            <span>Categories</span>
-          </a>
-          <a routerLink="/admin/orders" routerLinkActive="active">
+          <a routerLink="/admin/orders" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">📝</span>
             <span>Product Requests</span>
             <span class="badge warning">5</span>
@@ -79,65 +92,101 @@
       <div class="nav-dropdown">
         <div class="dropdown-trigger" (click)="toggleDropdown('finance')" [class.active]="activeDropdown === 'finance'">
           <span class="icon">💰</span>
-          <span class="label" *ngIf="!isCollapsed">Finance</span>
-          <span class="dropdown-icon" *ngIf="!isCollapsed">{{ activeDropdown === 'finance' ? '▼' : '▶' }}</span>
+          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Finance</span>
+          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'finance' ? '▼' : '▶' }}</span>
         </div>
         <div class="dropdown-menu" [class.show]="activeDropdown === 'finance'">
-          <a routerLink="/admin/transactions" routerLinkActive="active">
+          <a routerLink="/admin/transactions" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">💳</span>
             <span>Transactions</span>
           </a>
-          <a routerLink="finance/loans" routerLinkActive="active">
+          <!-- <a routerLink="finance/loans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">🏦</span>
             <span>Loans</span>
-          </a>
-          <a routerLink="finance/payments" routerLinkActive="active">
+          </a> -->
+          <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">💸</span>
             <span>Payments</span>
           </a>
-          <a routerLink="/admin/charges" routerLinkActive="active">
+          <a routerLink="/admin/charges" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">⚙️</span>
             <span>Charges & Fees</span>
           </a>
-          <a routerLink="finance/reports" routerLinkActive="active">
+          <a routerLink="finance/reports" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">📈</span>
             <span>Reports</span>
           </a>
         </div>
       </div>
 
-      <!-- Add this inside the nav-menu section -->
-<a routerLink="kyb-verification" routerLinkActive="active">
-  <span class="icon">✅</span>
-  <span class="label" *ngIf="!isCollapsed">KYB Verification</span>
-</a>
+      <!-- Additional Links -->
+      <a routerLink="customer-overview" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">👥</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Customer Overview</span>
+      </a>
 
-<a routerLink="kyc-verification" routerLinkActive="active">
-  <span class="icon">✅</span>
-  <span class="label" *ngIf="!isCollapsed">KYC Verification</span>
-</a>
+      <a routerLink="merchant-overview" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">🏪</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Merchant Overview</span>
+      </a>
+      
+      <a routerLink="all-installments" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">📅</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Installments</span>
+      </a>
+      
+      <a routerLink="product-plans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">📋</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Product Plans</span>
+      </a>
+      
+      <a routerLink="collections" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">💰</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Collections</span>
+      </a>
 
+      <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">💸</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settlements</span>
+      </a>
+      
+      <a routerLink="all-transactions" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">💳</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Transactions</span>
+      </a>
+
+      <a routerLink="kyb-verification" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">🛡️</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">KYB Verification</span>
+      </a>
+
+      <a routerLink="kyc-verification" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">✅</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">KYC Verification</span>
+      </a>
+
+      <a routerLink="all-reports" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">📈</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Reports</span>
+      </a>
+      
       <!-- Settings Dropdown -->
       <div class="nav-dropdown">
         <div class="dropdown-trigger" (click)="toggleDropdown('settings')" [class.active]="activeDropdown === 'settings'">
           <span class="icon">⚙️</span>
-          <span class="label" *ngIf="!isCollapsed">Settings</span>
-          <span class="dropdown-icon" *ngIf="!isCollapsed">{{ activeDropdown === 'settings' ? '▼' : '▶' }}</span>
+          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settings</span>
+          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'settings' ? '▼' : '▶' }}</span>
         </div>
         <div class="dropdown-menu" [class.show]="activeDropdown === 'settings'">
-          <a routerLink="settings/profile" routerLinkActive="active">
+          <a routerLink="settings/profile" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">👤</span>
             <span>Profile</span>
           </a>
-          <a routerLink="settings/security" routerLinkActive="active">
-            <span class="icon">🔒</span>
-            <span>Security</span>
-          </a>
-          <a routerLink="settings/notifications" routerLinkActive="active">
+          <a routerLink="settings/notifications" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">🔔</span>
             <span>Notifications</span>
           </a>
-          <a routerLink="settings/system" routerLinkActive="active">
+          <a routerLink="system-settings" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">💻</span>
             <span>System</span>
           </a>
@@ -150,20 +199,20 @@
       <div class="avatar">
         <img src="https://ui-avatars.com/api/?background=667eea&color=fff&name=Admin" alt="Admin">
       </div>
-      <div class="user-info" *ngIf="!isCollapsed">
+      <div class="user-info" *ngIf="!isMobile || (isMobile && isMobileOpen)">
         <h4>Admin User</h4>
         <p>admin@example.com</p>
       </div>
-      <span class="dropdown-icon" *ngIf="!isCollapsed">{{ showUserMenu ? '▼' : '▲' }}</span>
+      <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ showUserMenu ? '▼' : '▲' }}</span>
     </div>
 
     <!-- User Dropdown Menu -->
     <div class="user-menu" [class.show]="showUserMenu">
-      <a routerLink="/admin/profile">
+      <a routerLink="/admin/profile" (click)="isMobile && closeSidebar()">
         <span class="icon">👤</span>
         My Profile
       </a>
-      <a routerLink="/admin/settings">
+      <a routerLink="/admin/settings" (click)="isMobile && closeSidebar()">
         <span class="icon">⚙️</span>
         Account Settings
       </a>
@@ -178,9 +227,10 @@
   <!-- Main Content -->
   <main class="main-content">
     <header class="header">
-      <div class="header-left">
-        <h1>Welcome back, Admin</h1>
-        <p class="subtitle">Here's what's happening today</p>
+      <div class="header-left" *ngIf="isMobile">
+        <button class="mobile-menu-btn" (click)="toggleSidebar()">
+          <span class="icon">☰</span>
+        </button>
       </div>
       <div class="header-right">
         <div class="notifications">
