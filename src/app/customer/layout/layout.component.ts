@@ -87,7 +87,7 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
     else if (path.includes('/payments')) this.currentPageTitle = 'My Payments';
     else if (path.includes('/instalments')) this.currentPageTitle = 'Instalments';
     else if (path.includes('/transactions')) this.currentPageTitle = 'Transactions';
-    else if (path.includes('/plans')) this.currentPageTitle = 'Available Plans';
+    else if (path.includes('/plans')) this.currentPageTitle = 'Extended Plans';
     else if (path.includes('/profile')) this.currentPageTitle = 'My Profile';
     else if (path.includes('/settings')) this.currentPageTitle = 'Settings';
     else if (path.includes('/notifications')) this.currentPageTitle = 'Notifications';

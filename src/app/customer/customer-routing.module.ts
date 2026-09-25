@@ -32,7 +32,7 @@ const routes: Routes = [
       { path: 'payments', component: CustomerPaymentsComponent, data: { title: 'My Payments' } },
       { path: 'instalments', component: CustomerInstalmentsComponent, data: { title: 'My Instalments' } },
       { path: 'transactions', component: CustomerTransactionsComponent, data: { title: 'Transactions' } },
-      { path: 'plans', component: CustomerPlansComponent, data: { title: 'Available Plans' } },
+      { path: 'plans', component: CustomerPlansComponent, data: { title: 'Extended Plans' } },
       { path: 'profile', component: CustomerProfileComponent, data: { title: 'My Profile' } },
       { path: 'support', component: CustomerSupportComponent, data: { title: 'Support' } },
       { path: 'settings', component: CustomerSettingsComponent, data: { title: 'Settings' } },

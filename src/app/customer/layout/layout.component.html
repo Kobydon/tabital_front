@@ -47,10 +47,10 @@
         <span class="label" *ngIf="!isSidebarCollapsed">Transactions</span>
       </a>
 
-      <!-- Plans / Shop -->
+      <!-- Extended plans (6 & 12 months): eligible customers only, not open yet -->
       <a [routerLink]="'/customer/plans'" routerLinkActive="active">
-        <i class="fas fa-shopping-cart icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Plans</span>
+        <i class="fas fa-calendar-alt icon"></i>
+        <span class="label" *ngIf="!isSidebarCollapsed">Extended Plans (Soon)</span>
       </a>
 
       <!-- Account Dropdown -->
