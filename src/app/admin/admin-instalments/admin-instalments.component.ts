@@ -403,8 +403,40 @@ export class AdminInstalmentsComponent implements OnInit {
       case 'pending': return 'payment-pending';
       case 'overdue': return 'payment-overdue';
       case 'partial': return 'payment-partial';
+      case 'pending_verification': return 'payment-verification';
       default: return '';
     }
+  }
+
+  // ============================================
+  // LEDGER (read-only audit trail from the API)
+  // ============================================
+
+  ledgerTypeLabel(entryType: string): string {
+    switch (entryType) {
+      case 'plan_opened': return 'Contract opened';
+      case 'payment_received': return 'Payment received';
+      case 'late_fee_charged': return 'Late fee charged';
+      case 'late_fee_waived': return 'Late fee waived';
+      case 'merchant_fee': return 'Merchant fee (MDR)';
+      case 'merchant_payable': return 'Owed to merchant';
+      default: return entryType;
+    }
+  }
+
+  customerLedgerEntries(): any[] {
+    return (this.selectedPlan?.ledger?.entries || []).filter((e: any) => e.account === 'customer');
+  }
+
+  merchantLedgerEntries(): any[] {
+    return (this.selectedPlan?.ledger?.entries || []).filter((e: any) => e.account === 'merchant');
+  }
+
+  formatDateTime(value: string): string {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('en-GH', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   }
 
   formatCurrency(amount: number): string {

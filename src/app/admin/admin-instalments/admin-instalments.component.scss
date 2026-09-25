@@ -734,3 +734,77 @@
     to { transform: rotate(360deg); }
   }
 }
+// ---------------- Ledger ----------------
+.payment-verification {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payment-ref {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ledger-section {
+  h4 {
+    margin: 16px 0 8px;
+    font-size: 14px;
+    color: #374151;
+  }
+
+  .ledger-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f4ff;
+    border-radius: 10px;
+    padding: 12px 16px;
+
+    strong {
+      font-size: 18px;
+      color: #4338ca;
+    }
+  }
+
+  .ledger-empty {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  .ledger-table {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+
+  .ledger-header,
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1fr 1fr 1.6fr;
+    gap: 8px;
+    padding: 10px 12px;
+    min-width: 640px;
+    font-size: 13px;
+  }
+
+  .ledger-header {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .ledger-row + .ledger-row {
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .ledger-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+
+    &.debit { color: #b91c1c; }
+    &.credit { color: #047857; }
+  }
+}
