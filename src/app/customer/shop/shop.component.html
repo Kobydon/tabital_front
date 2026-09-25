@@ -279,7 +279,14 @@
               </div>
             </div>
 
-            <button class="btn-checkout" (click)="openCheckout()" [disabled]="!calculation">
+            <div class="credit-warning" *ngIf="creditBlockReason() as reason">
+              <i class="fas fa-exclamation-circle"></i> {{ reason }}
+            </div>
+            <div class="credit-ok" *ngIf="calculation.credit?.eligible && !creditBlockReason() && purchaseForm.value.selected_installments !== 1">
+              <i class="fas fa-check-circle"></i> Within your available limit of {{ formatCurrency(calculation.credit?.available_limit || 0) }}
+            </div>
+
+            <button class="btn-checkout" (click)="openCheckout()" [disabled]="!calculation || !!creditBlockReason()">
               <i class="fas fa-shopping-cart"></i> Proceed to Checkout
             </button>
           </div>

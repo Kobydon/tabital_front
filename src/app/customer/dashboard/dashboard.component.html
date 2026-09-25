@@ -20,6 +20,27 @@
 
   <!-- Stats Cards -->
   <div class="stats-grid">
+    <!-- Spending limit from underwriting (Phase 3) -->
+    <div class="stat-card" *ngIf="$any(stats)?.credit as credit">
+      <div class="stat-icon next-payment">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Available to Spend</h3>
+        <ng-container *ngIf="credit.eligible">
+          <div class="stat-value">{{ formatCurrency(credit.available_limit) }}</div>
+          <p class="stat-subtitle">of your {{ formatCurrency(credit.credit_limit) }} limit</p>
+        </ng-container>
+        <ng-container *ngIf="!credit.eligible">
+          <div class="stat-value">—</div>
+          <p class="stat-subtitle">
+            Not available yet: {{ credit.reasons?.[0] }}.
+            <a routerLink="/customer/profile">Complete your details</a>
+          </p>
+        </ng-container>
+      </div>
+    </div>
+
     <div class="stat-card">
       <div class="stat-icon total-outstanding">
         <i class="fas fa-credit-card"></i>

@@ -653,6 +653,24 @@ updateCustomerCreditLimit(customerId: number, data: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// ---------- Underwriting (Phase 3) ----------
+// No handleError here so screens can show the server's message
+setCustomerCreditLimit(customerId: number, data: { credit_limit: number | null; reason: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/credit-limit`, data, { headers: this.getAuthHeaders() });
+}
+
+getCustomerUnderwriting(customerId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/customers/${customerId}/underwriting`, { headers: this.getAuthHeaders() });
+}
+
+updateCustomerUnderwriting(customerId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/underwriting`, data, { headers: this.getAuthHeaders() });
+}
+
+rerunCustomerUnderwriting(customerId: number): Observable<any> {
+  return this.http.post(`${this.API}/admin/customers/${customerId}/underwriting/rerun`, {}, { headers: this.getAuthHeaders() });
+}
+
 addCustomerNote(customerId: number, data: any): Observable<any> {
   return this.http.post(`${this.API}/admin/customers/${customerId}/note`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));

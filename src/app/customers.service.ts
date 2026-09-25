@@ -267,6 +267,15 @@ startPaystackPayment(planId: number): Observable<any> {
   return this.http.post(`${this.API}/customer/payments/paystack/initialize`, { plan_id: planId }, { headers: this.getAuthHeaders() });
 }
 
+// ---------- Underwriting (Phase 3) ----------
+getCredit(): Observable<any> {
+  return this.http.get(`${this.API}/customer/credit`, { headers: this.getAuthHeaders() });
+}
+
+updateUnderwritingDetails(data: any): Observable<any> {
+  return this.http.put(`${this.API}/customer/underwriting`, data, { headers: this.getAuthHeaders() });
+}
+
 payOrderDownPayment(orderId: number): Observable<any> {
   return this.http.post(`${this.API}/customer/orders/${orderId}/pay`, {}, { headers: this.getAuthHeaders() });
 }

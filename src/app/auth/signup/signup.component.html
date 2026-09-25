@@ -143,17 +143,54 @@
             <input formControlName="company" placeholder="Company/organization">
           </div>
 
+          <!-- Underwriting details (verified by Tabital before a limit is given) -->
           <div class="form-field">
-            <label>Income Range *</label>
-            <select formControlName="income_range" [class.error]="customerForm.get('income_range')?.invalid && customerForm.get('income_range')?.touched">
-              <option value="">Select income range</option>
-              <option>Below GHS 1,000</option>
-              <option>GHS 1,000 – 3,000</option>
-              <option>GHS 3,000 – 5,000</option>
-              <option>GHS 5,000+</option>
+            <label>Monthly Salary (GHS) *</label>
+            <input type="number" min="0" step="1" formControlName="monthly_salary" placeholder="e.g. 4500"
+                   [class.error]="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
+            <small class="hint">Net monthly salary. We'll check it against your salary certificate.</small>
+            <small class="error-text" *ngIf="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
+              Enter your monthly salary
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Employed Since *</label>
+            <input type="date" formControlName="employment_start_date" [max]="today"
+                   [class.error]="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
+              Enter the date you started with your current employer
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Is your salary paid into a bank account? *</label>
+            <select formControlName="salary_paid_to_bank"
+                    [class.error]="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
+              <option [ngValue]="null">Select</option>
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">No</option>
             </select>
-            <small class="error-text" *ngIf="customerForm.get('income_range')?.invalid && customerForm.get('income_range')?.touched">
-              Income range is required
+            <small class="error-text" *ngIf="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
+              Please choose Yes or No
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Ghana Card Number *</label>
+            <input formControlName="national_id" placeholder="GHA-XXXXXXXXX-X"
+                   [class.error]="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
+              Enter your full Ghana Card number
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label>Mobile Money Number *</label>
+            <input formControlName="momo_number" placeholder="024XXXXXXX"
+                   [class.error]="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
+              {{ getMobileNumberErrorMessage(customerForm.get('momo_number')) }}
             </small>
           </div>
         </div>

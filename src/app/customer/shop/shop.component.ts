@@ -43,6 +43,14 @@ export interface InstallmentCalculation {
     remaining_installments: number;
     installment_amount: number;
   };
+  // Customer's underwriting result for this quote (Phase 3)
+  credit?: {
+    eligible: boolean;
+    tier: string | null;
+    credit_limit: number;
+    available_limit: number;
+    reasons: string[];
+  } | null;
   fees: {
     service_fee: number;
     delivery_fee: number;
@@ -300,9 +308,26 @@ export class CustomerShopComponent implements OnInit {
     this.calculateInstallment(this.selectedProduct, months);
   }
 
+  // Why this plan can't be bought right now, or null if it can (the server checks again at checkout)
+  creditBlockReason(): string | null {
+    const credit = this.calculation?.credit;
+    const months = this.purchaseForm.value.selected_installments;
+    if (!credit || months === 1) return null;         // full payment uses no credit
+    if (!credit.eligible) return credit.reasons?.[0] || 'You are not eligible for a payment plan yet';
+    if ((this.calculation?.product_price || 0) > credit.available_limit) {
+      return `This is above your available limit of ${this.formatCurrency(credit.available_limit)}`;
+    }
+    return null;
+  }
+
   openCheckout(): void {
     if (this.isKYCPending) {
       this.showKYCBlockedModal();
+      return;
+    }
+    const blocked = this.creditBlockReason();
+    if (blocked) {
+      alert(blocked);
       return;
     }
     
@@ -338,7 +363,8 @@ export class CustomerShopComponent implements OnInit {
       },
       error: (error) => {
         this.isPurchasing = false;
-        alert(error?.error?.error || 'Failed to place order. Please try again.');
+        const reasons: string[] = error?.error?.reasons || [];
+        alert([error?.error?.error || 'Failed to place order. Please try again.', ...reasons].join('\n• '));
       }
     });
   }

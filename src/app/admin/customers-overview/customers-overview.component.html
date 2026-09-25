@@ -343,6 +343,71 @@
           </div>
         </div>
 
+        <!-- Underwriting (Phase 3): decision, the facts behind it, and history -->
+        <div class="underwriting-section" *ngIf="underwriting">
+          <h3><i class="fas fa-balance-scale"></i> Underwriting</h3>
+
+          <div class="uw-decision" [class.declined]="!underwriting.current.eligible">
+            <div class="uw-headline">
+              <span class="uw-badge" [class]="'tier-' + (underwriting.current.tier || 'none')">
+                {{ underwriting.current.eligible ? ((underwriting.current.tier | titlecase) + ' tier') : 'Not eligible' }}
+              </span>
+              <span *ngIf="underwriting.current.eligible">
+                Limit <strong>{{ formatCurrency(underwriting.current.credit_limit) }}</strong>
+                · Available <strong>{{ formatCurrency(underwriting.current.available_limit) }}</strong>
+                · Pay in 4 down payment <strong>{{ underwriting.current.pay_in_4_down_payment_percent }}%</strong>
+              </span>
+            </div>
+            <ul class="uw-reasons">
+              <li *ngFor="let reason of underwriting.current.reasons">{{ reason }}</li>
+            </ul>
+            <small class="uw-meta">Rules {{ underwriting.current.rules_version }}
+              <ng-container *ngIf="underwriting.current.extended_plans_eligible"> · Eligible for extended plans</ng-container>
+            </small>
+          </div>
+
+          <div class="uw-details">
+            <div><span>Ghana Card</span><strong>{{ underwriting.details.national_id || '—' }}</strong></div>
+            <div><span>Date of birth</span><strong>{{ underwriting.details.date_of_birth || '—' }}</strong></div>
+            <div><span>Monthly salary</span>
+              <strong>
+                {{ underwriting.details.monthly_salary !== null ? formatCurrency(underwriting.details.monthly_salary) : '—' }}
+                <em [class.ok]="underwriting.details.salary_verified">{{ underwriting.details.salary_verified ? 'verified' : 'not verified' }}</em>
+              </strong>
+            </div>
+            <div><span>Employed since</span><strong>{{ underwriting.details.employment_start_date || '—' }}</strong></div>
+            <div><span>Salary paid to bank</span><strong>{{ underwriting.details.salary_paid_to_bank ? 'Yes' : 'No' }}</strong></div>
+            <div><span>MoMo number</span><strong>{{ underwriting.details.momo_number || '—' }}</strong></div>
+            <div *ngIf="underwriting.details.credit_limit_override !== null">
+              <span>Limit override</span><strong>{{ formatCurrency(underwriting.details.credit_limit_override) }}</strong>
+            </div>
+          </div>
+
+          <div class="uw-actions">
+            <button class="btn-primary small" *ngIf="!underwriting.details.salary_verified && underwriting.details.monthly_salary !== null"
+                    (click)="verifySalary()" [disabled]="isSubmitting">
+              <i class="fas fa-check"></i> Mark salary verified
+            </button>
+            <button class="btn-secondary small" (click)="rerunUnderwriting()" [disabled]="isSubmitting">
+              <i class="fas fa-redo"></i> Re-run assessment
+            </button>
+          </div>
+
+          <div class="uw-history" *ngIf="underwriting.history?.length">
+            <h4>Decision history</h4>
+            <div class="uw-history-row header">
+              <span>Date</span><span>Source</span><span>Result</span><span>Limit</span><span>Note</span>
+            </div>
+            <div class="uw-history-row" *ngFor="let h of underwriting.history">
+              <span>{{ h.created_at | date:'d MMM y, HH:mm' }}</span>
+              <span>{{ h.source | titlecase }}</span>
+              <span>{{ h.eligible ? ((h.tier | titlecase) + ' tier') : 'Declined' }}</span>
+              <span>{{ formatCurrency(h.credit_limit) }}</span>
+              <span>{{ h.note || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Recent Activity -->
         <div class="activity-section">
           <h3><i class="fas fa-history"></i> Recent Activity</h3>
@@ -453,14 +518,18 @@
           </div>
 
           <div class="form-group">
-            <label>Reason (Optional)</label>
-            <textarea formControlName="reason" rows="3" placeholder="Provide reason for limit change..."></textarea>
+            <label>Reason *</label>
+            <textarea formControlName="reason" rows="3" placeholder="Why is this limit being overridden? (stored with the decision)"></textarea>
+            <small>This overrides the limit worked out by the underwriting rules until it's cleared.</small>
           </div>
         </form>
       </div>
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModals()">Cancel</button>
+        <button class="btn-secondary" (click)="clearCreditLimitOverride()" [disabled]="!updateLimitForm.get('reason')?.value || isSubmitting">
+          Clear override
+        </button>
         <button class="btn-primary" (click)="updateCreditLimit()" [disabled]="updateLimitForm.invalid || isSubmitting">
           <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
           {{ isSubmitting ? 'Updating...' : 'Update Limit' }}

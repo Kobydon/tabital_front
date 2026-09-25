@@ -28,6 +28,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // Data
   customers: Customer[] = [];
   selectedCustomer: any = null;
+  underwriting: any = null;
   customerStats: any = {};
   
   // UI State
@@ -80,7 +81,8 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     { value: '', label: 'All' },
     { value: 'Low', label: 'Low' },
     { value: 'Medium', label: 'Medium' },
-    { value: 'High', label: 'High' }
+    { value: 'High', label: 'High' },
+    { value: 'Not Assessed', label: 'Not assessed' }
   ];
 
   // Customer Status Options
@@ -103,7 +105,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     
     this.updateLimitForm = this.fb.group({
       credit_limit: ['', [Validators.required, Validators.min(100)]],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]
     });
     
     this.addNoteForm = this.fb.group({
@@ -191,10 +193,12 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // ============================================
 
   viewCustomerDetails(customer: Customer): void {
+    this.underwriting = null;
     this.adminService.getCustomerDetail(customer.id).subscribe({
       next: (response: any) => {
         this.selectedCustomer = response;
         this.showCustomerModal = true;
+        this.loadUnderwriting(customer.id);
       },
       error: (error) => {
         console.error('Error loading customer details:', error);
@@ -243,21 +247,79 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
 
   updateCreditLimit(): void {
     if (this.updateLimitForm.invalid) return;
-    
+    this.saveCreditLimit(this.updateLimitForm.value.credit_limit);
+  }
+
+  clearCreditLimitOverride(): void {
+    if (!this.updateLimitForm.value.reason) return;
+    this.saveCreditLimit(null);
+  }
+
+  private saveCreditLimit(creditLimit: number | null): void {
+    const customerId = this.selectedCustomer.customer.id;
     this.isSubmitting = true;
-    const data = this.updateLimitForm.value;
-    
-    this.adminService.updateCustomerCreditLimit(this.selectedCustomer.customer.id, data).subscribe({
-      next: (response) => {
+    this.adminService.setCustomerCreditLimit(customerId, {
+      credit_limit: creditLimit,
+      reason: this.updateLimitForm.value.reason
+    }).subscribe({
+      next: (response: any) => {
         this.isSubmitting = false;
-        alert('Credit limit updated successfully');
+        alert(response?.message || 'Credit limit updated');
         this.showUpdateLimitModal = false;
+        this.loadCustomers();
+        this.loadUnderwriting(customerId);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        alert(error?.error?.error || 'Failed to update credit limit');
+      }
+    });
+  }
+
+  // ============================================
+  // UNDERWRITING (Phase 3)
+  // ============================================
+
+  loadUnderwriting(customerId: number): void {
+    this.adminService.getCustomerUnderwriting(customerId).subscribe({
+      next: (res: any) => this.underwriting = res,
+      error: () => this.underwriting = null
+    });
+  }
+
+  verifySalary(): void {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    if (!confirm('Confirm the salary matches the salary certificate / bank statement?')) return;
+    this.isSubmitting = true;
+    this.adminService.updateCustomerUnderwriting(customerId, {
+      salary_verified: true, note: 'Salary verified against documents'
+    }).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.loadUnderwriting(customerId);
         this.loadCustomers();
       },
       error: (error) => {
-        console.error('Error updating credit limit:', error);
         this.isSubmitting = false;
-        alert('Failed to update credit limit');
+        alert(error?.error?.error || 'Failed to verify salary');
+      }
+    });
+  }
+
+  rerunUnderwriting(): void {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    this.isSubmitting = true;
+    this.adminService.rerunCustomerUnderwriting(customerId).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.loadUnderwriting(customerId);
+        this.loadCustomers();
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        alert(error?.error?.error || 'Failed to re-run the assessment');
       }
     });
   }

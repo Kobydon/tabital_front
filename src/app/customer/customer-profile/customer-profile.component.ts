@@ -35,12 +35,16 @@ export class CustomerProfileComponent implements OnInit {
   isUpdating = false;
   isChangingPassword = false;
   isUploadingKYC = false;
-  activeTab: 'profile' | 'security' | 'kyc' | 'activity' = 'profile';
+  activeTab: 'profile' | 'credit' | 'security' | 'kyc' | 'activity' = 'profile';
   
   // Forms
   profileForm: FormGroup;
   passwordForm: FormGroup;
   kycForm: FormGroup;
+  creditForm: FormGroup;
+  credit: any = null;
+  isSavingCredit = false;
+  readonly today = new Date().toISOString().slice(0, 10);
   
   // File Upload
   selectedFiles: { type: string; file: File | null }[] = [
@@ -73,6 +77,14 @@ export class CustomerProfileComponent implements OnInit {
       income_range: ['']
     });
     
+    this.creditForm = this.fb.group({
+      national_id: ['', [Validators.required, Validators.minLength(8)]],
+      monthly_salary: [null, [Validators.required, Validators.min(1)]],
+      employment_start_date: ['', Validators.required],
+      salary_paid_to_bank: [null, Validators.required],
+      momo_number: ['', [Validators.required, Validators.pattern(/^0\d{9}$/)]]
+    });
+
     this.passwordForm = this.fb.group({
       current_password: ['', Validators.required],
       new_password: ['', [Validators.required, Validators.minLength(6)]],
@@ -90,6 +102,47 @@ export class CustomerProfileComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadActivityLogs();
+    this.loadCredit();
+  }
+
+  // ============================================
+  // EMPLOYMENT, INCOME & SPENDING LIMIT (Phase 3)
+  // ============================================
+
+  loadCredit(): void {
+    this.customerService.getCredit().subscribe({
+      next: (res: any) => {
+        this.credit = res;
+        const d = res?.details || {};
+        this.creditForm.patchValue({
+          national_id: d.national_id || '',
+          monthly_salary: d.monthly_salary,
+          employment_start_date: d.employment_start_date || '',
+          salary_paid_to_bank: d.salary_paid_to_bank,
+          momo_number: d.momo_number || ''
+        });
+      },
+      error: () => this.credit = null
+    });
+  }
+
+  saveCreditDetails(): void {
+    if (this.creditForm.invalid) {
+      this.creditForm.markAllAsTouched();
+      return;
+    }
+    this.isSavingCredit = true;
+    this.customerService.updateUnderwritingDetails(this.creditForm.value).subscribe({
+      next: (res: any) => {
+        this.isSavingCredit = false;
+        this.credit = res;
+        alert(res?.message || 'Details saved');
+      },
+      error: (error) => {
+        this.isSavingCredit = false;
+        alert(error?.error?.error || 'Could not save your details');
+      }
+    });
   }
 
   // ============================================
@@ -291,7 +344,7 @@ export class CustomerProfileComponent implements OnInit {
   // UI HELPERS
   // ============================================
 
-  switchTab(tab: 'profile' | 'security' | 'kyc' | 'activity'): void {
+  switchTab(tab: 'profile' | 'credit' | 'security' | 'kyc' | 'activity'): void {
     this.activeTab = tab;
     this.clearMessages();
   }

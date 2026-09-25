@@ -13,6 +13,7 @@ import { Subject } from 'rxjs';
 })
 export class SignupComponent implements OnInit, OnDestroy {
   activeTab: string = 'customer';
+  readonly today = new Date().toISOString().slice(0, 10);
   isLoading = false;
   
   serverErrors: { [key: string]: string } = {};
@@ -314,7 +315,12 @@ export class SignupComponent implements OnInit, OnDestroy {
       address: ['', Validators.required],
       designation: [''],
       company: [''],
-      income_range: ['', Validators.required],
+      // Underwriting (Phase 3): Tabital verifies salary and employment before giving a limit
+      monthly_salary: [null, [Validators.required, Validators.min(1)]],
+      employment_start_date: ['', Validators.required],
+      salary_paid_to_bank: [null, Validators.required],
+      national_id: ['', [Validators.required, Validators.minLength(8)]],
+      momo_number: ['', [Validators.required, this.validMobileNumberValidator.bind(this)]],
       ref_name: ['', Validators.required],
       ref_phone: ['', [Validators.required, this.validMobileNumberValidator.bind(this)]],
       ref_relationship: ['', Validators.required],
