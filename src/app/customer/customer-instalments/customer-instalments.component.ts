@@ -1,6 +1,7 @@
 // src/app/customer/components/instalments/instalments.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
 export type PlanStatus = 'all' | 'active' | 'completed' | 'overdue';
@@ -92,10 +93,20 @@ export class CustomerInstalmentsComponent implements OnInit {
     { value: 'cash', label: 'Cash', icon: '💰' }
   ];
 
+  // Buyer protection
+  showDisputeForm = false;
+  isSubmittingDispute = false;
+  disputeForm: FormGroup;
+
   constructor(
     private customerService: CustomerService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
+    this.disputeForm = this.fb.group({
+      reason: ['product_not_received', Validators.required],
+      description: ['', [Validators.required, Validators.minLength(10)]]
+    });
     this.paymentForm = this.fb.group({
       amount: ['', [Validators.required, Validators.min(0.01)]],
       payment_method: ['', Validators.required],
@@ -225,14 +236,33 @@ loadInstalmentPlans(): void {
     this.showDetailsModal = true;
   }
 
+  // Payments go through the Make Payment page (Paystack card/MoMo, or a transfer reference).
+  // The old in-page form posted to an endpoint that doesn't exist.
   openPaymentModal(payment: PaymentSchedule, instalment: InstalmentPlan): void {
-    this.selectedPayment = payment;
-    this.selectedInstalment = instalment;
-    this.paymentForm.reset();
-    this.paymentForm.patchValue({
-      amount: payment.amount
+    this.router.navigate(['/customer/make-payment'], { queryParams: { planId: instalment.id } });
+  }
+
+  submitDispute(): void {
+    if (this.disputeForm.invalid || !this.selectedInstalment) return;
+    this.isSubmittingDispute = true;
+    this.customerService.createDispute({
+      plan_id: this.selectedInstalment.id,
+      reason: this.disputeForm.value.reason,
+      description: this.disputeForm.value.description
+    }).subscribe({
+      next: (res: any) => {
+        this.isSubmittingDispute = false;
+        this.showDisputeForm = false;
+        this.disputeForm.reset({ reason: 'product_not_received', description: '' });
+        alert(res?.message || 'Report sent. Your payments are paused while we review it.');
+        this.closeModals();
+        this.loadInstalmentPlans();
+      },
+      error: (error) => {
+        this.isSubmittingDispute = false;
+        alert(error?.error?.error || 'Could not send your report. Please try again.');
+      }
     });
-    this.showPaymentModal = true;
   }
 
   makePayment(): void {

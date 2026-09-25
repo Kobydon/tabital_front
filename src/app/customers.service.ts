@@ -267,6 +267,27 @@ startPaystackPayment(planId: number): Observable<any> {
   return this.http.post(`${this.API}/customer/payments/paystack/initialize`, { plan_id: planId }, { headers: this.getAuthHeaders() });
 }
 
+// ---------- Servicing (Phase 4): saved cards, autopay, disputes ----------
+getSavedCards(): Observable<any> {
+  return this.http.get(`${this.API}/customer/payment-methods`, { headers: this.getAuthHeaders() });
+}
+
+updateSavedCard(methodId: number, data: { autopay_enabled?: boolean; is_default?: boolean }): Observable<any> {
+  return this.http.put(`${this.API}/customer/payment-methods/${methodId}`, data, { headers: this.getAuthHeaders() });
+}
+
+removeSavedCard(methodId: number): Observable<any> {
+  return this.http.delete(`${this.API}/customer/payment-methods/${methodId}`, { headers: this.getAuthHeaders() });
+}
+
+createDispute(data: { plan_id: number; reason: string; description: string }): Observable<any> {
+  return this.http.post(`${this.API}/customer/disputes`, data, { headers: this.getAuthHeaders() });
+}
+
+getDisputes(): Observable<any> {
+  return this.http.get(`${this.API}/customer/disputes`, { headers: this.getAuthHeaders() });
+}
+
 // ---------- Underwriting (Phase 3) ----------
 getCredit(): Observable<any> {
   return this.http.get(`${this.API}/customer/credit`, { headers: this.getAuthHeaders() });

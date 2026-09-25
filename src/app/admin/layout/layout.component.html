@@ -145,6 +145,11 @@
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Collections</span>
       </a>
 
+      <a routerLink="disputes" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">🛡️</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Disputes</span>
+      </a>
+
       <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
         <span class="icon">💸</span>
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settlements</span>

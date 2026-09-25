@@ -20,6 +20,7 @@ import { MerchantOverviewComponent } from './merchant-overview/merchant-overview
 import { AdminTransactionsComponent } from './admin-transactions/admin-transactions.component';
 import { AdminInstalmentsComponent } from './admin-instalments/admin-instalments.component';
 import { AdminCollectionComponent } from './admin-collection/admin-collection.component';
+import { AdminDisputesComponent } from './admin-disputes/admin-disputes.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -48,6 +49,7 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
     AdminTransactionsComponent,
     AdminInstalmentsComponent,
     AdminCollectionComponent,
+    AdminDisputesComponent,
     SettlementsComponent,
     ReportsAnalyticsComponent,
     ProductPlansComponent,

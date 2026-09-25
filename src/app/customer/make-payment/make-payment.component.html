@@ -38,6 +38,22 @@
         </button>
       </div>
 
+      <!-- Saved cards and autopay (opt-in). Cards are saved by Paystack after a card payment. -->
+      <div class="saved-cards" *ngIf="savedCards.length">
+        <h4><i class="fas fa-sync-alt"></i> Saved cards &amp; autopay</h4>
+        <div class="card-row" *ngFor="let card of savedCards">
+          <span>{{ card.card_type || 'Card' }} •••• {{ card.last4 }} <small *ngIf="card.expiry">exp {{ card.expiry }}</small></span>
+          <span class="autopay-state" [class.on]="card.autopay_enabled">
+            Autopay {{ card.autopay_enabled ? 'on' : 'off' }}
+          </span>
+          <button type="button" class="link-btn" (click)="toggleAutopay(card)">
+            {{ card.autopay_enabled ? 'Turn off' : 'Turn on' }}
+          </button>
+          <button type="button" class="link-btn danger" (click)="removeCard(card)">Remove</button>
+        </div>
+        <small class="hint">With autopay on, we charge this card on each due date (and retry the next days if it fails).</small>
+      </div>
+
       <!-- Manual payment: customer reports a transfer; an admin confirms it -->
       <form *ngIf="showManualForm" [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
 

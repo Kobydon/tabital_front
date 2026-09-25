@@ -333,3 +333,27 @@
   font-size: 13px;
   padding: 4px;
 }
+
+// ---------------- Saved cards & autopay (Phase 4) ----------------
+.saved-cards {
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+
+  h4 { margin: 0 0 10px; font-size: 15px; }
+  .hint { color: #6b7280; font-size: 12px; }
+
+  .card-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+  }
+
+  .autopay-state { color: #6b7280; }
+  .autopay-state.on { color: #047857; font-weight: 600; }
+  .link-btn.danger { color: #b91c1c; }
+}

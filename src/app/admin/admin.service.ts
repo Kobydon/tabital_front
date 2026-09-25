@@ -653,6 +653,20 @@ updateCustomerCreditLimit(customerId: number, data: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// ---------- Servicing (Phase 4) ----------
+getDisputes(status: string = ''): Observable<any> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : '';
+  return this.http.get(`${this.API}/admin/disputes${q}`, { headers: this.getAuthHeaders() });
+}
+
+resolveDispute(disputeId: number, data: { outcome: string; notes: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/disputes/${disputeId}/resolve`, data, { headers: this.getAuthHeaders() });
+}
+
+runServicing(): Observable<any> {
+  return this.http.post(`${this.API}/admin/servicing/run`, {}, { headers: this.getAuthHeaders() });
+}
+
 // ---------- Underwriting (Phase 3) ----------
 // No handleError here so screens can show the server's message
 setCustomerCreditLimit(customerId: number, data: { credit_limit: number | null; reason: string }): Observable<any> {

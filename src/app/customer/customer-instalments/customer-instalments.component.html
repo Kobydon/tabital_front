@@ -191,8 +191,8 @@
                 <span *ngIf="!payment.paid_date">-</span>
               </span>
               <span>
-                <button *ngIf="payment.status === 'pending'" 
-                        class="btn-pay" 
+                <button *ngIf="payment.status === 'pending' || payment.status === 'overdue'"
+                        class="btn-pay"
                         (click)="openPaymentModal(payment, selectedInstalment)">
                   <i class="fas fa-credit-card"></i> Pay Now
                 </button>
@@ -204,6 +204,33 @@
               </span>
             </div>
           </div>
+        </div>
+        <!-- Buyer protection: report a problem, which pauses the remaining payments -->
+        <div class="dispute-box" *ngIf="selectedInstalment.status === 'active'">
+          <ng-container *ngIf="!showDisputeForm">
+            <p>Problem with this purchase (not delivered, faulty, not as described)?</p>
+            <button class="btn-secondary" (click)="showDisputeForm = true">
+              <i class="fas fa-flag"></i> Report a problem
+            </button>
+          </ng-container>
+          <form *ngIf="showDisputeForm" [formGroup]="disputeForm" (ngSubmit)="submitDispute()">
+            <h4>Report a problem</h4>
+            <p class="hint">We'll pause your remaining payments while we look into it. Contact the merchant first if you can.</p>
+            <select formControlName="reason">
+              <option value="product_not_received">Item not received</option>
+              <option value="defective">Item is faulty or damaged</option>
+              <option value="not_as_described">Not as described</option>
+              <option value="unauthorized">I didn't make this purchase</option>
+              <option value="other">Something else</option>
+            </select>
+            <textarea formControlName="description" rows="3" placeholder="What happened? (at least 10 characters)"></textarea>
+            <div class="actions">
+              <button type="button" class="btn-secondary" (click)="showDisputeForm = false">Cancel</button>
+              <button type="submit" class="btn-primary" [disabled]="disputeForm.invalid || isSubmittingDispute">
+                {{ isSubmittingDispute ? 'Sending...' : 'Send report' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
       <div class="modal-footer">

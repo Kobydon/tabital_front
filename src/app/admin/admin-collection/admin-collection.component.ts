@@ -62,19 +62,19 @@ export class AdminCollectionComponent implements OnInit {
   statsCards = [
     { label: 'Total Overdue Amount', value: 0, icon: '💰', color: 'red', growth: 0, isCurrency: true },
     { label: 'Accounts Overdue', value: 0, icon: '👥', color: 'orange', growth: 0, isCurrency: false },
-    { label: '1-15 Days Overdue', value: 0, icon: '📅', color: 'yellow', growth: 0, isCurrency: true },
-    { label: '16-30 Days Overdue', value: 0, icon: '📅', color: 'orange', growth: 0, isCurrency: true },
-    { label: '31-60 Days Overdue', value: 0, icon: '⚠️', color: 'red', growth: 0, isCurrency: true },
-    { label: '60+ Days Overdue', value: 0, icon: '🚨', color: 'darkred', growth: 0, isCurrency: true }
+    { label: '1-30 Days Overdue', value: 0, icon: '📅', color: 'yellow', growth: 0, isCurrency: true },
+    { label: '31-60 Days Overdue', value: 0, icon: '📅', color: 'orange', growth: 0, isCurrency: true },
+    { label: '61-90 Days Overdue', value: 0, icon: '⚠️', color: 'red', growth: 0, isCurrency: true },
+    { label: '90+ Days (charge-off)', value: 0, icon: '🚨', color: 'darkred', growth: 0, isCurrency: true }
   ];
 
   // Overdue Range Options
   overdueRangeOptions = [
     { value: '', label: 'All Overdue' },
-    { value: '1-15', label: '1-15 Days' },
-    { value: '16-30', label: '16-30 Days' },
+    { value: '1-30', label: '1-30 Days' },
     { value: '31-60', label: '31-60 Days' },
-    { value: '60+', label: '60+ Days' }
+    { value: '61-90', label: '61-90 Days' },
+    { value: '90+', label: '90+ Days' }
   ];
 
   // Reminder Type Options
@@ -129,17 +129,13 @@ export class AdminCollectionComponent implements OnInit {
 
   updateStatsCards(): void {
     this.statsCards[0].value = this.collectionStats.total_overdue || 0;
-    this.statsCards[0].growth = this.collectionStats.total_overdue_growth || 0;
+    // Growth figures were made up by the old API; only real totals are shown now
     this.statsCards[1].value = this.collectionStats.accounts_overdue || 0;
-    this.statsCards[1].growth = this.collectionStats.accounts_overdue_growth || 0;
-    this.statsCards[2].value = this.collectionStats.overdue_1_15 || 0;
-    this.statsCards[2].growth = this.collectionStats.overdue_1_15_growth || 0;
-    this.statsCards[3].value = this.collectionStats.overdue_16_30 || 0;
-    this.statsCards[3].growth = this.collectionStats.overdue_16_30_growth || 0;
-    this.statsCards[4].value = this.collectionStats.overdue_31_60 || 0;
-    this.statsCards[4].growth = this.collectionStats.overdue_31_60_growth || 0;
-    this.statsCards[5].value = this.collectionStats.overdue_60_plus || 0;
-    this.statsCards[5].growth = this.collectionStats.overdue_60_plus_growth || 0;
+
+    this.statsCards[2].value = this.collectionStats.overdue_dpd_1_30 || 0;
+    this.statsCards[3].value = this.collectionStats.overdue_dpd_31_60 || 0;
+    this.statsCards[4].value = this.collectionStats.overdue_dpd_61_90 || 0;
+    this.statsCards[5].value = this.collectionStats.overdue_dpd_90_plus || 0;
   }
 
   loadOverduePayments(): void {
@@ -348,10 +344,10 @@ export class AdminCollectionComponent implements OnInit {
 
   getOverdueRangeClass(range: string): string {
     switch(range) {
-      case '1-15 Days': return 'range-1-15';
-      case '16-30 Days': return 'range-16-30';
-      case '31-60 Days': return 'range-31-60';
-      case '60+ Days': return 'range-60-plus';
+      case '1-30 Days': return 'range-1-15';
+      case '31-60 Days': return 'range-16-30';
+      case '61-90 Days': return 'range-31-60';
+      case '90+ Days': return 'range-60-plus';
       default: return '';
     }
   }

@@ -19,6 +19,7 @@ export class MakePaymentComponent implements OnInit {
   isRedirecting = false;
   paystackEnabled = false;
   showManualForm = false;
+  savedCards: any[] = [];
   paymentForm: FormGroup;
 
   paymentMethods = [
@@ -41,7 +42,35 @@ export class MakePaymentComponent implements OnInit {
     });
   }
 
+  loadSavedCards(): void {
+    this.customerService.getSavedCards().subscribe({
+      next: (res: any) => this.savedCards = res?.payment_methods || [],
+      error: () => this.savedCards = []
+    });
+  }
+
+  toggleAutopay(card: any): void {
+    const enable = !card.autopay_enabled;
+    if (enable && !confirm(`Charge card ending ${card.last4} automatically on each due date?`)) return;
+    this.customerService.updateSavedCard(card.id, { autopay_enabled: enable }).subscribe({
+      next: (res: any) => {
+        alert(res?.message || 'Saved');
+        this.loadSavedCards();
+      },
+      error: (error) => alert(error?.error?.error || 'Could not update autopay')
+    });
+  }
+
+  removeCard(card: any): void {
+    if (!confirm(`Remove card ending ${card.last4}? Autopay will stop for this card.`)) return;
+    this.customerService.removeSavedCard(card.id).subscribe({
+      next: () => this.loadSavedCards(),
+      error: (error) => alert(error?.error?.error || 'Could not remove the card')
+    });
+  }
+
   ngOnInit(): void {
+    this.loadSavedCards();
     this.customerService.getPaymentConfig().subscribe({
       next: (cfg) => {
         this.paystackEnabled = !!cfg?.paystack_enabled;

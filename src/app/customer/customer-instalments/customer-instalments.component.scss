@@ -620,3 +620,25 @@
     margin-bottom: 20px;
   }
 }
+// ---------------- Buyer protection (Phase 4) ----------------
+.dispute-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff7ed;
+
+  p { margin: 0 0 8px; color: #7c2d12; font-size: 14px; }
+  .hint { color: #9a3412; font-size: 13px; }
+  h4 { margin: 0 0 6px; }
+
+  select, textarea {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .actions { display: flex; gap: 8px; justify-content: flex-end; }
+}
