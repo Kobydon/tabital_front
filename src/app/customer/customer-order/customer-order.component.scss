@@ -741,3 +741,35 @@
     }
   }
 }
+// ---------------- Checkout down payment ----------------
+.pay-btn {
+  background: #0ba4db;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  i { margin-right: 6px; }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.paid-tag {
+  margin-left: 6px;
+  color: #047857;
+  font-weight: 600;
+}
+
+.refund-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #92400e;
+  font-size: 13px;
+}

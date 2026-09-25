@@ -267,6 +267,10 @@ startPaystackPayment(planId: number): Observable<any> {
   return this.http.post(`${this.API}/customer/payments/paystack/initialize`, { plan_id: planId }, { headers: this.getAuthHeaders() });
 }
 
+payOrderDownPayment(orderId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/orders/${orderId}/pay`, {}, { headers: this.getAuthHeaders() });
+}
+
 verifyPaystackPayment(reference: string): Observable<any> {
   return this.http.get(`${this.API}/customer/payments/paystack/verify/${encodeURIComponent(reference)}`, { headers: this.getAuthHeaders() });
 }

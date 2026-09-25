@@ -17,7 +17,11 @@ export interface AdminOrder {
   down_payment_amount: number;
   installment_amount: number;
   number_of_installments: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  down_payment_status?: 'unpaid' | 'paid';
+  down_payment_reference?: string;
+  down_payment_paid_at?: string;
+  refund_status?: string | null;
   delivery_address: string;
   created_at: string;
   approved_at?: string;
@@ -42,7 +46,7 @@ export class AdminOrdersComponent implements OnInit {
   pageSize = 10;
   totalItems = 0;
   totalPages = 1;
-  activeTab: 'all' | 'pending' | 'approved' | 'rejected' | 'completed' = 'all';
+  activeTab: 'all' | 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' = 'all';
   showOrderModal = false;
   showApproveModal = false;
   showRejectModal = false;
@@ -139,7 +143,7 @@ export class AdminOrdersComponent implements OnInit {
   // FILTER METHODS
   // ============================================
 
-  filterByTab(tab: 'all' | 'pending' | 'approved' | 'rejected' | 'completed'): void {
+  filterByTab(tab: 'all' | 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed'): void {
     this.activeTab = tab;
     this.currentPage = 1;
     this.loadOrders();
@@ -215,11 +219,12 @@ export class AdminOrdersComponent implements OnInit {
     };
     
     this.adminService.rejectOrder(this.selectedOrder.id, data).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isProcessing = false;
         this.showRejectModal = false;
         this.loadOrders();
-        alert('Order rejected successfully!');
+        // The message says whether the down payment was refunded automatically
+        alert(response?.message || 'Order rejected successfully!');
       },
       error: (error) => {
         console.error('Error rejecting order:', error);
@@ -326,8 +331,27 @@ export class AdminOrdersComponent implements OnInit {
     }
   }
 
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'awaiting_payment': return 'Awaiting down payment';
+      case 'pending': return 'Awaiting approval';
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+    }
+  }
+
+  getRefundLabel(refundStatus: string | null | undefined): string {
+    switch (refundStatus) {
+      case 'refunded': return 'Down payment refunded via Paystack';
+      case 'refund_failed': return 'Refund failed: refund manually';
+      case 'manual_refund_required': return 'Refund the down payment manually';
+      case 'refund_required': return 'Paid after rejection: refund required';
+      default: return '';
+    }
+  }
+
   getStatusIcon(status: string): string {
     switch (status) {
+      case 'awaiting_payment': return '💳';
       case 'pending': return '⏳';
       case 'approved': return '✅';
       case 'rejected': return '❌';

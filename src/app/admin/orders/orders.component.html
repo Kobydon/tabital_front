@@ -62,8 +62,11 @@
     <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="filterByTab('all')">
       <i class="fas fa-list"></i> All Orders
     </button>
+    <button class="tab-btn" [class.active]="activeTab === 'awaiting_payment'" (click)="filterByTab('awaiting_payment')">
+      <i class="fas fa-credit-card"></i> Awaiting Down Payment
+    </button>
     <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="filterByTab('pending')">
-      <i class="fas fa-clock"></i> Pending
+      <i class="fas fa-clock"></i> Awaiting Approval
       <span class="badge" *ngIf="stats.pending_orders > 0">{{ stats.pending_orders }}</span>
     </button>
     <button class="tab-btn" [class.active]="activeTab === 'approved'" (click)="filterByTab('approved')">
@@ -141,8 +144,10 @@
           </td>
           <td>
             <span class="status-badge" [class]="getStatusClass(order.status)">
-              {{ getStatusIcon(order.status) }} {{ order.status | titlecase }}
+              {{ getStatusIcon(order.status) }} {{ getStatusLabel(order.status) }}
             </span>
+            <small class="dp-status" *ngIf="order.down_payment_status === 'paid'">✓ Down payment paid</small>
+            <small class="dp-status refund" *ngIf="order.refund_status">{{ getRefundLabel(order.refund_status) }}</small>
           </td>
           <td>{{ formatDate(order.created_at) }}</td>
           <td class="actions">
@@ -152,7 +157,7 @@
             <button *ngIf="order.status === 'pending'" class="action-icon approve" (click)="openApproveModal(order)" title="Approve">
               <i class="fas fa-check-circle"></i>
             </button>
-            <button *ngIf="order.status === 'pending'" class="action-icon reject" (click)="openRejectModal(order)" title="Reject">
+            <button *ngIf="order.status === 'pending' || order.status === 'awaiting_payment'" class="action-icon reject" (click)="openRejectModal(order)" title="Reject">
               <i class="fas fa-times-circle"></i>
             </button>
           </td>
@@ -204,7 +209,7 @@
             <strong>{{ selectedOrder.order_id }}</strong>
           </div>
           <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
-            {{ getStatusIcon(selectedOrder.status) }} {{ selectedOrder.status | titlecase }}
+            {{ getStatusIcon(selectedOrder.status) }} {{ getStatusLabel(selectedOrder.status) }}
           </span>
         </div>
 
@@ -262,20 +267,26 @@
               <strong>{{ formatCurrency(selectedOrder.total_payable) }}</strong>
             </div>
             <div class="breakdown-row">
-              <span>Down Payment (40%):</span>
+              <span>Down Payment:</span>
               <strong>{{ formatCurrency(selectedOrder.down_payment_amount) }}</strong>
             </div>
             <div class="breakdown-row">
+              <span>Down payment status:</span>
+              <strong>
+                {{ selectedOrder.down_payment_status === 'paid' ? 'Paid' : 'Not paid' }}
+                <small *ngIf="selectedOrder.down_payment_reference">(ref {{ selectedOrder.down_payment_reference }})</small>
+              </strong>
+            </div>
+            <div class="breakdown-row" *ngIf="selectedOrder.number_of_installments > 1">
               <span>Monthly Installment:</span>
               <strong>{{ formatCurrency(selectedOrder.installment_amount) }} for {{ selectedOrder.number_of_installments - 1 }} months</strong>
             </div>
-            <div class="breakdown-row total">
-              <span>Platform Fee (10%):</span>
-              <strong>{{ formatCurrency(selectedOrder.total_payable * 0.1) }}</strong>
+            <div class="breakdown-row" *ngIf="selectedOrder.refund_status">
+              <span>Refund:</span>
+              <strong>{{ getRefundLabel(selectedOrder.refund_status) }}</strong>
             </div>
-            <div class="breakdown-row total">
-              <span>Merchant Payout:</span>
-              <strong>{{ formatCurrency(selectedOrder.total_payable * 0.9) }}</strong>
+            <div class="breakdown-note">
+              The merchant fee and payout are calculated by the server on approval and shown in the plan's ledger.
             </div>
           </div>
         </div>
@@ -293,7 +304,7 @@
         <button *ngIf="selectedOrder?.status === 'pending'" class="btn-approve" (click)="openApproveModal(selectedOrder!)">
           <i class="fas fa-check"></i> Approve Order
         </button>
-        <button *ngIf="selectedOrder?.status === 'pending'" class="btn-reject" (click)="openRejectModal(selectedOrder!)">
+        <button *ngIf="selectedOrder?.status === 'pending' || selectedOrder?.status === 'awaiting_payment'" class="btn-reject" (click)="openRejectModal(selectedOrder!)">
           <i class="fas fa-times"></i> Reject Order
         </button>
       </div>
@@ -323,13 +334,19 @@
             <textarea formControlName="admin_notes" rows="3" placeholder="Add any notes about this approval"></textarea>
           </div>
 
-          <div class="form-group">
+          <div class="approval-info paid" *ngIf="selectedOrder.down_payment_status === 'paid'">
+            <i class="fas fa-check-circle"></i>
+            <span>Down payment received at checkout (ref {{ selectedOrder.down_payment_reference }}). Payment 1 will be recorded as paid.</span>
+          </div>
+
+          <!-- Manual fallback, only when Paystack didn't collect the down payment -->
+          <div class="form-group" *ngIf="selectedOrder.down_payment_status !== 'paid'">
             <label>Down Payment Reference</label>
             <input type="text" formControlName="down_payment_reference" placeholder="MoMo / bank reference of the down payment received">
             <small>Leave blank if the down payment hasn't arrived yet. It will wait for verification in Instalments.</small>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="selectedOrder.down_payment_status !== 'paid'">
             <label>Down Payment Method</label>
             <select formControlName="down_payment_method">
               <option value="mobile_money">Mobile Money</option>

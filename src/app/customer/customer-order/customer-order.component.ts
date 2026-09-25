@@ -15,7 +15,10 @@ export interface CustomerOrder {
   installment_amount: number;
   number_of_installments: number;
   remaining_balance: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  down_payment_status: 'unpaid' | 'paid';
+  due_now: number;
+  refund_status: string | null;
   payment_schedule: any[];
   delivery_address: string;
   delivery_status: string;
@@ -37,6 +40,7 @@ export class CustomerOrdersComponent implements OnInit {
   isLoading = true;
   activeTab: 'all' | 'pending' | 'approved' | 'completed' = 'all';
   showOrderModal = false;
+  payingOrderId: number | null = null;
 
   constructor(private customerService: CustomerService) {}
 
@@ -116,6 +120,25 @@ export class CustomerOrdersComponent implements OnInit {
     }
   }
 
+  // Retry the checkout down payment for an order that's still awaiting payment
+  payDownPayment(order: CustomerOrder): void {
+    this.payingOrderId = order.id;
+    this.customerService.payOrderDownPayment(order.id).subscribe({
+      next: (res: any) => {
+        if (res?.authorization_url) {
+          window.location.href = res.authorization_url;
+        } else {
+          this.payingOrderId = null;
+          alert('Could not start the payment. Please try again.');
+        }
+      },
+      error: (error) => {
+        this.payingOrderId = null;
+        alert(error?.error?.error || 'Could not start the payment. Please try again.');
+      }
+    });
+  }
+
   closeModal(): void {
     this.showOrderModal = false;
     this.selectedOrder = null;
@@ -157,8 +180,27 @@ export class CustomerOrdersComponent implements OnInit {
     });
   }
 
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'awaiting_payment': return 'Awaiting down payment';
+      case 'pending': return 'Awaiting approval';
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+    }
+  }
+
+  getRefundLabel(refundStatus: string): string {
+    switch (refundStatus) {
+      case 'refunded': return 'Your down payment is being refunded';
+      case 'refund_required':
+      case 'refund_failed':
+      case 'manual_refund_required': return 'Your down payment will be refunded by our team';
+      default: return '';
+    }
+  }
+
   getStatusClass(status: string): string {
     switch (status) {
+      case 'awaiting_payment': return 'status-pending';
       case 'pending': return 'status-pending';
       case 'approved': return 'status-approved';
       case 'rejected': return 'status-rejected';
@@ -170,6 +212,7 @@ export class CustomerOrdersComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     switch (status) {
+      case 'awaiting_payment': return '💳';
       case 'pending': return '⏳';
       case 'approved': return '✅';
       case 'rejected': return '❌';

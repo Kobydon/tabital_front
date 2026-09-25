@@ -407,7 +407,7 @@
             <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
             <button type="button" class="btn-primary" (click)="placeOrder()" [disabled]="purchaseForm.invalid || isPurchasing">
               <i class="fas fa-spinner fa-spin" *ngIf="isPurchasing"></i>
-              {{ isPurchasing ? 'Processing...' : 'Place Order' }}
+              {{ isPurchasing ? 'Processing...' : (paystackEnabled ? 'Place Order & Pay ' + formatCurrency(calculation.due_now) : 'Place Order') }}
             </button>
           </div>
         </form>

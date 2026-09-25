@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
-type CallbackState = 'checking' | 'paid' | 'pending' | 'failed' | 'mismatch' | 'error';
+type CallbackState = 'checking' | 'paid' | 'pending' | 'failed' | 'mismatch' | 'refund' | 'error';
 
 /**
  * Paystack redirects here with ?reference=...&trxref=... after checkout.
@@ -47,7 +47,9 @@ export class PaymentCallbackComponent implements OnInit {
           this.state = 'paid';
         } else if (outcome === 'duplicate_payment') {
           this.state = 'paid';
-          this.message = 'This instalment was already paid, so we will review this payment for a refund.';
+          this.message = 'This was already paid, so we will review this payment for a refund.';
+        } else if (outcome === 'refund_required') {
+          this.state = 'refund';
         } else if (outcome === 'amount_mismatch' || outcome === 'reference_mismatch') {
           this.state = 'mismatch';
         } else if (res?.status === 'failed' || res?.status === 'abandoned') {
@@ -63,11 +65,24 @@ export class PaymentCallbackComponent implements OnInit {
     });
   }
 
+  isDownPayment(): boolean {
+    return this.result?.purpose === 'down_payment';
+  }
+
   goToInstalments(): void {
     this.router.navigate(['/customer/instalments']);
   }
 
+  goToOrders(): void {
+    this.router.navigate(['/customer/orders']);
+  }
+
   tryAgain(): void {
+    // A checkout down payment is retried from My Orders; instalments from Make Payment
+    if (this.isDownPayment()) {
+      this.goToOrders();
+      return;
+    }
     const planId = this.result?.plan_id;
     this.router.navigate(['/customer/make-payment'], { queryParams: planId ? { planId } : {} });
   }

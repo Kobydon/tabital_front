@@ -93,6 +93,8 @@ export class CustomerShopComponent implements OnInit {
   isLoading = true;
   isCalculating = false;
   isPurchasing = false;
+  // When on, Payment 1 (down payment + delivery) is paid on Paystack at checkout
+  paystackEnabled = false;
   currentPage = 1;
   pageSize = 12;
   totalItems = 0;
@@ -126,6 +128,10 @@ export class CustomerShopComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.customerService.getPaymentConfig().subscribe({
+      next: (cfg) => this.paystackEnabled = !!cfg?.paystack_enabled,
+      error: () => this.paystackEnabled = false
+    });
     this.checkKYCStatus();
     this.loadProducts();
     this.loadInstallmentOptions();
@@ -318,11 +324,16 @@ export class CustomerShopComponent implements OnInit {
     };
     
     this.customerService.createPurchaseOrder(orderData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
+        // Down payment is collected now: go to Paystack's secure checkout
+        if (response?.authorization_url) {
+          window.location.href = response.authorization_url;
+          return;
+        }
         this.isPurchasing = false;
         this.showCheckoutModal = false;
         this.showProductModal = false;
-        alert('Order placed successfully! Waiting for admin approval.');
+        alert(response?.message || 'Order placed successfully! Waiting for admin approval.');
         this.router.navigate(['/customer/orders']);
       },
       error: (error) => {
