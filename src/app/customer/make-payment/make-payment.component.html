@@ -25,8 +25,21 @@
         </div>
       </div>
 
-      <!-- Payment Form -->
-      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+      <!-- Pay online through Paystack (card or MoMo). Marked paid once Paystack confirms. -->
+      <div class="paystack-box" *ngIf="paystackEnabled">
+        <button type="button" class="btn-paystack" (click)="payWithPaystack()" [disabled]="isRedirecting || !planId || !amount">
+          <i class="fas fa-spinner fa-spin" *ngIf="isRedirecting"></i>
+          <i class="fas fa-lock" *ngIf="!isRedirecting"></i>
+          {{ isRedirecting ? 'Opening secure checkout...' : 'Pay ' + formatCurrency(amount || 0) + ' with Card or MoMo' }}
+        </button>
+        <small>Secured by Paystack. You'll return here once the payment is complete.</small>
+        <button type="button" class="link-btn" (click)="showManualForm = !showManualForm">
+          {{ showManualForm ? 'Hide bank transfer option' : 'Already paid by bank transfer or MoMo? Enter the reference' }}
+        </button>
+      </div>
+
+      <!-- Manual payment: customer reports a transfer; an admin confirms it -->
+      <form *ngIf="showManualForm" [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
 
         <div class="form-group">
           <label>Payment Method *</label>

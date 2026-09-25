@@ -1,0 +1,59 @@
+<div class="callback-container">
+  <div class="callback-card" [ngClass]="state">
+
+    <ng-container *ngIf="state === 'checking'">
+      <div class="spinner"></div>
+      <h2>Confirming your payment…</h2>
+      <p>We're checking with Paystack. This usually takes a few seconds.</p>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'paid'">
+      <i class="fas fa-check-circle icon"></i>
+      <h2>Payment confirmed</h2>
+      <p *ngIf="result">
+        {{ formatCurrency(result.amount) }} for payment {{ result.installment_number }} has been received.
+      </p>
+      <p *ngIf="message">{{ message }}</p>
+      <button class="btn-primary" (click)="goToInstalments()">View my instalments</button>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'pending'">
+      <i class="fas fa-hourglass-half icon"></i>
+      <h2>Payment not confirmed yet</h2>
+      <p>If you approved the payment, it will update automatically once Paystack confirms it.</p>
+      <div class="actions">
+        <button class="btn-secondary" (click)="verify()">Check again</button>
+        <button class="btn-primary" (click)="goToInstalments()">Back to instalments</button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'failed'">
+      <i class="fas fa-times-circle icon"></i>
+      <h2>Payment didn't go through</h2>
+      <p>No money was taken for this attempt. You can try again.</p>
+      <div class="actions">
+        <button class="btn-secondary" (click)="goToInstalments()">Back to instalments</button>
+        <button class="btn-primary" (click)="tryAgain()">Try again</button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'mismatch'">
+      <i class="fas fa-exclamation-triangle icon"></i>
+      <h2>We need to check this payment</h2>
+      <p>The amount received doesn't match what was due, so it hasn't been applied yet. Our team will review it.</p>
+      <button class="btn-primary" (click)="goToInstalments()">Back to instalments</button>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'error'">
+      <i class="fas fa-exclamation-circle icon"></i>
+      <h2>Couldn't confirm the payment</h2>
+      <p>{{ message }}</p>
+      <div class="actions">
+        <button class="btn-secondary" (click)="verify()" *ngIf="reference">Check again</button>
+        <button class="btn-primary" (click)="goToInstalments()">Back to instalments</button>
+      </div>
+    </ng-container>
+
+    <small class="ref" *ngIf="reference">Reference: {{ reference }}</small>
+  </div>
+</div>

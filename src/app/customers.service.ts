@@ -257,6 +257,20 @@ makeOnePayment(paymentData: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// ---------- Paystack (card / MoMo) ----------
+// These don't go through handleError so the page can show the server's message.
+getPaymentConfig(): Observable<{ paystack_enabled: boolean }> {
+  return this.http.get<{ paystack_enabled: boolean }>(`${this.API}/customer/payments/config`, { headers: this.getAuthHeaders() });
+}
+
+startPaystackPayment(planId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/payments/paystack/initialize`, { plan_id: planId }, { headers: this.getAuthHeaders() });
+}
+
+verifyPaystackPayment(reference: string): Observable<any> {
+  return this.http.get(`${this.API}/customer/payments/paystack/verify/${encodeURIComponent(reference)}`, { headers: this.getAuthHeaders() });
+}
+
 // Add these methods to customers.service.ts
 
 // Get paid instalment payments

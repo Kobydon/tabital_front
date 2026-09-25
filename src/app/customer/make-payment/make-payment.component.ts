@@ -16,8 +16,11 @@ export class MakePaymentComponent implements OnInit {
   instalmentPlan: any = null;
   isLoading = true;
   isProcessing = false;
+  isRedirecting = false;
+  paystackEnabled = false;
+  showManualForm = false;
   paymentForm: FormGroup;
-  
+
   paymentMethods = [
     { value: 'mobile_money', label: 'Mobile Money', icon: '📱', description: 'MTN MoMo, Telecel Cash, AirtelTigo Money' },
     { value: 'bank_transfer', label: 'Bank Transfer', icon: '🏦', description: 'Direct bank transfer' },
@@ -39,6 +42,17 @@ export class MakePaymentComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.customerService.getPaymentConfig().subscribe({
+      next: (cfg) => {
+        this.paystackEnabled = !!cfg?.paystack_enabled;
+        this.showManualForm = !this.paystackEnabled;
+      },
+      error: () => {
+        this.paystackEnabled = false;
+        this.showManualForm = true;
+      }
+    });
+
     this.route.queryParams.subscribe(params => {
       this.planId = params['planId'] ? parseInt(params['planId']) : null;
       this.amount = params['amount'] ? parseFloat(params['amount']) : null;
@@ -58,12 +72,32 @@ export class MakePaymentComponent implements OnInit {
         this.instalmentPlan = response;
         this.planName = this.instalmentPlan.product_name;
         const next = (this.instalmentPlan.payment_schedule || [])
-          .find((p: any) => p.status === 'pending' || p.status === 'overdue');
+          .find((p: any) => ['pending', 'overdue', 'pending_verification'].includes(p.status));
         this.amount = next ? next.amount : 0;
         this.isLoading = false;
       },
       error: () => {
         this.isLoading = false;
+      }
+    });
+  }
+
+  // Card / MoMo through Paystack: the server fixes the amount and returns Paystack's checkout page
+  payWithPaystack(): void {
+    if (!this.planId || this.isRedirecting) return;
+    this.isRedirecting = true;
+    this.customerService.startPaystackPayment(this.planId).subscribe({
+      next: (res: any) => {
+        if (res?.authorization_url) {
+          window.location.href = res.authorization_url;
+        } else {
+          this.isRedirecting = false;
+          alert('Could not start the payment. Please try again.');
+        }
+      },
+      error: (error) => {
+        this.isRedirecting = false;
+        alert(error?.error?.error || 'Could not start the payment. Please try again.');
       }
     });
   }
@@ -94,7 +128,7 @@ export class MakePaymentComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-GH', { 
+    return new Intl.NumberFormat('en-GH', {
       style: 'currency', currency: 'GHS'
     }).format(amount || 0);
   }

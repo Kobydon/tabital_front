@@ -290,3 +290,46 @@
     font-size: 22px;
   }
 }
+// ---------------- Paystack ----------------
+.paystack-box {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin: 16px 0 24px;
+
+  small {
+    color: #6b7280;
+    text-align: center;
+  }
+}
+
+.btn-paystack {
+  background: #0ba4db;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  i {
+    margin-right: 8px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px;
+}
