@@ -323,6 +323,21 @@
             <textarea formControlName="admin_notes" rows="3" placeholder="Add any notes about this approval"></textarea>
           </div>
 
+          <div class="form-group">
+            <label>Down Payment Reference</label>
+            <input type="text" formControlName="down_payment_reference" placeholder="MoMo / bank reference of the down payment received">
+            <small>Leave blank if the down payment hasn't arrived yet. It will wait for verification in Instalments.</small>
+          </div>
+
+          <div class="form-group">
+            <label>Down Payment Method</label>
+            <select formControlName="down_payment_method">
+              <option value="mobile_money">Mobile Money</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+
           <div class="approval-info">
             <i class="fas fa-info-circle"></i>
             <span>Approving this order will:</span>

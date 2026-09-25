@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
@@ -6,8 +7,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  API = 'https://tabital.onrender.com';
-// https://tabital.onrender.com
+  API = environment.apiUrl;
   constructor(private http: HttpClient,private router:Router) {}
 
   register(data: any) {
@@ -27,7 +27,10 @@ export class AuthService {
   }
 
   logout() {
+    // Clear the cached profile too, so the next person on this device can't see it
     localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    sessionStorage.clear();
     this.router.navigate(['/login']);
   }
 

@@ -602,8 +602,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     };
     
     delete customerData.confirmPassword;
-    
-    console.log('Submitting customer data:', customerData);
 
     this.auth.register(customerData).subscribe({
       next: (res: any) => {
@@ -613,7 +611,6 @@ export class SignupComponent implements OnInit, OnDestroy {
         this.router.navigate(['/login']);
       },
       error: (err) => {
-        alert(err.message);
         this.isLoading = false;
         this.handleServerErrors(err);
         

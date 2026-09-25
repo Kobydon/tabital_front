@@ -36,6 +36,7 @@ export interface InstallmentCalculation {
     percentage: number;
     amount: number;
   };
+  due_now: number;
   remaining_balance: number;
   installment_details: {
     total_installments: number;
@@ -44,6 +45,7 @@ export interface InstallmentCalculation {
   };
   fees: {
     service_fee: number;
+    delivery_fee: number;
     merchant_fee_percentage: number;
     merchant_fee_amount: number;
     late_fee_percentage: number;
@@ -102,10 +104,7 @@ export class CustomerShopComponent implements OnInit {
   
   // Forms
   purchaseForm: FormGroup;
-  
-  // Constants
-  readonly DELIVERY_FEE = 50;
-  
+
   // Categories
   categories = [
     'Electronics', 'Phones', 'Laptops', 'Tablets', 'Accessories',
@@ -221,16 +220,18 @@ export class CustomerShopComponent implements OnInit {
   loadInstallmentOptions(): void {
     this.installmentOptions = [
       { months: 1, label: 'Full Payment', interest_rate: 0, is_active: true },
-      { months: 2, label: '2 Months - 50% Down, 50% Later', interest_rate: 0, is_active: true },
-      { months: 3, label: '3 Months - 50% Down, 25% + 25% Later', interest_rate: 0, is_active: true },
-      { months: 4, label: '4 Months - 40% Down', interest_rate: 0, is_active: true },
+      { months: 2, label: 'Pay in 2', interest_rate: 0, is_active: true },
+      { months: 3, label: 'Pay in 3', interest_rate: 0, is_active: true },
+      { months: 4, label: 'Pay in 4', interest_rate: 0, is_active: true },
       { months: 6, label: '6 Months', interest_rate: 0, is_active: false, coming_soon: true }
     ];
   }
 
   calculateInstallment(product: Product, months: number): void {
     this.isCalculating = true;
+    this.calculation = null;
     
+    // The server is the only source of plan amounts. If it can't quote, we don't show one.
     this.customerService.calculateInstallmentPlan({
       product_price: product.price,
       number_of_installments: months,
@@ -240,132 +241,11 @@ export class CustomerShopComponent implements OnInit {
         this.calculation = response;
         this.isCalculating = false;
       },
-      error: (error) => {
-        console.error('Error calculating installment:', error);
-        this.calculateManually(product, months);
+      error: () => {
+        this.isCalculating = false;
+        alert('We could not calculate this payment plan right now. Please try again.');
       }
     });
-  }
-
-  calculateManually(product: Product, months: number): void {
-    const quantity = this.purchaseForm.value.quantity || 1;
-    const totalPrice = product.price * quantity;
-    const serviceFee = 0;
-    const lateFeePercentage = 10;
-    const deliveryFee = this.DELIVERY_FEE;
-    
-    let downPaymentPercentage = 0;
-    let downPaymentAmount = 0;
-    let remainingBalanceAfterDown = 0;
-    let totalInstallments = 0;
-    let remainingInstallments = 0;
-    let installmentAmount = 0;
-    
-    // Set down payment percentage based on months
-    if (months === 1) {
-      downPaymentPercentage = 100;
-    } else if (months === 2 || months === 3) {
-      downPaymentPercentage = 50;
-    } else if (months === 4) {
-      downPaymentPercentage = 40;
-    }
-    
-    downPaymentAmount = totalPrice * downPaymentPercentage / 100;
-    remainingBalanceAfterDown = totalPrice - downPaymentAmount;
-    totalInstallments = months;
-    remainingInstallments = totalInstallments - 1;
-    
-    // Calculate installment amount for remaining payments
-    if (remainingInstallments > 0) {
-      installmentAmount = remainingBalanceAfterDown / remainingInstallments;
-    } else {
-      installmentAmount = 0;
-    }
-    
-    const totalPayable = totalPrice + deliveryFee + serviceFee;
-    const paymentSchedule: PaymentSchedule[] = [];
-    const currentDate = new Date();
-    
-    // First payment (Due Now) - includes delivery fee
-    paymentSchedule.push({
-      installment_number: 1,
-      amount: downPaymentAmount + deliveryFee,
-      due_date: currentDate.toISOString(),
-      status: 'due_now',
-      description: `${downPaymentPercentage}% Down Payment + Delivery Fee`
-    });
-    
-    // Subsequent payments
-    for (let i = 1; i <= remainingInstallments; i++) {
-      const dueDate = new Date(currentDate);
-      dueDate.setMonth(dueDate.getMonth() + i);
-      
-      let paymentDescription = '';
-      if (months === 2) {
-        paymentDescription = `Final Payment (Remaining ${100 - downPaymentPercentage}%)`;
-      } else if (months === 3) {
-        const percent = (100 - downPaymentPercentage) / remainingInstallments;
-        paymentDescription = `Payment ${i + 1} of ${months} (${percent}% of product)`;
-      } else if (months === 4) {
-        const percent = (100 - downPaymentPercentage) / remainingInstallments;
-        paymentDescription = `Payment ${i + 1} of ${months} (${percent}% of product)`;
-      } else {
-        paymentDescription = `Installment ${i + 1} of ${months}`;
-      }
-      
-      paymentSchedule.push({
-        installment_number: i + 1,
-        amount: installmentAmount,
-        due_date: dueDate.toISOString(),
-        status: 'pending',
-        description: paymentDescription
-      });
-    }
-    
-    this.calculation = {
-      product_price: totalPrice,
-      down_payment: {
-        percentage: downPaymentPercentage,
-        amount: downPaymentAmount + deliveryFee
-      },
-      remaining_balance: remainingBalanceAfterDown,
-      installment_details: {
-        total_installments: totalInstallments,
-        remaining_installments: remainingInstallments,
-        installment_amount: installmentAmount
-      },
-      fees: {
-        service_fee: serviceFee,
-        merchant_fee_percentage: 10,
-        merchant_fee_amount: totalPrice * 0.1,
-        late_fee_percentage: lateFeePercentage
-      },
-      totals: {
-        total_payable: totalPayable,
-        merchant_payout: totalPrice * 0.9
-      },
-      payment_schedule: paymentSchedule
-    };
-    
-    this.isCalculating = false;
-  }
-
-  // Helper method to calculate down payment percentage
-  getDownPaymentPercentage(months: number): number {
-    switch(months) {
-      case 1: return 100;
-      case 2: return 50;
-      case 3: return 50;
-      case 4: return 40;
-      default: return 0;
-    }
-  }
-
-  // Helper method to calculate due now amount
-  getDueNowAmount(productPrice: number, months: number): number {
-    const downPaymentPercentage = this.getDownPaymentPercentage(months);
-    const downPaymentAmount = productPrice * downPaymentPercentage / 100;
-    return downPaymentAmount + this.DELIVERY_FEE;
   }
 
   // ============================================
@@ -429,19 +309,12 @@ export class CustomerShopComponent implements OnInit {
     
     this.isPurchasing = true;
     
+    // Only the choice is sent. The server prices the order from the stored product.
     const orderData = {
       product_id: this.selectedProduct?.id,
-      product_name: this.selectedProduct?.name,
-      product_price: this.selectedProduct?.price,
-      merchant_id: this.selectedProduct?.merchant_id,
-      merchant_name: this.selectedProduct?.merchant_name,
       quantity: this.purchaseForm.value.quantity,
       number_of_installments: this.purchaseForm.value.selected_installments,
-      delivery_address: this.purchaseForm.value.delivery_address,
-      down_payment_amount: this.calculation?.down_payment.amount,
-      installment_amount: this.calculation?.installment_details.installment_amount,
-      total_payable: this.calculation?.totals.total_payable,
-      payment_schedule: this.calculation?.payment_schedule
+      delivery_address: this.purchaseForm.value.delivery_address
     };
     
     this.customerService.createPurchaseOrder(orderData).subscribe({
@@ -453,9 +326,8 @@ export class CustomerShopComponent implements OnInit {
         this.router.navigate(['/customer/orders']);
       },
       error: (error) => {
-        console.error('Error placing order:', error);
         this.isPurchasing = false;
-        alert('Failed to place order. Please try again.');
+        alert(error?.error?.error || 'Failed to place order. Please try again.');
       }
     });
   }

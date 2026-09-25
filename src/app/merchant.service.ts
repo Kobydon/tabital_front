@@ -1,10 +1,11 @@
+import { environment } from '../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MerchantService {
-  private API = 'https://tabital.onrender.com';
+  private API = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

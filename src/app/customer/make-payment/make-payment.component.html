@@ -27,16 +27,6 @@
 
       <!-- Payment Form -->
       <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
-        <div class="form-group">
-          <label>Payment Amount (GHS) *</label>
-          <div class="amount-input">
-            <span class="currency">₵</span>
-            <input type="number" step="0.01" formControlName="amount" placeholder="0.00">
-          </div>
-          <small *ngIf="paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched" class="error">
-            Please enter a valid amount
-          </small>
-        </div>
 
         <div class="form-group">
           <label>Payment Method *</label>
@@ -62,8 +52,8 @@
         </div>
 
         <div class="form-group">
-          <label>Payment Reference (Optional)</label>
-          <input type="text" formControlName="payment_reference" placeholder="Enter transaction reference number">
+          <label>Transaction Reference *</label>
+          <input type="text" formControlName="payment_reference" placeholder="Reference from your MoMo or bank receipt">
         </div>
 
         <div class="form-group">
@@ -73,14 +63,14 @@
 
         <div class="payment-note">
           <i class="fas fa-info-circle"></i>
-          <span>Your payment will be processed immediately. A receipt will be sent to your email.</span>
+          <span>Send the amount due by MoMo or bank transfer first, then enter the reference here. Your instalment is marked paid once Tabital confirms the money was received.</span>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
           <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isProcessing">
             <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
-            {{ isProcessing ? 'Processing...' : 'Pay Now' }}
+            {{ isProcessing ? 'Submitting...' : 'Submit Payment' }}
           </button>
         </div>
       </form>

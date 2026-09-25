@@ -233,7 +233,6 @@
                 <span class="plan-type" *ngIf="option.months === 4">40% Down + Delivery + 20% + 20% + 20%</span> -->
               </div>
               <div class="due-now-info">
-                <!-- <small>Due Now: {{ formatCurrency(getDueNowAmount(selectedProduct.price || 0, option.months)) }}</small> -->
               </div>
               <span *ngIf="option.coming_soon" class="coming-soon-badge">
                 <i class="fas fa-clock"></i> Coming Soon
@@ -268,23 +267,14 @@
               </div>
               <div class="payment-note">
                 <i class="fas fa-info-circle"></i>
-                <span *ngIf="calculation.down_payment.percentage === 100">
-                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price + 50) }} (Full payment {{ formatCurrency(calculation.product_price) }} + Delivery Fee GHS 50)
-                </span>
-                <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 2">
-                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.5 + 50) }} (50% of product = {{ formatCurrency(calculation.product_price * 0.5) }} + Delivery Fee GHS 50)<br>
-                  <strong>Month 1:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (Remaining 50% = {{ formatCurrency(calculation.product_price * 0.5) }})
-                </span>
-                <span *ngIf="calculation.down_payment.percentage === 50 && calculation.installment_details.total_installments === 3">
-                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.5 + 50) }} (50% of product = {{ formatCurrency(calculation.product_price * 0.5) }} + Delivery Fee GHS 50)<br>
-                  <strong>Month 1:</strong> {{ formatCurrency(calculation.payment_schedule[1]?.amount || 0) }} (25% = {{ formatCurrency(calculation.product_price * 0.25) }})<br>
-                  <strong>Month 2:</strong> {{ formatCurrency(calculation.payment_schedule[2]?.amount || 0) }} (25% = {{ formatCurrency(calculation.product_price * 0.25) }})
-                </span>
-                <span *ngIf="calculation.down_payment.percentage === 40 && calculation.installment_details.total_installments === 4">
-                  <strong>Due Now:</strong> {{ formatCurrency(calculation.product_price * 0.4 + 50) }} (40% of product = {{ formatCurrency(calculation.product_price * 0.4) }} + Delivery Fee GHS 50)<br>
-                  <strong>Month 1:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})<br>
-                  <strong>Month 2:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})<br>
-                  <strong>Month 3:</strong> {{ formatCurrency(calculation.installment_details.installment_amount) }} (20% = {{ formatCurrency(calculation.product_price * 0.2) }})
+                <span>
+                  <strong>Due Now:</strong> {{ formatCurrency(calculation.due_now) }}
+                  ({{ calculation.down_payment.percentage }}% down payment {{ formatCurrency(calculation.down_payment.amount) }}
+                  <ng-container *ngIf="calculation.fees.delivery_fee > 0"> + delivery fee {{ formatCurrency(calculation.fees.delivery_fee) }}</ng-container>)
+                  <ng-container *ngIf="calculation.installment_details.remaining_installments > 0">
+                    <br><strong>Then:</strong> {{ calculation.installment_details.remaining_installments }} monthly payment(s), as scheduled above
+                  </ng-container>
+                  <br><strong>Total Payable:</strong> {{ formatCurrency(calculation.totals.total_payable) }}
                 </span>
               </div>
             </div>
@@ -318,7 +308,7 @@
             <h4>{{ selectedProduct.name }}</h4>
             <p>Product Price: {{ formatCurrency(selectedProduct.price) }} × {{ purchaseForm.value.quantity }}</p>
             <p class="product-total">Product Total: {{ formatCurrency(calculation.product_price) }}</p>
-            <p class="delivery-fee">Delivery Fee: <strong>GHS 50.00</strong> (Added to first payment)</p>
+            <p class="delivery-fee" *ngIf="calculation.fees.delivery_fee > 0">Delivery Fee: <strong>{{ formatCurrency(calculation.fees.delivery_fee) }}</strong> (paid with your down payment, not financed)</p>
           </div>
           
           <div class="summary-breakdown">
@@ -327,23 +317,27 @@
             </div>
             <div class="breakdown-row" *ngIf="calculation.down_payment.percentage">
               <span>Product Down Payment ({{ calculation.down_payment.percentage }}%):</span>
-              <strong>{{ formatCurrency(calculation.product_price * calculation.down_payment.percentage / 100) }}</strong>
+              <strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong>
             </div>
-            <div class="breakdown-row delivery-row">
-              <span>Delivery Fee (Added to first payment):</span>
-              <strong>GHS 50.00</strong>
+            <div class="breakdown-row delivery-row" *ngIf="calculation.fees.delivery_fee > 0">
+              <span>Delivery Fee (paid with first payment):</span>
+              <strong>{{ formatCurrency(calculation.fees.delivery_fee) }}</strong>
             </div>
             <div class="breakdown-row total-due-now">
               <span><strong>Total Due Now:</strong></span>
-              <strong class="due-now-amount">{{ formatCurrency(calculation.down_payment.amount) }}</strong>
+              <strong class="due-now-amount">{{ formatCurrency(calculation.due_now) }}</strong>
             </div>
             <div class="breakdown-row" *ngIf="calculation.installment_details.installment_amount > 0">
               <span>Remaining Installments ({{ calculation.installment_details.remaining_installments }} payments):</span>
               <strong>{{ formatCurrency(calculation.installment_details.installment_amount) }}/month</strong>
             </div>
             <div class="breakdown-row total">
-              <span>Total Payable (Product + Delivery):</span>
-              <strong>{{ formatCurrency(calculation.product_price + 50) }}</strong>
+              <span>Total Payable (Product + Fees):</span>
+              <strong>{{ formatCurrency(calculation.totals.total_payable) }}</strong>
+            </div>
+            <div class="breakdown-row" *ngIf="calculation.fees.late_fee_percentage > 0">
+              <span>Late payment fee:</span>
+              <span>{{ calculation.fees.late_fee_percentage }}% of a missed instalment, charged the day after its due date</span>
             </div>
           </div>
           
@@ -355,7 +349,7 @@
                 <span>Payment {{ payment.installment_number }}:</span>
                 <span>{{ formatCurrency(payment.amount) }}</span>
                 <span class="due-date">
-                  {{ idx === 0 ? 'Due Now (includes GHS 50 delivery fee)' : 'Due ' + formatDate(payment.due_date) }}
+                  {{ idx === 0 ? 'Due Now' + (calculation.fees.delivery_fee > 0 ? ' (includes ' + formatCurrency(calculation.fees.delivery_fee) + ' delivery fee)' : '') : 'Due ' + formatDate(payment.due_date) }}
                 </span>
               </div>
             </div>
@@ -387,21 +381,21 @@
               <span>Subtotal:</span>
               <span>{{ formatCurrency(calculation.product_price) }}</span>
             </div>
-            <div class="summary-line">
+            <div class="summary-line" *ngIf="calculation.fees.delivery_fee > 0">
               <span>Delivery Fee:</span>
-              <span>GHS 50.00</span>
+              <span>{{ formatCurrency(calculation.fees.delivery_fee) }}</span>
             </div>
             <div class="summary-line total">
-              <span>Total Inc. Delivery:</span>
-              <span>{{ formatCurrency(calculation.product_price + 50) }}</span>
+              <span>Total Payable:</span>
+              <span>{{ formatCurrency(calculation.totals.total_payable) }}</span>
             </div>
             <div class="summary-line down-payment-line" *ngIf="calculation.down_payment.percentage !== 100">
               <span>Down Payment ({{ calculation.down_payment.percentage }}% of product):</span>
-              <span>{{ formatCurrency(calculation.product_price * calculation.down_payment.percentage / 100) }}</span>
+              <span>{{ formatCurrency(calculation.down_payment.amount) }}</span>
             </div>
             <div class="summary-line due-now-line">
               <span><strong>Amount Due Now (Down Payment + Delivery):</strong></span>
-              <span><strong>{{ formatCurrency(calculation.down_payment.amount) }}</strong></span>
+              <span><strong>{{ formatCurrency(calculation.due_now) }}</strong></span>
             </div>
             <div class="summary-line" *ngIf="calculation.installment_details.installment_amount > 0">
               <span>Monthly Installment ({{ calculation.installment_details.remaining_installments }} months):</span>

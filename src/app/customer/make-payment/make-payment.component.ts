@@ -19,10 +19,9 @@ export class MakePaymentComponent implements OnInit {
   paymentForm: FormGroup;
   
   paymentMethods = [
-    { value: 'mobile_money', label: 'Mobile Money', icon: '📱', description: 'Pay via MTN, Vodafone, AirtelTigo' },
+    { value: 'mobile_money', label: 'Mobile Money', icon: '📱', description: 'MTN MoMo, Telecel Cash, AirtelTigo Money' },
     { value: 'bank_transfer', label: 'Bank Transfer', icon: '🏦', description: 'Direct bank transfer' },
-    { value: 'card', label: 'Card Payment', icon: '💳', description: 'Credit/Debit card' },
-    { value: 'cash', label: 'Cash', icon: '💰', description: 'Pay at merchant location' }
+    { value: 'card', label: 'Card Payment', icon: '💳', description: 'Credit/Debit card' }
   ];
 
   constructor(
@@ -31,10 +30,10 @@ export class MakePaymentComponent implements OnInit {
     private customerService: CustomerService,
     private fb: FormBuilder
   ) {
+    // The amount due comes from the server; the customer only reports how they paid
     this.paymentForm = this.fb.group({
-      amount: ['', [Validators.required, Validators.min(1)]],
       payment_method: ['', Validators.required],
-      payment_reference: [''],
+      payment_reference: ['', [Validators.required, Validators.minLength(4)]],
       notes: ['']
     });
   }
@@ -44,15 +43,11 @@ export class MakePaymentComponent implements OnInit {
       this.planId = params['planId'] ? parseInt(params['planId']) : null;
       this.amount = params['amount'] ? parseFloat(params['amount']) : null;
       this.planName = params['planName'] || '';
-      
+
       if (this.planId) {
         this.loadPlanDetails();
       } else {
         this.isLoading = false;
-      }
-      
-      if (this.amount) {
-        this.paymentForm.patchValue({ amount: this.amount });
       }
     });
   }
@@ -62,13 +57,12 @@ export class MakePaymentComponent implements OnInit {
       next: (response) => {
         this.instalmentPlan = response;
         this.planName = this.instalmentPlan.product_name;
-        if (!this.amount) {
-          this.paymentForm.patchValue({ amount: this.instalmentPlan.next_payment_amount });
-        }
+        const next = (this.instalmentPlan.payment_schedule || [])
+          .find((p: any) => p.status === 'pending' || p.status === 'overdue');
+        this.amount = next ? next.amount : 0;
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Error loading plan details:', error);
+      error: () => {
         this.isLoading = false;
       }
     });
@@ -76,27 +70,25 @@ export class MakePaymentComponent implements OnInit {
 
   submitPayment(): void {
     if (this.paymentForm.invalid) return;
-    
+
     this.isProcessing = true;
-    
+
     const paymentData = {
       plan_id: this.planId,
-      amount: this.paymentForm.value.amount,
       payment_method: this.paymentForm.value.payment_method,
       payment_reference: this.paymentForm.value.payment_reference,
       notes: this.paymentForm.value.notes
     };
-    
+
     this.customerService.makeOnePayment(paymentData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isProcessing = false;
-        alert('Payment successful!');
+        alert(response?.message || 'Payment submitted for verification.');
         this.router.navigate(['/customer/instalments']);
       },
       error: (error) => {
-        console.error('Error making payment:', error);
         this.isProcessing = false;
-        alert('Payment failed. Please try again.');
+        alert(error?.error?.error || 'Could not submit your payment. Please try again.');
       }
     });
   }

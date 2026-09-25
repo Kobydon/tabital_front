@@ -86,7 +86,7 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, {
-    enableTracing: true, // TEMPORARILY ENABLE TO SEE ROUTER EVENTS
+    enableTracing: false,
     useHash: false
   })],
   exports: [RouterModule]

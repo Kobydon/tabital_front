@@ -6,6 +6,11 @@ import { environment } from './environments/environment';
 
 if (environment.production) {
   enableProdMode();
+  // Components log user, KYC and payment objects for debugging. Never in production.
+  const noop = () => {};
+  console.log = noop;
+  console.debug = noop;
+  console.info = noop;
 }
 
 platformBrowserDynamic().bootstrapModule(AppModule)

@@ -1,3 +1,4 @@
+import { environment } from '../environments/environment';
 // src/app/services/customer.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
@@ -132,7 +133,7 @@ export interface PaymentOverview {
   providedIn: 'root'
 })
 export class CustomerService {
-  private API = 'https://tabital.onrender.com';
+  private API = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 private getAuthHeaders(isFormData: boolean = false): HttpHeaders {

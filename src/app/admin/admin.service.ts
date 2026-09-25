@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
@@ -98,7 +99,7 @@ export interface ApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private API = 'https://tabital.onrender.com';
+  private API = environment.apiUrl;
   private readonly TOKEN_KEY = 'access_token';
 
   constructor(private http: HttpClient) {}

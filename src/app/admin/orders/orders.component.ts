@@ -77,7 +77,10 @@ export class AdminOrdersComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.approveForm = this.fb.group({
-      admin_notes: ['']
+      admin_notes: [''],
+      // Fill in only once the down payment has actually been received
+      down_payment_reference: [''],
+      down_payment_method: ['mobile_money']
     });
     
     this.rejectForm = this.fb.group({
@@ -181,20 +184,23 @@ export class AdminOrdersComponent implements OnInit {
     this.isProcessing = true;
     
     const data = {
-      admin_notes: this.approveForm.value.admin_notes || 'Order approved by admin'
+      admin_notes: this.approveForm.value.admin_notes || 'Order approved by admin',
+      down_payment_reference: (this.approveForm.value.down_payment_reference || '').trim(),
+      down_payment_method: this.approveForm.value.down_payment_method || 'mobile_money'
     };
-    
+
     this.adminService.approveOrder(this.selectedOrder.id, data).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isProcessing = false;
         this.showApproveModal = false;
         this.loadOrders();
-        alert('Order approved successfully!');
+        alert(response?.down_payment_status === 'paid'
+          ? 'Order approved. Down payment recorded as received.'
+          : 'Order approved. The down payment is awaiting verification in Instalments.');
       },
       error: (error) => {
-        console.error('Error approving order:', error);
         this.isProcessing = false;
-        alert('Failed to approve order. Please try again.');
+        alert(error?.error?.error || error?.message || 'Failed to approve order. Please try again.');
       }
     });
   }
