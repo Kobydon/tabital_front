@@ -1,0 +1,6 @@
+# Tabital Pay brand-asset pipeline (brand/prepare_logo.py). Python 3.12.
+Pillow==12.3.0
+
+# Optional: only needed if the founder sends SVG files. On Windows cairosvg also needs the
+# native Cairo library (e.g. the GTK3 runtime) on PATH. Without it, send PNG >= 1024 px instead.
+# cairosvg>=2.7

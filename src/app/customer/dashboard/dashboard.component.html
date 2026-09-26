@@ -6,6 +6,19 @@
     <button class="close-btn" (click)="errorMessage = ''">×</button>
   </div>
 
+  <!-- Vault: the next payment leads the home screen -->
+  <tp-next-payment *ngIf="nextDue as nd" class="home-next"
+    [amount]="nd.payment.amount_due ?? (nd.payment.amount + (nd.payment.late_fee || 0))"
+    [instalment]="nd.payment.amount" [lateFee]="nd.payment.late_fee || 0" [dueDate]="nd.payment.due_date"
+    [paid]="paidCount(nd.plan)" [total]="(nd.plan.payment_schedule || []).length" [productName]="nd.plan.product_name"
+    [canDefer]="false" (pay)="payNext()">
+  </tp-next-payment>
+  <div class="home-quick" *ngIf="!nextDue">
+    <tp-empty-state icon="shopping-bag" title="Nothing to pay right now" text="Find something you need and pay in 2, 3 or 4.">
+      <a tpButton routerLink="/customer/shop">Go to the shop</a>
+    </tp-empty-state>
+  </div>
+
   <!-- Welcome Section -->
   <div class="welcome-section">
     <div>

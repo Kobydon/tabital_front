@@ -214,9 +214,30 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Vault home: the earliest unpaid instalment across active plans leads the page. */
+  get nextDue(): { plan: any; payment: any } | null {
+    let best: { plan: any; payment: any } | null = null;
+    for (const plan of (this.activePlans as any[]) || []) {
+      for (const payment of plan.payment_schedule || []) {
+        if (payment.status !== 'pending' && payment.status !== 'overdue') continue;
+        if (!best || new Date(payment.due_date) < new Date(best.payment.due_date)) best = { plan, payment };
+      }
+    }
+    return best;
+  }
+
+  paidCount(plan: any): number {
+    return (plan?.payment_schedule || []).filter((p: any) => p.status === 'paid').length;
+  }
+
+  payNext(): void {
+    const nd = this.nextDue;
+    if (nd) this.router.navigate(['/customer/make-payment'], { queryParams: { planId: nd.plan.id } });
+  }
+
   private loadActivePlans(): Promise<void> {
     return new Promise((resolve) => {
-      this.customerService.getMyPlans({ status: 'active', limit: 3 }).subscribe({
+      this.customerService.getMyPlans({ status: 'active', limit: 20 }).subscribe({
         next: (data) => {
           this.activePlans = data?.plans || [];
           resolve();

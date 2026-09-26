@@ -22,6 +22,8 @@ export interface Product {
   merchant_id: number;
   merchant_name: string;
   status: string;
+  // Server-priced teaser: GHS down_payment today, then installments x installment_amount
+  split_preview?: { plan: string; down_payment: number; installments: number; installment_amount: number; delivery_fee: number } | null;
 }
 
 export interface InstallmentOption {
@@ -99,7 +101,7 @@ export interface CustomerKYC {
 @Component({
   selector: 'app-customer-shop',
   templateUrl: './shop.component.html',
-  styleUrls: ['./shop.component.scss']
+  styleUrls: ['./shop.component.scss', './shop-vault.scss']
 })
 export class CustomerShopComponent implements OnInit {
   /** Terms, privacy and agreement links (environment.legal, §10). */
@@ -161,6 +163,7 @@ export class CustomerShopComponent implements OnInit {
       error: () => this.paystackEnabled = false
     });
     this.checkKYCStatus();
+    this.loadCredit();
     this.loadProducts();
     this.loadInstallmentOptions();
   }
@@ -183,6 +186,29 @@ export class CustomerShopComponent implements OnInit {
         console.error('Error fetching customer profile:', error);
         this.isKYCPending = true;
       }
+    });
+  }
+
+  // Vault: eligibility and available limit up front, before the customer picks a product
+  credit: any = null;
+  loadCredit(): void {
+    this.customerService.getCredit().subscribe({ next: (c: any) => { this.credit = c; }, error: () => { this.credit = null; } });
+  }
+
+  // Every plan for the open product, priced by the server, shown side by side
+  planOptions: any[] = [];
+  planOptionsLoading = false;
+  loadPlanOptions(): void {
+    if (!this.selectedProduct) return;
+    this.planOptionsLoading = true;
+    this.customerService.getPlanOptions(this.selectedProduct.id, this.purchaseForm.value.quantity || 1).subscribe({
+      next: (res: any) => {
+        // Pay in 4 first (the main plan), full payment last
+        const order = [4, 3, 2, 1];
+        this.planOptions = [...(res.options || [])].sort((a, b) => order.indexOf(a.n_payments) - order.indexOf(b.n_payments));
+        this.planOptionsLoading = false;
+      },
+      error: () => { this.planOptions = []; this.planOptionsLoading = false; }
     });
   }
 
@@ -288,9 +314,12 @@ export class CustomerShopComponent implements OnInit {
 
   viewProduct(product: Product): void {
     this.selectedProduct = product;
-    this.purchaseForm.patchValue({ quantity: 1, selected_installments: 1 });
+    // Pay in 4 is the main plan; customers who can't use credit start on paying in full
+    const start = this.credit?.eligible ? 4 : 1;
+    this.purchaseForm.patchValue({ quantity: 1, selected_installments: start });
     this.showProductModal = true;
-    this.calculateInstallment(product, 1);
+    this.calculateInstallment(product, start);
+    this.loadPlanOptions();
   }
 
   selectInstallment(months: number): void {
@@ -326,6 +355,7 @@ export class CustomerShopComponent implements OnInit {
     
     const months = this.purchaseForm.value.selected_installments || 1;
     this.calculateInstallment(this.selectedProduct, months);
+    this.loadPlanOptions();
   }
 
   // Why this plan can't be bought right now, or null if it can (the server checks again at checkout)

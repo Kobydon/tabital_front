@@ -718,6 +718,11 @@ createPurchaseOrder(orderData: any): Observable<any> {
   return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() });
 }
 
+// Vault shop: every plan for a product, priced by the server
+getPlanOptions(productId: number, quantity = 1, inStore = false): Observable<any> {
+  return this.http.post(`${this.API}/customer/plan-options`, { product_id: productId, quantity, in_store: inStore }, { headers: this.getAuthHeaders() });
+}
+
 // Deferment (§4): quote, then pay the fee through Paystack
 getDefermentQuote(planId: number, paymentId?: number): Observable<any> {
   const qs = paymentId ? `?payment_id=${paymentId}` : '';

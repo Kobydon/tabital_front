@@ -1,142 +1,80 @@
-<div class="shop-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <h1 class="title">
-        <span class="icon">🛒</span>
-        Shop with Installment Plans
-      </h1>
-      <p class="subtitle">Buy now, pay over time with flexible payment plans</p>
+<div class="shop-container vault-shop">
+  <tp-page-header title="Shop" subtitle="Own it today. Pay in 2, 3 or 4, interest-free when you pay on time.">
+    <a tpButton="secondary" size="sm" routerLink="/customer/orders"><lucide-icon name="package" [size]="16"></lucide-icon> My orders</a>
+  </tp-page-header>
+
+  <!-- Identity check first: customers see it before choosing a product, not at checkout -->
+  <div class="vs-banner vs-banner--warn" *ngIf="isKYCPending && customerKYC" role="status">
+    <lucide-icon name="scan-face" [size]="22"></lucide-icon>
+    <div class="vs-banner__text">
+      <strong>{{ getKYCBlockTitle() }}</strong>
+      <span>{{ getKYCBlockMessageText() }}</span>
     </div>
-    <div class="header-right">
-      <button class="orders-btn" routerLink="/customer/orders">
-        <i class="fas fa-box"></i> My Orders
-      </button>
-    </div>
+    <button tpButton="navy" size="sm" (click)="navigateToKYC()">{{ getKYCBlockButtonText() }}</button>
   </div>
 
-  <!-- KYC Warning Banner -->
-  <div class="kyc-warning-banner" *ngIf="isKYCPending && customerKYC">
-    <div class="banner-icon" [class.warning]="customerKYC.kyc_status === 'pending'" [class.danger]="customerKYC.kyc_status === 'rejected'">
-      <i class="fas" [class.fa-clock]="customerKYC.kyc_status === 'pending'" [class.fa-exclamation-triangle]="customerKYC.kyc_status === 'rejected'"></i>
+  <!-- Available to spend -->
+  <div class="vs-banner vs-banner--info" *ngIf="!isKYCPending && credit" role="status">
+    <lucide-icon [name]="credit.eligible ? 'wallet' : 'triangle-alert'" [size]="22"></lucide-icon>
+    <div class="vs-banner__text" *ngIf="credit.eligible">
+      <strong>You can spend up to {{ credit.available_limit | money }} on a payment plan</strong>
+      <span>Your limit grows when you pay on time.</span>
     </div>
-    <div class="banner-content">
-      <h4>{{ getKYCBlockTitle() }}</h4>
-      <p>{{ getKYCBlockMessageText() }}</p>
+    <div class="vs-banner__text" *ngIf="!credit.eligible">
+      <strong>Payment plans aren't available on your account yet</strong>
+      <span>{{ credit.reasons?.[0] || 'You can still pay in full.' }}</span>
     </div>
-    <button class="banner-btn" (click)="navigateToKYC()">
-      {{ getKYCBlockButtonText() }}
-      <i class="fas fa-arrow-right"></i>
-    </button>
+    <a tpButton="ghost" size="sm" routerLink="/customer/profile">See why</a>
   </div>
 
   <!-- Categories -->
-  <div class="categories-section">
-    <div class="categories-header">
-      <h2><i class="fas fa-tags"></i> Categories</h2>
-    </div>
-    <div class="categories-grid">
-      <button 
-        class="category-card"
-        [class.active]="selectedCategory === ''"
-        (click)="filterByCategory('')">
-        <span class="category-icon">📋</span>
-        <span class="category-name">All</span>
-      </button>
-      <button 
-        *ngFor="let cat of categories"
-        class="category-card"
-        [class.active]="selectedCategory === cat"
-        (click)="filterByCategory(cat)">
-        <span class="category-icon">{{ getCategoryIcon(cat) }}</span>
-        <span class="category-name">{{ cat }}</span>
-      </button>
-    </div>
+  <nav class="vs-cats" aria-label="Categories">
+    <button type="button" class="vs-cat" [class.is-on]="selectedCategory === ''" (click)="filterByCategory('')">All</button>
+    <button type="button" *ngFor="let cat of categories" class="vs-cat" [class.is-on]="selectedCategory === cat"
+            (click)="filterByCategory(cat)">{{ cat }}</button>
+  </nav>
+
+  <!-- Search -->
+  <div class="vs-search">
+    <lucide-icon name="search" [size]="18" aria-hidden="true"></lucide-icon>
+    <input type="search" aria-label="Search products" placeholder="Search phones, laptops, appliances…"
+           [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+    <button *ngIf="searchTerm" type="button" class="vs-search__clear" aria-label="Clear search" (click)="searchTerm = ''; applyFilters()">
+      <lucide-icon name="x" [size]="16"></lucide-icon>
+    </button>
+    <span class="vs-search__count">{{ filteredProducts.length }} product{{ filteredProducts.length === 1 ? '' : 's' }}</span>
   </div>
 
-  <!-- Search & Filters -->
-  <div class="filter-section">
-    <div class="search-box">
-      <i class="fas fa-search" aria-hidden="true"></i>
-      <input
-        type="search"
-        aria-label="Search products"
-        placeholder="Search products..."
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="onSearchChange()"
-      />
-      <button *ngIf="searchTerm" class="clear-btn" aria-label="Clear search" (click)="searchTerm = ''; applyFilters()">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="filter-stats">
-      <span>{{ filteredProducts.length }} products found</span>
-      <button *ngIf="searchTerm || selectedCategory" class="reset-btn" (click)="resetFilters()">
-        <i class="fas fa-undo-alt"></i> Reset
-      </button>
-    </div>
-  </div>
+  <div *ngIf="isLoading" class="vs-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading products…</div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading products...</p>
-  </div>
-
-  <!-- Products Grid -->
-  <div class="products-grid" *ngIf="!isLoading && filteredProducts.length > 0">
-    <div class="product-card" *ngFor="let product of filteredProducts">
-      <div class="product-image">
-        <img 
-          *ngIf="product.main_image" 
-          [src]="product.main_image" 
-          [alt]="product.name"
-          onerror="this.src='assets/default-product.svg'">
-        <div *ngIf="!product.main_image" class="no-image">
-          <i class="fas fa-image"></i>
-        </div>
-        <div class="stock-badge" [class]="getStockClass(product.stock_quantity)">
-          {{ getStockStatus(product.stock_quantity) }}
-        </div>
+  <!-- Products -->
+  <div class="vs-grid" *ngIf="!isLoading && filteredProducts.length > 0">
+    <article class="vs-card" *ngFor="let product of filteredProducts">
+      <div class="vs-card__img">
+        <img [src]="product.main_image || 'assets/default-product.svg'" [alt]="product.name"
+             onerror="this.src='assets/default-product.svg'" loading="lazy">
+        <tp-chip class="vs-card__stock" [tone]="product.stock_quantity > 5 ? 'success' : product.stock_quantity > 0 ? 'warn' : 'error'"
+                 [label]="getStockStatus(product.stock_quantity)"></tp-chip>
       </div>
-      
-      <div class="product-info">
-        <h3>{{ product.name }}</h3>
-        <p class="product-description">{{ product.description | slice:0:60 }}...</p>
-        
-        <div class="product-price">
-          <span class="current-price">{{ formatCurrency(product.price) }}</span>
-        </div>
-        
-        <div class="product-meta">
-          <span class="meta-item">
-            <i class="fas fa-tag"></i> {{ product.category }}
-          </span>
-          <span class="meta-item" *ngIf="product.brand">
-            <i class="fas fa-building"></i> {{ product.brand }}
-          </span>
-        </div>
-        
-        <div class="installment-teaser">
-          <i class="fas fa-calendar-alt"></i>
-          <span>Delivery Fee: GHS 50.00 added to first payment</span>
-        </div>
-        
-        <button class="btn-view" (click)="viewProduct(product)" [disabled]="product.stock_quantity <= 0">
-          {{ product.stock_quantity > 0 ? 'View & Buy' : 'Out of Stock' }}
+      <div class="vs-card__body">
+        <p class="vs-card__merchant">{{ product.merchant_name }}</p>
+        <h3 class="vs-card__name">{{ product.name }}</h3>
+        <div class="vs-card__price">{{ product.price | money }}</div>
+        <p class="vs-card__split" *ngIf="product.split_preview as sp">
+          or <strong>{{ sp.down_payment | money }}</strong> today, then {{ sp.installments }} × {{ sp.installment_amount | money }}
+          <span *ngIf="sp.delivery_fee > 0" class="vs-card__plus">+ delivery</span>
+        </p>
+        <button tpButton="navy" [block]="true" (click)="viewProduct(product)" [disabled]="product.stock_quantity <= 0">
+          {{ product.stock_quantity > 0 ? 'View and choose a plan' : 'Out of stock' }}
         </button>
       </div>
-    </div>
+    </article>
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!isLoading && filteredProducts.length === 0" class="empty-state">
-    <div class="empty-icon">🛍️</div>
-    <h3>No products found</h3>
-    <p>Try adjusting your filters or search criteria</p>
-    <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
-  </div>
-
+  <tp-empty-state *ngIf="!isLoading && filteredProducts.length === 0" icon="shopping-bag"
+                  title="No products found" text="Try another category or search.">
+    <button tpButton="secondary" size="sm" (click)="resetFilters()">Clear filters</button>
+  </tp-empty-state>
   <!-- Pagination -->
   <div class="pagination" *ngIf="totalPages > 1">
     <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
@@ -210,37 +148,27 @@
 
         <!-- Installment Plans Section -->
         <div class="installment-section">
-          <h3><i class="fas fa-calendar-alt"></i> Choose Your Installment Plan</h3>
-          
-          <div class="delivery-fee-note" *ngIf="calculation && calculation.fees.delivery_fee > 0">
-            <i class="fas fa-truck"></i>
-            <span>A delivery fee of <strong>{{ formatCurrency(calculation.fees.delivery_fee) }}</strong> is added to your first payment (due now) on every plan. It isn't financed.</span>
-          </div>
-          
-          <div class="installment-options">
-            <button 
-              *ngFor="let option of installmentOptions"
-              class="installment-btn"
-              [class.active]="purchaseForm.get('selected_installments')?.value === option.months && option.is_active"
-              [class.coming-soon]="!option.is_active"
-              (click)="selectInstallment(option.months)"
-              [disabled]="!option.is_active">
-              <div class="plan-details">
-                <span class="months">{{ option.months === 1 ? 'Full' : option.months }}</span>
-                <span class="period">{{ option.months === 1 ? 'Pay in full' : 'payments (Pay in ' + option.months + ')' }}</span>
-                <!-- <span class="plan-type" *ngIf="option.months === 1">100% Down + Delivery</span>
-                <span class="plan-type" *ngIf="option.months === 2">50% Down + Delivery + 50% Later</span>
-                <span class="plan-type" *ngIf="option.months === 3">50% Down + Delivery + 25% + 25%</span>
-                <span class="plan-type" *ngIf="option.months === 4">40% Down + Delivery + 20% + 20% + 20%</span> -->
-              </div>
-              <div class="due-now-info">
-              </div>
-              <span *ngIf="option.coming_soon" class="coming-soon-badge">
-                <i class="fas fa-clock"></i> Coming Soon
-              </span>
+          <h3>How would you like to pay?</h3>
+
+          <!-- Vault: every plan side by side, priced by the server (today, then monthly, and the total) -->
+          <div class="vs-plans" role="radiogroup" aria-label="Payment plan">
+            <div *ngIf="planOptionsLoading" class="vs-loading"><span class="tp-spinner" aria-hidden="true"></span> Pricing your plans…</div>
+            <button type="button" *ngFor="let o of planOptions" class="vs-plan" role="radio"
+                    [attr.aria-checked]="purchaseForm.get('selected_installments')?.value === o.n_payments"
+                    [class.is-on]="purchaseForm.get('selected_installments')?.value === o.n_payments"
+                    [class.is-blocked]="!o.available" (click)="selectInstallment(o.n_payments)">
+              <span class="vs-plan__name">{{ o.label }}</span>
+              <span class="vs-plan__today">{{ o.due_now | money }} <small>today</small></span>
+              <span class="vs-plan__then" *ngIf="o.installments > 0">then {{ o.installments }} × {{ o.installment_amount | money }} monthly</span>
+              <span class="vs-plan__then" *ngIf="o.installments === 0">nothing more to pay</span>
+              <span class="vs-plan__total">Total {{ o.total_payable | money }}</span>
+              <span class="vs-plan__blocked" *ngIf="!o.available">{{ o.blocked_reason }}</span>
             </button>
           </div>
-
+          <p class="vs-plans__note" *ngIf="planOptions[0]?.delivery_fee > 0">
+            Today's amount includes the {{ planOptions[0].delivery_fee | money }} delivery fee. It isn't financed.
+            6- and 12-month plans are coming soon.
+          </p>
           <!-- Calculation Display -->
           <div *ngIf="calculation" class="calculation-preview">
             
