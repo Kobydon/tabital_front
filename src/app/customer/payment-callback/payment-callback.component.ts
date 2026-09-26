@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
-type CallbackState = 'checking' | 'paid' | 'pending' | 'failed' | 'mismatch' | 'refund' | 'error';
+type CallbackState = 'checking' | 'paid' | 'deferred' | 'pending' | 'failed' | 'mismatch' | 'refund' | 'error';
 
 /**
  * Paystack redirects here with ?reference=...&trxref=... after checkout.
@@ -43,7 +43,9 @@ export class PaymentCallbackComponent implements OnInit {
       next: (res: any) => {
         this.result = res;
         const outcome = res?.outcome;
-        if (outcome === 'applied' || outcome === 'already_applied') {
+        if (res?.purpose === 'deferment_fee' && (outcome === 'deferred' || outcome === 'already_applied')) {
+          this.state = 'deferred';
+        } else if (outcome === 'applied' || outcome === 'already_applied') {
           this.state = 'paid';
         } else if (outcome === 'duplicate_payment') {
           this.state = 'paid';

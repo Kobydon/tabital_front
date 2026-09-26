@@ -196,6 +196,11 @@
                         (click)="openPaymentModal(payment, selectedInstalment)">
                   <i class="fas fa-credit-card"></i> Pay Now
                 </button>
+                <button *ngIf="payment.status === 'pending' && payment.installment_number > 1 && getDaysRemaining(payment.due_date) >= 0 && selectedInstalment.status === 'active'"
+                        class="btn-receipt"
+                        (click)="openDeferment(payment, selectedInstalment)" title="Pay a fee to move this payment back">
+                  <i class="fas fa-calendar-plus"></i> Defer
+                </button>
                 <button *ngIf="payment.status === 'paid'" 
                         class="btn-receipt" 
                         (click)="downloadReceipt(payment, selectedInstalment)">
@@ -205,6 +210,48 @@
             </div>
           </div>
         </div>
+        <!-- Deferment (§4): full disclosure of the fee, new dates and new total before agreeing -->
+        <div class="dispute-box" *ngIf="deferLoading || deferQuote || deferError">
+          <h4><i class="fas fa-calendar-plus"></i> Defer a payment</h4>
+          <p *ngIf="deferLoading">Checking…</p>
+          <ng-container *ngIf="deferQuote && !deferLoading">
+            <ng-container *ngIf="!deferQuote.allowed">
+              <p class="hint" *ngFor="let r of deferQuote.reasons">⚠️ {{ r }}</p>
+            </ng-container>
+            <ng-container *ngIf="deferQuote.allowed">
+              <p>Pay a one-off fee of <strong>{{ formatCurrency(deferQuote.fee) }}</strong>
+                ({{ deferQuote.fee_percentage }}% of instalment {{ deferQuote.installment_number }}) to move it
+                {{ deferQuote.months }} month{{ deferQuote.months > 1 ? 's' : '' }} later. The payments after it move too,
+                so you never pay two in one month. It isn't a late payment and doesn't affect your credit limit.</p>
+              <div class="schedule-table">
+                <div class="schedule-header"><span>Instalment</span><span>Amount</span><span>Now due</span><span>New due date</span></div>
+                <div class="schedule-row" *ngFor="let s of deferQuote.schedule">
+                  <span>Instalment {{ s.installment_number }}</span>
+                  <span>{{ formatCurrency(s.amount) }}</span>
+                  <span>{{ formatDate(s.due_date) }}</span>
+                  <span><strong>{{ formatDate(s.new_due_date) }}</strong></span>
+                </div>
+              </div>
+              <p>Total payable on this plan: {{ formatCurrency(deferQuote.total_payable_before) }} →
+                <strong>{{ formatCurrency(deferQuote.total_payable_after) }}</strong>.
+                You can defer {{ deferQuote.deferments_left }} time{{ deferQuote.deferments_left === 1 ? '' : 's' }} on this plan.</p>
+              <label class="hint" style="display:flex;gap:8px;align-items:flex-start">
+                <input type="checkbox" [(ngModel)]="deferAgree" [ngModelOptions]="{standalone: true}">
+                I agree to pay the {{ formatCurrency(deferQuote.fee) }} fee now and to the new payment dates above.
+              </label>
+              <p class="hint" *ngIf="!deferQuote.online_payment">Online payment isn't available right now, so deferment can't be paid yet.</p>
+            </ng-container>
+          </ng-container>
+          <p class="hint" *ngIf="deferError">⚠️ {{ deferError }}</p>
+          <div class="actions">
+            <button type="button" class="btn-secondary" (click)="closeDeferment()">Cancel</button>
+            <button type="button" class="btn-primary" *ngIf="deferQuote?.allowed"
+                    [disabled]="!deferAgree || deferring || !deferQuote.online_payment" (click)="confirmDeferment()">
+              {{ deferring ? 'Taking you to payment…' : 'Pay ' + formatCurrency(deferQuote.fee) + ' and defer' }}
+            </button>
+          </div>
+        </div>
+
         <!-- Buyer protection: report a problem, which pauses the remaining payments -->
         <div class="dispute-box" *ngIf="selectedInstalment.status === 'active'">
           <ng-container *ngIf="!showDisputeForm">

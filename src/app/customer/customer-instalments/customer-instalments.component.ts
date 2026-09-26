@@ -93,6 +93,48 @@ export class CustomerInstalmentsComponent implements OnInit {
     { value: 'cash', label: 'Cash', icon: '💰' }
   ];
 
+  // Deferment (§4)
+  deferQuote: any = null;
+  deferLoading = false;
+  deferAgree = false;
+  deferring = false;
+  deferError = '';
+
+  openDeferment(payment: PaymentSchedule, plan: InstalmentPlan): void {
+    this.deferQuote = null;
+    this.deferAgree = false;
+    this.deferError = '';
+    this.deferLoading = true;
+    this.customerService.getDefermentQuote(plan.id, payment.id).subscribe({
+      next: (q: any) => { this.deferQuote = q; this.deferLoading = false; },
+      error: (err: any) => { this.deferLoading = false; this.deferError = err.error?.error || 'Could not check deferment'; }
+    });
+  }
+
+  closeDeferment(): void {
+    this.deferQuote = null;
+    this.deferError = '';
+    this.deferLoading = false;
+  }
+
+  confirmDeferment(): void {
+    if (!this.deferQuote?.allowed || !this.deferAgree) return;
+    this.deferring = true;
+    this.customerService.startDeferment(this.deferQuote.plan_id, this.deferQuote.payment_id).subscribe({
+      next: (res: any) => {
+        if (res?.authorization_url) {
+          window.location.href = res.authorization_url;      // Paystack; dates move once it's confirmed
+          return;
+        }
+        this.deferring = false;
+      },
+      error: (err: any) => {
+        this.deferring = false;
+        this.deferError = err.error?.error || 'Could not start the payment';
+      }
+    });
+  }
+
   // Buyer protection
   showDisputeForm = false;
   isSubmittingDispute = false;
@@ -330,6 +372,7 @@ loadInstalmentPlans(): void {
   // ============================================
 
   closeModals(): void {
+    this.closeDeferment();
     this.showDetailsModal = false;
     this.showPaymentModal = false;
     this.showReceiptModal = false;

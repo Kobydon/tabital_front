@@ -28,7 +28,25 @@
       <button class="btn-primary" (click)="goToInstalments()">View my instalments</button>
     </ng-container>
 
-    <ng-container *ngIf="state === 'refund'">
+    <ng-container *ngIf="state === 'deferred'">
+      <i class="fas fa-calendar-check icon"></i>
+      <h2>Payment deferred</h2>
+      <p *ngIf="result">
+        We received the {{ formatCurrency(result.amount) }} deferment fee. Payment {{ result.installment_number }}
+        and the payments after it now have new due dates.
+      </p>
+      <button class="btn-primary" (click)="goToInstalments()">See my new dates</button>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'refund' && result?.purpose === 'deferment_fee'">
+      <i class="fas fa-undo icon"></i>
+      <h2>Deferment couldn't be applied</h2>
+      <p>Something changed while your payment was going through (for example the instalment was already paid).
+        Your payment dates stay the same, and we'll refund the deferment fee.</p>
+      <button class="btn-primary" (click)="goToInstalments()">View my instalments</button>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'refund' && result?.purpose !== 'deferment_fee'">
       <i class="fas fa-undo icon"></i>
       <h2>Order already closed</h2>
       <p>This order was closed before your payment arrived. Your money will be refunded.</p>

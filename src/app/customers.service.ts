@@ -718,6 +718,17 @@ createPurchaseOrder(orderData: any): Observable<any> {
   return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() });
 }
 
+// Deferment (§4): quote, then pay the fee through Paystack
+getDefermentQuote(planId: number, paymentId?: number): Observable<any> {
+  const qs = paymentId ? `?payment_id=${paymentId}` : '';
+  return this.http.get(`${this.API}/customer/plans/${planId}/deferment${qs}`, { headers: this.getAuthHeaders() });
+}
+
+startDeferment(planId: number, paymentId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/plans/${planId}/deferment`, { payment_id: paymentId, agree: true },
+    { headers: this.getAuthHeaders() });
+}
+
 // Identity check with Smile ID (Phase 6)
 getIdentityStatus(): Observable<any> {
   return this.http.get(`${this.API}/customer/identity`, { headers: this.getAuthHeaders() });
