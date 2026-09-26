@@ -1,6 +1,9 @@
 import { Component, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/auth/auth.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
+
+interface NavItem { path: string; label: string; icon: string; exact?: boolean; management?: boolean; }
 
 @Component({
   selector: 'app-admin-layout',
@@ -14,11 +17,12 @@ export class LayoutComponent {
   showUserMenu = false;
   isMobile = false;
 
-  // Vault navigation: only routes that exist, grouped by job (Lucide icons, no emoji)
-  readonly navGroups = [
+  // Vault navigation: only routes that exist, grouped by job (Lucide icons, no emoji).
+  // management: true = Management Access only (the server refuses anyone else).
+  private readonly allNavGroups: { label: string; items: NavItem[] }[] = [
     { label: 'Overview', items: [
       { path: '/admin/dashboard', label: 'Dashboard', icon: 'layout-dashboard', exact: true },
-      { path: '/admin/unit-economics', label: 'Unit economics', icon: 'trending-up' },
+      { path: '/admin/unit-economics', label: 'Unit economics', icon: 'trending-up', management: true },
       { path: '/admin/all-reports', label: 'Reports', icon: 'chart-line' },
     ]},
     { label: 'Approvals', items: [
@@ -44,13 +48,26 @@ export class LayoutComponent {
       { path: '/admin/all-users', label: 'All users', icon: 'user' },
     ]},
     { label: 'Settings', items: [
-      { path: '/admin/system-settings', label: 'Rates and rules', icon: 'sliders-horizontal' },
-      { path: '/admin/data-access', label: 'Personal data access', icon: 'eye' },
+      { path: '/admin/system-settings', label: 'Rates and rules', icon: 'sliders-horizontal', management: true },
+      { path: '/admin/team', label: 'Team and access', icon: 'user-cog', management: true },
+      { path: '/admin/data-access', label: 'Personal data access', icon: 'eye', management: true },
     ]},
   ];
 
-  constructor(private router: Router) {
+  navGroups: { label: string; items: NavItem[] }[] = [];
+
+  constructor(private router: Router, public access: AdminAccess) {
     this.checkScreenSize();
+    this.navGroups = this.visibleGroups();
+    access.load(true);          // fresh after every sign-in
+    access.changes.subscribe(() => this.navGroups = this.visibleGroups());
+  }
+
+  private visibleGroups(): { label: string; items: NavItem[] }[] {
+    const management = this.access.isManagement;
+    return this.allNavGroups
+      .map(g => ({ ...g, items: g.items.filter(i => management || !i.management) }))
+      .filter(g => g.items.length);
   }
 
   ngOnInit() {

@@ -9,12 +9,13 @@ import {
 } from './components';
 import { TpConfirmHostComponent } from './confirm';
 import { TpRevealComponent } from './reveal';
+import { TpManagementDirective } from './admin-access';
 import { TP_ICONS } from './icons';
 import { MoneyPipe, TpDatePipe } from './pipes';
 
 const PARTS = [
   TpButtonDirective, TpFieldComponent, TpCardComponent, TpChipComponent, TpPageHeaderComponent,
-  TpEmptyStateComponent, TpNextPaymentComponent, TpPayBarComponent, TpConfirmHostComponent, TpRevealComponent,
+  TpEmptyStateComponent, TpNextPaymentComponent, TpPayBarComponent, TpConfirmHostComponent, TpRevealComponent, TpManagementDirective,
   MoneyPipe, TpDatePipe
 ];
 

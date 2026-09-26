@@ -3,10 +3,12 @@ import { HttpClient } from '@angular/common/http';
 
 import { environment } from 'src/environments/environment';
 import { notify } from '../shared/notify';
+import { AdminAccess } from './admin-access';
 
 /**
  * A personal value that admin screens get masked (Ghana Card, phone, MoMo, account numbers).
  * The full value needs a reason and every reveal is logged on the server (POST /admin/pii/reveal).
+ * Only admins with Management Access see the Reveal button (the server refuses anyone else).
  *
  * <tp-reveal [userId]="c.id" field="national_id" [value]="c.national_id"></tp-reveal>
  */
@@ -15,7 +17,7 @@ import { notify } from '../shared/notify';
   template: `
     <span class="tp-reveal">
       <span class="tp-reveal__value" [class.tp-reveal__value--shown]="revealed !== null">{{ (revealed ?? value) || '—' }}</span>
-      <ng-container *ngIf="value && userId && revealed === null">
+      <ng-container *ngIf="value && userId && revealed === null && access.isManagement">
         <button *ngIf="!asking" type="button" class="tp-reveal__btn" (click)="asking = true"
                 [attr.aria-label]="'Reveal ' + label">
           <lucide-icon name="eye" [size]="14"></lucide-icon> Reveal
@@ -48,7 +50,9 @@ export class TpRevealComponent {
   revealed: string | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, public access: AdminAccess) {
+    access.load();
+  }
 
   reveal(): void {
     if (this.reason.trim().length < 5 || !this.userId) return;

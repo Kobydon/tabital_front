@@ -26,6 +26,7 @@ import { IdentityReviewComponent } from './identity-review/identity-review.compo
 import { FraudReviewComponent } from './fraud-review/fraud-review.component';
 import { UnitEconomicsComponent } from './unit-economics/unit-economics.component';
 import { PiiAccessLogComponent } from './pii-access-log/pii-access-log.component';
+import { TeamComponent } from './team/team.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -59,6 +60,7 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
     FraudReviewComponent,
     UnitEconomicsComponent,
     PiiAccessLogComponent,
+    TeamComponent,
     SettlementsComponent,
     ReportsAnalyticsComponent,
     ProductPlansComponent,

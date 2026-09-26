@@ -9,7 +9,7 @@ import {
   Download, Eye, EyeOff, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
   Link, ListChecks, Lock, LogOut, Menu, MessageCircle, Package, Percent, PhoneCall, QrCode, Receipt,
   Scale, ScanFace, Search, Settings, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Store,
-  TrendingUp, TriangleAlert, Truck, Undo2, User, Users, Wallet, X
+  TrendingUp, TriangleAlert, UserCog, Truck, Undo2, User, Users, Wallet, X
 } from 'lucide-angular';
 
 export const TP_ICONS = {
@@ -18,5 +18,5 @@ export const TP_ICONS = {
   Download, Eye, EyeOff, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
   Link, ListChecks, Lock, LogOut, Menu, MessageCircle, Package, Percent, PhoneCall, QrCode, Receipt,
   Scale, ScanFace, Search, Settings, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Store,
-  TrendingUp, TriangleAlert, Truck, Undo2, User, Users, Wallet, X
+  TrendingUp, TriangleAlert, UserCog, Truck, Undo2, User, Users, Wallet, X
 };

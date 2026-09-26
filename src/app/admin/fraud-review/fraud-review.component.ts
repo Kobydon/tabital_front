@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
 import { notify } from 'src/app/shared/notify';
 
 /** Fraud signals (CLAUDE.md §9D/E). "block" stops purchases, order approval and payouts until reviewed. */
@@ -40,7 +41,9 @@ export class FraudReviewComponent implements OnInit {
     quick_dispute: 'Dispute right after delivery'
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, public access: AdminAccess) {
+    access.load();
+  }
 
   ngOnInit(): void {
     this.load();
@@ -82,6 +85,11 @@ export class FraudReviewComponent implements OnInit {
       },
       error: (err: any) => { this.busy = false; this.error = err.error?.error || 'Could not save'; }
     });
+  }
+
+  /** Clearing or confirming a signal needs Management Access. */
+  canReview(signal: any): boolean {
+    return this.access.isManagement && signal?.status !== 'cleared';
   }
 
   label(code: string): string {

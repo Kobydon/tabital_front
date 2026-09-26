@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { notify } from 'src/app/shared/notify';
@@ -69,7 +70,8 @@ export class AdminCollectionComponent implements OnInit {
     { value: 'in_app', label: 'In-app notification' }
   ];
 
-  constructor(private adminService: AdminService, private fb: FormBuilder) {
+  constructor(private adminService: AdminService, private fb: FormBuilder, public access: AdminAccess) {
+    access.load();
     this.reminderForm = this.fb.group({
       reminder_type: ['sms', Validators.required]
     });

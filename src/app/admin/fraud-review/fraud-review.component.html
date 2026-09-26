@@ -75,7 +75,7 @@
       </dl>
     </ng-container>
 
-    <ng-container *ngIf="selected.status !== 'cleared'">
+    <ng-container *ngIf="canReview(selected)">
       <h3 class="tp-section-title">Decision</h3>
       <tp-field label="What did you find?" for="fr-note" [required]="true" [error]="error"
                 hint="Clear it if there's an innocent explanation (e.g. family sharing a phone). Confirm it if it's fraud: a confirmed block stays in place.">
@@ -85,7 +85,7 @@
 
     <div class="tp-dialog__actions">
       <button tpButton="secondary" type="button" (click)="selected = null">Close</button>
-      <ng-container *ngIf="selected.status !== 'cleared'">
+      <ng-container *ngIf="canReview(selected)">
         <button tpButton="danger" type="button" [disabled]="busy" (click)="review('confirmed')">Confirm fraud</button>
         <button tpButton="navy" type="button" [disabled]="busy" [loading]="busy" (click)="review('cleared')">Clear signal</button>
       </ng-container>

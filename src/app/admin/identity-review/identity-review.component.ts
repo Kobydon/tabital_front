@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
 import { notify } from 'src/app/shared/notify';
 
 /** Smile ID checks that need a person: "attention" results, name/DOB mismatches, and blocks to override. */
@@ -25,7 +26,9 @@ export class IdentityReviewComponent implements OnInit {
   busy = false;
   error = '';
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, public access: AdminAccess) {
+    access.load();
+  }
 
   ngOnInit(): void {
     this.load();
@@ -56,7 +59,8 @@ export class IdentityReviewComponent implements OnInit {
   }
 
   canDecide(check: any): boolean {
-    return ['review', 'blocked', 'error'].includes(check?.status);
+    // Decisions need Management Access
+    return this.access.isManagement && ['review', 'blocked', 'error'].includes(check?.status);
   }
 
   decide(approve: boolean) {

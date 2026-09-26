@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
 import { notify } from 'src/app/shared/notify';
 // import { AdminService } from '../../admin.service';
 
@@ -78,8 +79,10 @@ export class AdminOrdersComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    public access: AdminAccess
   ) {
+    access.load();
     this.approveForm = this.fb.group({
       admin_notes: [''],
       // Fill in only once the down payment has actually been received

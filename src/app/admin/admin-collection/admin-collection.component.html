@@ -1,7 +1,7 @@
 <!-- Collections queue: Vault. Phone numbers arrive masked; reveal one (with a reason) to call. -->
 <tp-page-header title="Collections"
   subtitle="Overdue instalments by days past due (§8.4). Reminders go out automatically; use this queue for calls, manual reminders and payments received outside Paystack.">
-  <button tpButton="secondary" size="sm" type="button" (click)="exportOverduePayments()">
+  <button *tpManagement tpButton="secondary" size="sm" type="button" (click)="exportOverduePayments()">
     <lucide-icon name="download" [size]="16"></lucide-icon> Export CSV
   </button>
 </tp-page-header>
@@ -48,7 +48,7 @@
           <td><div class="tp-row-actions">
             <button tpButton="ghost" size="sm" type="button" (click)="viewPaymentDetails(payment)">Details</button>
             <button tpButton="secondary" size="sm" type="button" (click)="openReminderModal(payment)">Remind</button>
-            <button tpButton="navy" size="sm" type="button" (click)="openMarkReceivedModal(payment)">Record payment</button>
+            <button *tpManagement tpButton="navy" size="sm" type="button" (click)="openMarkReceivedModal(payment)">Record payment</button>
           </div></td>
         </tr>
       </tbody>
@@ -123,7 +123,7 @@
     <div class="tp-dialog__actions">
       <button tpButton="secondary" type="button" (click)="closeModals()">Close</button>
       <button tpButton="secondary" type="button" (click)="openReminderModal(selectedPayment.payment)">Send reminder</button>
-      <button tpButton="navy" type="button" (click)="openMarkReceivedModal(selectedPayment.payment)">Record payment</button>
+      <button *tpManagement tpButton="navy" type="button" (click)="openMarkReceivedModal(selectedPayment.payment)">Record payment</button>
     </div>
   </div>
 </div>

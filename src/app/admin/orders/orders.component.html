@@ -1,7 +1,7 @@
 <!-- Admin order queue: Vault. Personal data arrives masked (reveal needs a reason). -->
 <tp-page-header title="Orders"
   subtitle="Orders move to approval once the down payment is paid at checkout. Approve to open the plan; rejecting a paid order refunds it.">
-  <button tpButton="secondary" size="sm" type="button" (click)="exportOrders()">
+  <button *tpManagement tpButton="secondary" size="sm" type="button" (click)="exportOrders()">
     <lucide-icon name="download" [size]="16"></lucide-icon> Export CSV
   </button>
 </tp-page-header>
@@ -59,8 +59,8 @@
           <td>
             <div class="tp-row-actions">
               <button tpButton="ghost" size="sm" type="button" (click)="viewOrderDetails(order)">Details</button>
-              <button *ngIf="order.status === 'pending'" tpButton="navy" size="sm" type="button" (click)="openApproveModal(order)">Approve</button>
-              <button *ngIf="order.status === 'pending' || order.status === 'awaiting_payment'" tpButton="ghost" size="sm"
+              <button *ngIf="access.isManagement && order.status === 'pending'" tpButton="navy" size="sm" type="button" (click)="openApproveModal(order)">Approve</button>
+              <button *ngIf="access.isManagement && (order.status === 'pending' || order.status === 'awaiting_payment')" tpButton="ghost" size="sm"
                       type="button" (click)="openRejectModal(order)">Reject</button>
             </div>
           </td>
@@ -112,9 +112,9 @@
 
     <div class="tp-dialog__actions">
       <button tpButton="secondary" type="button" (click)="closeModals()">Close</button>
-      <button *ngIf="selectedOrder.status === 'pending' || selectedOrder.status === 'awaiting_payment'" tpButton="ghost" type="button"
+      <button *ngIf="access.isManagement && (selectedOrder.status === 'pending' || selectedOrder.status === 'awaiting_payment')" tpButton="ghost" type="button"
               (click)="openRejectModal(selectedOrder)">Reject</button>
-      <button *ngIf="selectedOrder.status === 'pending'" tpButton="navy" type="button" (click)="openApproveModal(selectedOrder)">Approve</button>
+      <button *ngIf="access.isManagement && selectedOrder.status === 'pending'" tpButton="navy" type="button" (click)="openApproveModal(selectedOrder)">Approve</button>
     </div>
   </div>
 </div>
