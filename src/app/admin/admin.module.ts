@@ -1,3 +1,4 @@
+import { UiModule } from '../ui/ui.module';
 import { NgModule } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -64,7 +65,7 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
 
   ],
   imports: [
-    CommonModule,ReactiveFormsModule,FormsModule,
+    UiModule, CommonModule,ReactiveFormsModule,FormsModule,
     RouterModule,DecimalPipe,FormsModule,TitleCasePipe,
     AdminRoutingModule , // ✅ This is correct
        

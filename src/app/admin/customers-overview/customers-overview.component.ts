@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 interface Customer {
   id: number;
   customer_id: string;
@@ -307,10 +308,10 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  verifySalary(): void {
+  async verifySalary(): Promise<void> {
     const customerId = this.selectedCustomer?.customer?.id;
     if (!customerId) return;
-    if (!confirm('Confirm the salary matches the salary certificate / bank statement?')) return;
+    if (!(await ask('Confirm the salary matches the salary certificate / bank statement?'))) return;
     this.isSubmitting = true;
     this.adminService.updateCustomerUnderwriting(customerId, {
       salary_verified: true, note: 'Salary verified against documents'

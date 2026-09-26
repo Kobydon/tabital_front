@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { ask } from 'src/app/ui/confirm';
 
 /**
  * Merchant settlement batches (Phase 5). Batches are made on each merchant's 3/7/30-day cycle
@@ -79,12 +80,12 @@ export class SettlementsComponent implements OnInit {
     return ['pending_approval', 'on_hold', 'failed'].includes(batch?.status);
   }
 
-  approve(batch: any) {
+  async approve(batch: any) {
     const acct = batch.payout_account;
     const dest = acct?.payout_method === 'bank'
       ? `${acct.bank_name || 'bank'} account ${acct.account_number}`
       : `Mobile Money ${acct?.momo_number}`;
-    if (!confirm(`Send ${this.formatCurrency(batch.net)} to ${batch.merchant_name} (${dest})?\n\nThis starts a real Paystack transfer.`)) return;
+    if (!(await ask({ title: `Send ${this.formatCurrency(batch.net)}?`, message: `To ${batch.merchant_name} (${dest}).\nThis starts a real Paystack transfer.`, confirm: 'Send payment' }))) return;
     this.approving = true;
     this.clear();
     this.adminService.approveSettlementBatch(batch.id).subscribe({

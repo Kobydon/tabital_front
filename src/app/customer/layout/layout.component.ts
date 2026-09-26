@@ -4,6 +4,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from 'src/app/auth/auth.service';
 import { CustomerService, CustomerProfile } from 'src/app/customers.service';
 import { filter } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-customer-layout',
@@ -19,9 +20,45 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
   showNotifications = false;
   currentPageTitle = 'Dashboard';
   unreadCount = 0;
-  walletBalance = 'AED 0.00';
   notifications: any[] = [];
   customerProfile: CustomerProfile | null = null;
+  drawerOpen = false;                        // phone: slide-over menu
+  readonly supportEmail = environment.supportEmail;
+
+  // Vault navigation (grouped; Lucide icons)
+  readonly navGroups = [
+    { label: 'Shop', items: [
+      { path: '/customer/dashboard', label: 'Home', icon: 'house', exact: true },
+      { path: '/customer/shop', label: 'Shop', icon: 'shopping-bag' },
+      { path: '/customer/orders', label: 'My orders', icon: 'package' },
+    ]},
+    { label: 'Payments', items: [
+      { path: '/customer/instalments', label: 'My payments', icon: 'calendar-clock' },
+      { path: '/customer/payments', label: 'Payment history', icon: 'receipt' },
+      { path: '/customer/transactions', label: 'Transactions', icon: 'arrow-right-left' },
+      { path: '/customer/plans', label: 'Extended plans (soon)', icon: 'clock' },
+    ]},
+    { label: 'Account', items: [
+      { path: '/customer/verify-identity', label: 'Verify identity', icon: 'scan-face' },
+      { path: '/customer/documents', label: 'Documents', icon: 'file-text' },
+      { path: '/customer/profile', label: 'Profile and limit', icon: 'user' },
+      { path: '/customer/notifications', label: 'Notifications', icon: 'bell' },
+      { path: '/customer/settings', label: 'Settings', icon: 'settings' },
+      { path: '/customer/support', label: 'Support', icon: 'message-circle' },
+    ]},
+  ];
+
+  // Bottom tabs on phones
+  readonly tabs = [
+    { path: '/customer/dashboard', label: 'Home', icon: 'house', exact: true },
+    { path: '/customer/shop', label: 'Shop', icon: 'shopping-bag' },
+    { path: '/customer/instalments', label: 'Payments', icon: 'calendar-clock' },
+    { path: '/customer/profile', label: 'Account', icon: 'user' },
+  ];
+
+  get firstName(): string {
+    return (this.customerProfile?.full_name || '').split(' ')[0];
+  }
   
   // For polling
   private notificationInterval: any;
@@ -36,6 +73,7 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
     ).subscribe(() => {
       this.updatePageTitle();
       this.closeAllDropdowns();
+      this.drawerOpen = false;
     });
   }
 
@@ -76,7 +114,7 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
     if (!target.closest('.user-profile') && !target.closest('.user-menu')) {
       this.userMenuOpen = false;
     }
-    if (!target.closest('.notifications')) {
+    if (!target.closest('.tp-notifications')) {
       this.showNotifications = false;
     }
   }
@@ -84,8 +122,8 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
   updatePageTitle(): void {
     const path = this.router.url;
     if (path.includes('/dashboard')) this.currentPageTitle = 'Dashboard';
-    else if (path.includes('/payments')) this.currentPageTitle = 'My Payments';
-    else if (path.includes('/instalments')) this.currentPageTitle = 'Instalments';
+    else if (path.includes('/payments')) this.currentPageTitle = 'Payment history';
+    else if (path.includes('/instalments')) this.currentPageTitle = 'My payments';
     else if (path.includes('/transactions')) this.currentPageTitle = 'Transactions';
     else if (path.includes('/plans')) this.currentPageTitle = 'Extended Plans';
     else if (path.includes('/profile')) this.currentPageTitle = 'My Profile';
@@ -93,10 +131,13 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
     else if (path.includes('/notifications')) this.currentPageTitle = 'Notifications';
     else if (path.includes('/support')) this.currentPageTitle = 'Support';
     else if (path.includes('/referrals')) this.currentPageTitle = 'Referrals';
-    else if (path.includes('/documents')) this.currentPageTitle = 'KYC Verification';
+    else if (path.includes('/documents')) this.currentPageTitle = 'Documents';
     else if (path.includes('/wallet')) this.currentPageTitle = 'My Wallet';
     else if (path.includes('/orders')) this.currentPageTitle = 'Orders';
     else if (path.includes('/shop')) this.currentPageTitle = 'Shop';
+    else if (path.includes('/verify-identity')) this.currentPageTitle = 'Verify identity';
+    else if (path.includes('/make-payment')) this.currentPageTitle = 'Make a payment';
+    else if (path.includes('/pay-link')) this.currentPageTitle = 'Checkout';
     else this.currentPageTitle = 'Dashboard';
   }
 
@@ -244,15 +285,6 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
       month: 'short', 
       day: 'numeric'
     });
-  }
-
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-AE', { 
-      style: 'currency', 
-      currency: 'AED',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
   }
 
   logout(): void {

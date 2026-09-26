@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { MerchantService } from 'src/app/merchant.service';
+import { ask } from 'src/app/ui/confirm';
 
 interface PaymentLink {
   id: number;
@@ -112,8 +113,8 @@ export class PaymentLinksComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  cancel(link: PaymentLink) {
-    if (!confirm(`Cancel the link for ${link.product_name}? Customers won't be able to use it.`)) return;
+  async cancel(link: PaymentLink) {
+    if (!(await ask({ title: 'Cancel this link?', message: `Customers won't be able to use the link for ${link.product_name}.`, confirm: 'Cancel link', cancel: 'Keep it', danger: true }))) return;
     this.merchantService.cancelPaymentLink(link.id).subscribe({
       next: () => {
         if (this.shown?.id === link.id) this.shown = null;

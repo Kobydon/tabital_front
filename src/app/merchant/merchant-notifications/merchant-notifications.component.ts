@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export type FilterStatus = 'all' | 'unread' | 'read';
 export type NotificationType = 'order' | 'payment' | 'kyc' | 'settlement' | 'warning' | 'success' | 'system';
 
@@ -269,8 +270,8 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteNotification(notification: MerchantNotification): void {
-    if (confirm('Are you sure you want to delete this notification?')) {
+  async deleteNotification(notification: MerchantNotification): Promise<void> {
+    if (await ask('Are you sure you want to delete this notification?')) {
       this.merchantService.deleteMerchantNotification(notification.id).subscribe({
         next: () => {
           this.notifications = this.notifications.filter(n => n.id !== notification.id);
@@ -284,8 +285,8 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
     }
   }
 
-  clearAll(): void {
-    if (confirm('Are you sure you want to clear all notifications?')) {
+  async clearAll(): Promise<void> {
+    if (await ask('Are you sure you want to clear all notifications?')) {
       this.merchantService.clearAllMerchantNotifications().subscribe({
         next: () => {
           this.notifications = [];
@@ -329,8 +330,8 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  resetSettings(): void {
-    if (confirm('Reset all notification settings to default?')) {
+  async resetSettings(): Promise<void> {
+    if (await ask('Reset all notification settings to default?')) {
       this.settingsForm.reset({
         email_notifications: true,
         sms_notifications: true,

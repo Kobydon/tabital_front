@@ -1,271 +1,59 @@
-<div class="admin-layout">
-  <!-- Sidebar Overlay for mobile -->
-  <div class="sidebar-overlay" 
-       [class.show]="isMobile && isMobileOpen" 
-       (click)="closeSidebar()">
-  </div>
+<!-- Admin shell: Vault (shared styles in src/styles/_shell.scss) -->
+<div class="tp-shell" [class.tp-shell--collapsed]="isCollapsed" [class.tp-shell--drawer-open]="isMobileOpen">
+  <a class="tp-skip-link" href="#main">Skip to content</a>
 
-  <!-- Sidebar -->
-  <aside class="sidebar" 
-         [class.collapsed]="!isMobile && isCollapsed"
-         [class.mobile-open]="isMobile && isMobileOpen">
-    
-    <!-- Toggle Button -->
-    <button class="toggle-btn" (click)="toggleSidebar()">
-      <span class="icon">
-        <!-- Different icons for mobile vs desktop -->
-        <ng-container *ngIf="isMobile">
-          {{ isMobileOpen ? '←' : '→' }}
-        </ng-container>
-        <ng-container *ngIf="!isMobile">
-          {{ isCollapsed ? '→' : '←' }}
-        </ng-container>
-      </span>
-    </button>
-
-    <!-- Logo -->
-    <div class="logo">
-      <div class="logo-icon tp-mark-box" aria-hidden="true">T</div>
-      <div class="logo-text" *ngIf="!isMobile || (isMobile && isMobileOpen)">
-        <h2>Tabital Pay</h2>
-        <p>Admin</p>
-      </div>
+  <aside class="tp-side" aria-label="Admin navigation">
+    <div class="tp-side__brand">
+      <span class="logo-icon tp-mark-box" aria-hidden="true">T</span>
+      <span class="tp-side__name" *ngIf="!isCollapsed">Tabital Pay <small class="tp-side__role">Admin</small></span>
+      <button type="button" class="tp-side__close" (click)="closeSidebar()" aria-label="Close menu">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
     </div>
 
-    <!-- Navigation Menu -->
-    <nav class="nav-menu">
-      <!-- Dashboard -->
-      <a routerLink="dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="isMobile && closeSidebar()">
-        <span class="icon">📊</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Dashboard</span>
-      </a>
-
-      <!-- Users Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleDropdown('users')" [class.active]="activeDropdown === 'users'">
-          <span class="icon">👥</span>
-          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">User Management</span>
-          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'users' ? '▼' : '▶' }}</span>
-        </div>
-        <div class="dropdown-menu" [class.show]="activeDropdown === 'users'">
-          <a routerLink="all-users" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">📋</span>
-            <span>All Users</span>
-          </a>
-          <a routerLink="/admin/customers" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">👤</span>
-            <span>Customers</span>
-          </a>
-          <a routerLink="/admin/merchants" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">🏪</span>
-            <span>Merchants</span>
-          </a>
-          <!-- <a routerLink="users/pending" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">⏳</span>
-            <span>Pending Approvals</span>
-            <span class="badge">12</span>
-          </a> -->
-        </div>
-      </div>
-
-      <!-- Products Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleDropdown('products')" [class.active]="activeDropdown === 'products'">
-          <span class="icon">🛍️</span>
-          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Products</span>
-          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'products' ? '▼' : '▶' }}</span>
-        </div>
-        <div class="dropdown-menu" [class.show]="activeDropdown === 'products'">
-          <a routerLink="product-plans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">📦</span>
-            <span>All Products</span>
-          </a>
-          <a routerLink="/admin/orders" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">📝</span>
-            <span>Product Requests</span>
-            <span class="badge warning">5</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Finance Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleDropdown('finance')" [class.active]="activeDropdown === 'finance'">
-          <span class="icon">💰</span>
-          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Finance</span>
-          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'finance' ? '▼' : '▶' }}</span>
-        </div>
-        <div class="dropdown-menu" [class.show]="activeDropdown === 'finance'">
-          <a routerLink="/admin/transactions" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">💳</span>
-            <span>Transactions</span>
-          </a>
-          <!-- <a routerLink="finance/loans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">🏦</span>
-            <span>Loans</span>
-          </a> -->
-          <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">💸</span>
-            <span>Payments</span>
-          </a>
-          <a routerLink="/admin/system-settings" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">⚙️</span>
-            <span>Rates & Rules</span>
-          </a>
-          <a routerLink="finance/reports" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">📈</span>
-            <span>Reports</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Additional Links -->
-      <a routerLink="customer-overview" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">👥</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Customer Overview</span>
-      </a>
-
-      <a routerLink="merchant-overview" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">🏪</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Merchant Overview</span>
-      </a>
-      
-      <a routerLink="all-installments" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">📅</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Installments</span>
-      </a>
-      
-      <a routerLink="product-plans" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">📋</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Product Plans</span>
-      </a>
-      
-      <a routerLink="collections" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">💰</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Collections</span>
-      </a>
-
-      <a routerLink="disputes" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">🛡️</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Disputes</span>
-      </a>
-
-      <a routerLink="identity-review" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">🪪</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Identity Review</span>
-      </a>
-
-      <a routerLink="fraud-review" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">🚩</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Fraud Review</span>
-      </a>
-
-      <a routerLink="unit-economics" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">📈</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Unit Economics</span>
-      </a>
-
-      <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">💸</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settlements</span>
-      </a>
-      
-      <a routerLink="all-transactions" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">💳</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Transactions</span>
-      </a>
-
-      <a routerLink="kyb-verification" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">🛡️</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">KYB Verification</span>
-      </a>
-
-      <a routerLink="kyc-verification" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">✅</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">KYC Verification</span>
-      </a>
-
-      <a routerLink="all-reports" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-        <span class="icon">📈</span>
-        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Reports</span>
-      </a>
-      
-      <!-- Settings Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleDropdown('settings')" [class.active]="activeDropdown === 'settings'">
-          <span class="icon">⚙️</span>
-          <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settings</span>
-          <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ activeDropdown === 'settings' ? '▼' : '▶' }}</span>
-        </div>
-        <div class="dropdown-menu" [class.show]="activeDropdown === 'settings'">
-          <a routerLink="settings/profile" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">👤</span>
-            <span>Profile</span>
-          </a>
-          <a routerLink="settings/notifications" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">🔔</span>
-            <span>Notifications</span>
-          </a>
-          <a routerLink="system-settings" routerLinkActive="active" (click)="isMobile && closeSidebar()">
-            <span class="icon">💻</span>
-            <span>Business Settings</span>
-          </a>
-        </div>
-      </div>
+    <nav class="tp-side__nav">
+      <ng-container *ngFor="let group of navGroups">
+        <p class="tp-side__group" *ngIf="!isCollapsed">{{ group.label }}</p>
+        <a *ngFor="let item of group.items" class="tp-side__item" [routerLink]="item.path" routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.title]="isCollapsed ? item.label : null"
+           (click)="closeSidebar()">
+          <lucide-icon [name]="item.icon" [size]="18"></lucide-icon>
+          <span *ngIf="!isCollapsed">{{ item.label }}</span>
+        </a>
+      </ng-container>
     </nav>
 
-    <!-- User Profile Section -->
-    <div class="user-profile" (click)="toggleUserMenu()">
-      <div class="avatar">
-        <img src="https://ui-avatars.com/api/?background=02163f&color=fff&name=Admin" alt="Admin">
-      </div>
-      <div class="user-info" *ngIf="!isMobile || (isMobile && isMobileOpen)">
-        <h4>Admin User</h4>
-        <p>admin@example.com</p>
-      </div>
-      <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ showUserMenu ? '▼' : '▲' }}</span>
-    </div>
-
-    <!-- User Dropdown Menu -->
-    <div class="user-menu" [class.show]="showUserMenu">
-      <a routerLink="/admin/profile" (click)="isMobile && closeSidebar()">
-        <span class="icon">👤</span>
-        My Profile
-      </a>
-      <a routerLink="/admin/settings" (click)="isMobile && closeSidebar()">
-        <span class="icon">⚙️</span>
-        Account Settings
-      </a>
-      <hr>
-      <button class="logout-btn" (click)="logout()">
-        <span class="icon">🚪</span>
-        Logout
+    <div class="tp-side__foot">
+      <button type="button" class="tp-side__item" (click)="logout()">
+        <lucide-icon name="log-out" [size]="18"></lucide-icon>
+        <span *ngIf="!isCollapsed">Log out</span>
+      </button>
+      <button type="button" class="tp-side__collapse" (click)="isCollapsed = !isCollapsed"
+              [attr.aria-label]="isCollapsed ? 'Expand menu' : 'Collapse menu'">
+        <lucide-icon [name]="isCollapsed ? 'chevron-right' : 'chevron-left'" [size]="16"></lucide-icon>
       </button>
     </div>
   </aside>
+  <div class="tp-scrim" *ngIf="isMobileOpen" (click)="closeSidebar()" aria-hidden="true"></div>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <header class="header">
-      <div class="header-left" *ngIf="isMobile">
-        <button class="mobile-menu-btn" (click)="toggleSidebar()">
-          <span class="icon">☰</span>
-        </button>
+  <div class="tp-main">
+    <header class="tp-top">
+      <button type="button" class="tp-top__menu" (click)="isMobileOpen = true" aria-label="Open menu">
+        <lucide-icon name="menu" [size]="22"></lucide-icon>
+      </button>
+      <div class="tp-top__title">
+        <h1>Operations</h1>
+        <p>Approvals, risk and money movement</p>
       </div>
-      <div class="header-right">
-        <div class="notifications">
-          <span class="icon">🔔</span>
-          <span class="badge">3</span>
-        </div>
-        <div class="search-bar">
-          <span class="icon">🔍</span>
-          <input type="text" placeholder="Search...">
-        </div>
+      <div class="tp-top__actions">
+        <a tpButton="secondary" size="sm" routerLink="/admin/orders">
+          <lucide-icon name="clipboard-list" [size]="16"></lucide-icon> Orders to approve
+        </a>
       </div>
     </header>
-    
-    <div class="content">
+
+    <main id="main" class="tp-content tp-content--wide" tabindex="-1">
       <router-outlet></router-outlet>
-    </div>
-  </main>
+    </main>
+  </div>
 </div>

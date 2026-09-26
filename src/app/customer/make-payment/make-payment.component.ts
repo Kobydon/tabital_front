@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 @Component({
   selector: 'app-make-payment',
   templateUrl: './make-payment.component.html',
@@ -52,9 +53,9 @@ export class MakePaymentComponent implements OnInit {
     });
   }
 
-  toggleAutopay(card: any): void {
+  async toggleAutopay(card: any): Promise<void> {
     const enable = !card.autopay_enabled;
-    if (enable && !confirm(`Charge card ending ${card.last4} automatically on each due date?`)) return;
+    if (enable && !(await ask({ title: 'Turn on autopay?', message: `We'll charge card ending ${card.last4} on each due date, and try again for a few days if a charge fails.`, confirm: 'Turn on autopay' }))) return;
     this.customerService.updateSavedCard(card.id, { autopay_enabled: enable }).subscribe({
       next: (res: any) => {
         notify(res?.message || 'Saved');
@@ -64,8 +65,8 @@ export class MakePaymentComponent implements OnInit {
     });
   }
 
-  removeCard(card: any): void {
-    if (!confirm(`Remove card ending ${card.last4}? Autopay will stop for this card.`)) return;
+  async removeCard(card: any): Promise<void> {
+    if (!(await ask({ title: `Remove card ending ${card.last4}?`, message: 'Autopay will stop for this card.', confirm: 'Remove card', danger: true }))) return;
     this.customerService.removeSavedCard(card.id).subscribe({
       next: () => this.loadSavedCards(),
       error: (error) => notify(error?.error?.error || 'Could not remove the card', 'error')

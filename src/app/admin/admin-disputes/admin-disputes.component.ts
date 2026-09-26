@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 /**
  * Buyer-protection disputes (Phase 4). Opening a dispute pauses the plan; resolving it
  * either resumes payments (merchant won, due dates moved forward by the pause) or writes off
@@ -57,12 +58,12 @@ export class AdminDisputesComponent implements OnInit {
     this.notes = '';
   }
 
-  resolve(): void {
+  async resolve(): Promise<void> {
     if (!this.selected || this.notes.trim().length < 5) return;
     const summary = this.outcome === 'customer_won'
       ? 'Resolve for the CUSTOMER? The remaining balance will be written off and the plan cancelled.'
       : 'Resolve for the MERCHANT? Payments resume with due dates moved forward by the pause.';
-    if (!confirm(summary)) return;
+    if (!(await ask(summary))) return;
     this.isSubmitting = true;
     this.adminService.resolveDispute(this.selected.id, { outcome: this.outcome, notes: this.notes.trim() }).subscribe({
       next: (res: any) => {
@@ -78,8 +79,8 @@ export class AdminDisputesComponent implements OnInit {
     });
   }
 
-  runServicing(): void {
-    if (!confirm('Run today\'s servicing now (late fees, overdue buckets, reminders, autopay)? It is safe to run more than once a day.')) return;
+  async runServicing(): Promise<void> {
+    if (!(await ask('Run today\'s servicing now (late fees, overdue buckets, reminders, autopay)? It is safe to run more than once a day.'))) return;
     this.isRunningServicing = true;
     this.adminService.runServicing().subscribe({
       next: (res: any) => {

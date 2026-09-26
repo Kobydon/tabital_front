@@ -1,14 +1,29 @@
 <div class="instalments-container">
+  <!-- Vault: the next payment is the first thing a customer sees (Concept B card) -->
+  <tp-next-payment *ngIf="nextDue as nd" class="next-card"
+    [amount]="nd.payment.amount + (nd.payment.late_fee || 0)"
+    [instalment]="nd.payment.amount"
+    [lateFee]="nd.payment.late_fee || 0"
+    [dueDate]="nd.payment.due_date"
+    [paid]="nd.plan.paid_installments"
+    [total]="nd.plan.total_installments"
+    [productName]="nd.plan.plan_name"
+    [canDefer]="canDeferNext"
+    (pay)="openPaymentModal(nd.payment, nd.plan)"
+    (defer)="deferNext()">
+  </tp-next-payment>
+
+  <tp-empty-state *ngIf="!isLoading && !nextDue && instalments.length > 0" icon="circle-check"
+    title="You're all paid up" text="No payments are due on your plans right now.">
+  </tp-empty-state>
+
   <!-- Header -->
   <div class="header">
     <div class="header-left">
-      <h1 class="title">
-        <span class="icon">📅</span>
-        My Instalment Plans
-      </h1>
+      <h2 class="title">Your plans</h2>
       <div class="stats-badge">
         <span class="stat-count">{{ stats.active_plans }}</span>
-        <span class="stat-label">Active Plans</span>
+        <span class="stat-label">Active</span>
       </div>
     </div>
   </div>
@@ -291,4 +306,11 @@
     </div>
   </div>
 
+  <!-- Phones: the pay action stays in reach at the bottom of the screen (Concept B) -->
+  <ng-container *ngIf="nextDue as nd">
+    <tp-pay-bar *ngIf="!showDetailsModal" [label]="'Next payment · ' + (nd.payment.due_date | tpDate)"
+      [amount]="nd.payment.amount + (nd.payment.late_fee || 0)" action="Pay now"
+      (act)="openPaymentModal(nd.payment, nd.plan)">
+    </tp-pay-bar>
+  </ng-container>
 </div>

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export type StatusType = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
 export type PriorityType = 'all' | 'low' | 'medium' | 'high' | 'urgent';
 
@@ -252,8 +253,8 @@ export class CustomerSupportComponent implements OnInit {
     });
   }
 
-  closeTicket(ticket: SupportTicket): void {
-    if (confirm('Are you sure you want to close this ticket?')) {
+  async closeTicket(ticket: SupportTicket): Promise<void> {
+    if (await ask('Are you sure you want to close this ticket?')) {
       this.customerService.closeTicket(ticket.id).subscribe({
         next: (response) => {
           this.loadTickets();

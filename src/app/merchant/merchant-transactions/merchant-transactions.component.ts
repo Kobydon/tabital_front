@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 @Component({
   selector: 'app-merchant-transactions',
   templateUrl: './merchant-transactions.component.html',
@@ -223,8 +224,8 @@ export class MerchantTransactionsComponent implements OnInit {
     }
   }
 
-  updateStatus(transaction: any, status: string) {
-    if (confirm(`Change transaction status to ${status}?`)) {
+  async updateStatus(transaction: any, status: string) {
+    if (await ask(`Change transaction status to ${status}?`)) {
       this.merchantService.updateTransactionStatus(transaction.id, { status }).subscribe({
         next: () => {
           this.loadTransactions();

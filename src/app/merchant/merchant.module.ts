@@ -1,3 +1,4 @@
+import { UiModule } from '../ui/ui.module';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -43,7 +44,7 @@ import { PaymentLinksComponent } from './payment-links/payment-links.component';
     PaymentLinksComponent
   ],
   imports: [
-    CommonModule,
+    UiModule, CommonModule,
     FormsModule,
     ReactiveFormsModule,
     RouterModule,

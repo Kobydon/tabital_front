@@ -14,6 +14,40 @@ export class LayoutComponent {
   showUserMenu = false;
   isMobile = false;
 
+  // Vault navigation: only routes that exist, grouped by job (Lucide icons, no emoji)
+  readonly navGroups = [
+    { label: 'Overview', items: [
+      { path: '/admin/dashboard', label: 'Dashboard', icon: 'layout-dashboard', exact: true },
+      { path: '/admin/unit-economics', label: 'Unit economics', icon: 'trending-up' },
+      { path: '/admin/all-reports', label: 'Reports', icon: 'chart-line' },
+    ]},
+    { label: 'Approvals', items: [
+      { path: '/admin/orders', label: 'Orders', icon: 'clipboard-list' },
+      { path: '/admin/kyc-verification', label: 'Customer KYC', icon: 'id-card' },
+      { path: '/admin/kyb-verification', label: 'Merchant KYB', icon: 'badge-check' },
+      { path: '/admin/identity-review', label: 'Identity review', icon: 'scan-face' },
+      { path: '/admin/fraud-review', label: 'Fraud review', icon: 'shield-check' },
+    ]},
+    { label: 'Loans', items: [
+      { path: '/admin/all-installments', label: 'Instalments', icon: 'calendar-clock' },
+      { path: '/admin/collections', label: 'Collections', icon: 'phone-call' },
+      { path: '/admin/disputes', label: 'Disputes', icon: 'flag' },
+    ]},
+    { label: 'Money', items: [
+      { path: '/admin/settlements', label: 'Merchant settlements', icon: 'landmark' },
+      { path: '/admin/all-transactions', label: 'Transactions', icon: 'arrow-right-left' },
+    ]},
+    { label: 'People', items: [
+      { path: '/admin/customer-overview', label: 'Customers', icon: 'users' },
+      { path: '/admin/merchant-overview', label: 'Merchants', icon: 'store' },
+      { path: '/admin/product-plans', label: 'Products', icon: 'package' },
+      { path: '/admin/all-users', label: 'All users', icon: 'user' },
+    ]},
+    { label: 'Settings', items: [
+      { path: '/admin/system-settings', label: 'Rates and rules', icon: 'sliders-horizontal' },
+    ]},
+  ];
+
   constructor(private router: Router) {
     this.checkScreenSize();
   }

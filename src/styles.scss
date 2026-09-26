@@ -3,29 +3,9 @@
  * Colours come from tabitalpay.com (Astra theme palette); fonts match the website.
  * Component styles should use these variables instead of hard-coded colours.
  */
-:root {
-  /* Brand */
-  --tp-gold: #f5b700;         /* primary accent; always with navy text (9.8:1), never white (1.8:1) */
-  --tp-gold-press: #e8a400;
-  --tp-navy: #02163f;         /* headings, primary buttons, app frame */
-  --tp-navy-2: #0a2d73;       /* links, secondary accent */
-  --tp-text: #475569;         /* body text, 7.2:1 on the page background */
-  --tp-bg: #f8f9fc;
-  --tp-surface: #ffffff;
-  --tp-line: #e2e8f0;
-
-  /* Status (AA on their tints and on white) */
-  --tp-success: #15803d;
-  --tp-success-bg: #e7f6ee;
-  --tp-warn: #8a5a00;
-  --tp-warn-bg: #fff4d1;
-  --tp-error: #b42318;
-  --tp-error-bg: #fdecea;
-  --tp-muted: #64748b;
-
-  --tp-font-heading: 'Poppins', 'Segoe UI', Roboto, Arial, sans-serif;
-  --tp-font-body: 'Open Sans', 'Segoe UI', Roboto, Arial, sans-serif;
-}
+@import './styles/tokens';
+@import './styles/ui';
+@import './styles/shell';
 
 html, body {
   margin: 0;

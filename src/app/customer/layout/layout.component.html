@@ -1,194 +1,99 @@
-<!-- src/app/customer/layout/layout.component.html -->
-<div class="customer-layout">
-  <!-- Sidebar -->
-  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
-    <button class="toggle-btn" (click)="toggleSidebar()">
-      <i class="fas" [class.fa-chevron-left]="!isSidebarCollapsed" [class.fa-chevron-right]="isSidebarCollapsed"></i>
-    </button>
+<!-- Customer shell: Vault (Concept A). Navy sidebar on desktop; top bar + bottom tabs on phones. -->
+<div class="tp-shell" [class.tp-shell--collapsed]="isSidebarCollapsed" [class.tp-shell--drawer-open]="drawerOpen">
+  <a class="tp-skip-link" href="#main">Skip to content</a>
 
-    <div class="logo">
-      <div class="logo-icon tp-mark-box" aria-hidden="true">T</div>
-      <div class="logo-text" *ngIf="!isSidebarCollapsed">
-        <h2>Tabital Pay</h2>
-        <p>Own it today. Pay later.</p>
-      </div>
+  <!-- Sidebar (desktop) / drawer (phone) -->
+  <aside class="tp-side" aria-label="Main navigation">
+    <div class="tp-side__brand">
+      <span class="logo-icon tp-mark-box" aria-hidden="true">T</span>
+      <span class="tp-side__name" *ngIf="!isSidebarCollapsed">Tabital Pay</span>
+      <button type="button" class="tp-side__close" (click)="drawerOpen = false" aria-label="Close menu">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
     </div>
 
-    <nav class="nav-menu">
-      <!-- Dashboard -->
-      <a [routerLink]="'/customer/dashboard'" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <i class="fas fa-tachometer-alt icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Dashboard</span>
-      </a>
-      
-      <!-- My Orders -->
-      <a [routerLink]="'/customer/orders'" routerLinkActive="active">
-        <i class="fas fa-shopping-bag icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">My Orders</span>
-      </a>
-
-      <!-- My Payments -->
-      <a [routerLink]="'/customer/payments'" routerLinkActive="active">
-        <i class="fas fa-credit-card icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">My Payments</span>
-      </a>
-
-      <!-- Instalments -->
-      <a [routerLink]="'/customer/instalments'" routerLinkActive="active">
-        <i class="fas fa-calendar-alt icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Instalments</span>
-      </a>
-
-      <!-- Transactions -->
-      <a [routerLink]="'/customer/transactions'" routerLinkActive="active">
-        <i class="fas fa-exchange-alt icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Transactions</span>
-      </a>
-
-      <!-- Extended plans (6 & 12 months): eligible customers only, not open yet -->
-      <a [routerLink]="'/customer/plans'" routerLinkActive="active">
-        <i class="fas fa-calendar-alt icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Extended Plans (Soon)</span>
-      </a>
-
-      <!-- Account Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleAccountDropdown()" [class.active]="accountDropdownOpen">
-          <i class="fas fa-user-circle icon"></i>
-          <span class="label" *ngIf="!isSidebarCollapsed">Account</span>
-          <i class="fas fa-chevron-down dropdown-icon" *ngIf="!isSidebarCollapsed"></i>
-        </div>
-        <div class="dropdown-menu" [class.show]="accountDropdownOpen && !isSidebarCollapsed">
-          <a [routerLink]="'/customer/profile'" routerLinkActive="active">
-            <i class="fas fa-id-card icon"></i>
-            <span>My Profile</span>
-          </a>
-          <a [routerLink]="'/customer/settings'" routerLinkActive="active">
-            <i class="fas fa-cog icon"></i>
-            <span>Settings</span>
-          </a>
-          <a [routerLink]="'/customer/notifications'" routerLinkActive="active">
-            <i class="fas fa-bell icon"></i>
-            <span>Notifications</span>
-            <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Support Dropdown -->
-      <div class="nav-dropdown">
-        <div class="dropdown-trigger" (click)="toggleSupportDropdown()" [class.active]="supportDropdownOpen">
-          <i class="fas fa-headset icon"></i>
-          <span class="label" *ngIf="!isSidebarCollapsed">Support</span>
-          <i class="fas fa-chevron-down dropdown-icon" *ngIf="!isSidebarCollapsed"></i>
-        </div>
-        <div class="dropdown-menu" [class.show]="supportDropdownOpen && !isSidebarCollapsed">
-          <a href="mailto:info@tabitalpay.com" target="_blank">
-            <i class="fas fa-life-ring icon"></i>
-            <span>Help Center</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Identity (Phase 6: Ghana Card + selfie with Smile ID) -->
-      <a [routerLink]="'/customer/verify-identity'" routerLinkActive="active">
-        <i class="fas fa-user-check icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">Verify Identity</span>
-      </a>
-
-      <!-- Documents -->
-      <a [routerLink]="'/customer/documents'" routerLinkActive="active">
-        <i class="fas fa-file-alt icon"></i>
-        <span class="label" *ngIf="!isSidebarCollapsed">KYC Documents</span>
+    <nav class="tp-side__nav">
+      <ng-container *ngFor="let group of navGroups">
+        <p class="tp-side__group" *ngIf="!isSidebarCollapsed">{{ group.label }}</p>
+        <a *ngFor="let item of group.items" class="tp-side__item" [routerLink]="item.path" routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.title]="isSidebarCollapsed ? item.label : null"
+           (click)="drawerOpen = false">
+          <lucide-icon [name]="item.icon" [size]="18"></lucide-icon>
+          <span *ngIf="!isSidebarCollapsed">{{ item.label }}</span>
+          <span class="tp-side__badge" *ngIf="item.path === '/customer/notifications' && unreadCount > 0">{{ unreadCount }}</span>
+        </a>
+      </ng-container>
+      <a class="tp-side__item" [href]="'mailto:' + supportEmail">
+        <lucide-icon name="life-buoy" [size]="18"></lucide-icon>
+        <span *ngIf="!isSidebarCollapsed">Help: {{ supportEmail }}</span>
       </a>
     </nav>
 
-    <!-- User Profile -->
-    <div class="user-profile" (click)="toggleUserMenu()">
-      <div class="avatar">
-        <i class="fas fa-user-circle" style="font-size: 40px; color: #f9a826;"></i>
+    <div class="tp-side__foot">
+      <div class="tp-side__user" *ngIf="!isSidebarCollapsed && customerProfile">
+        <strong>{{ customerProfile.full_name || 'Your account' }}</strong>
+        <span>{{ customerProfile.phone || customerProfile.email }}</span>
       </div>
-      <div class="user-info" *ngIf="!isSidebarCollapsed">
-        <h4>{{ customerProfile?.full_name || 'John Doe' }}</h4>
-        <p>{{ customerProfile?.email || 'customer@tabital.com' }}</p>
-      </div>
-    </div>
-
-    <!-- User Menu Dropdown -->
-    <div class="user-menu" [class.show]="userMenuOpen">
-      <a [routerLink]="'/customer/profile'">
-        <i class="fas fa-user icon"></i>
-        <span>My Profile</span>
-      </a>
-      <a [routerLink]="'/customer/settings'">
-        <i class="fas fa-cog icon"></i>
-        <span>Settings</span>
-      </a>
-      <hr>
-      <button class="logout-btn" (click)="logout()">
-        <i class="fas fa-sign-out-alt icon"></i>
-        <span>Logout</span>
+      <button type="button" class="tp-side__item tp-side__logout" (click)="logout()">
+        <lucide-icon name="log-out" [size]="18"></lucide-icon>
+        <span *ngIf="!isSidebarCollapsed">Log out</span>
+      </button>
+      <button type="button" class="tp-side__collapse" (click)="toggleSidebar()"
+              [attr.aria-label]="isSidebarCollapsed ? 'Expand menu' : 'Collapse menu'">
+        <lucide-icon [name]="isSidebarCollapsed ? 'chevron-right' : 'chevron-left'" [size]="16"></lucide-icon>
       </button>
     </div>
   </aside>
+  <div class="tp-scrim" *ngIf="drawerOpen" (click)="drawerOpen = false" aria-hidden="true"></div>
 
-  <!-- Main Content -->
-  <div class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
-    <div class="header">
-      <div class="header-left">
+  <!-- Main -->
+  <div class="tp-main">
+    <header class="tp-top">
+      <button type="button" class="tp-top__menu" (click)="drawerOpen = true" aria-label="Open menu">
+        <lucide-icon name="menu" [size]="22"></lucide-icon>
+      </button>
+      <div class="tp-top__title">
         <h1>{{ currentPageTitle }}</h1>
-        <p class="subtitle">Welcome back, {{ customerProfile?.full_name || 'Customer' }}!</p>
+        <p *ngIf="customerProfile?.full_name">Hello, {{ firstName }}</p>
       </div>
-      <div class="header-right">
-        <div class="search-bar">
-          <i class="fas fa-search icon"></i>
-          <input type="text" placeholder="Search...">
-        </div>
-        <div class="notifications" (click)="toggleNotifications()">
-          <i class="fas fa-bell icon"></i>
-          <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
-        </div>
-      </div>
-    </div>
+      <div class="tp-top__actions">
+        <div class="tp-notifications">
+          <button type="button" class="tp-top__icon" (click)="toggleNotifications()" [attr.aria-expanded]="showNotifications"
+                  [attr.aria-label]="unreadCount ? unreadCount + ' unread notifications' : 'Notifications'">
+            <lucide-icon name="bell" [size]="20"></lucide-icon>
+            <span class="tp-top__badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+          </button>
 
-    <div class="content">
+          <div class="tp-notif" *ngIf="showNotifications" (click)="$event.stopPropagation()" role="dialog" aria-label="Notifications">
+            <div class="tp-notif__head">
+              <strong>Notifications</strong>
+              <button type="button" tpButton="ghost" size="sm" (click)="markAllAsRead()" *ngIf="unreadCount > 0">Mark all read</button>
+            </div>
+            <div class="tp-notif__list">
+              <div *ngFor="let n of notifications | slice:0:5" class="tp-notif__item" [class.is-unread]="!n.read">
+                <p class="tp-notif__title">{{ n.title || n.message }}</p>
+                <p class="tp-notif__msg" *ngIf="n.title && n.message !== n.title">{{ n.message }}</p>
+                <small>{{ formatNotificationTime(n.created_at) }}</small>
+              </div>
+              <tp-empty-state *ngIf="notifications.length === 0" icon="bell" title="No notifications"></tp-empty-state>
+            </div>
+            <a class="tp-notif__all" *ngIf="notifications.length > 0" routerLink="/customer/notifications"
+               (click)="showNotifications = false">View all</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="tp-content" tabindex="-1">
       <router-outlet></router-outlet>
-    </div>
+    </main>
   </div>
-</div>
 
-<!-- Notification Dropdown - Fixed with slice pipe -->
-<div class="notification-dropdown" [class.show]="showNotifications" (click)="$event.stopPropagation()">
-  <div class="dropdown-header">
-    <h4>Notifications</h4>
-    <button class="mark-all" (click)="markAllAsRead()" *ngIf="unreadCount > 0">Mark all as read</button>
-  </div>
-  <div class="notification-list">
-    <div *ngFor="let notification of notifications | slice:0:5" 
-         class="notification-item" 
-         [class.unread]="!notification.read">
-      <div class="notification-icon">
-        <i class="fas" [class.fa-credit-card]="notification.type === 'payment'"
-           [class.fa-check-circle]="notification.type === 'success'"
-           [class.fa-exclamation-circle]="notification.type === 'warning'"
-           [class.fa-gift]="notification.type === 'referral'"
-           [class.fa-shopping-bag]="notification.type === 'order'"
-           [class.fa-id-card]="notification.type === 'kyc'"></i>
-      </div>
-      <div class="notification-content">
-        <p class="notification-title">{{ notification.title || notification.message }}</p>
-        <p class="notification-message" *ngIf="notification.title && notification.message !== notification.title">
-          {{ notification.message }}
-        </p>
-        <small>{{ formatNotificationTime(notification.created_at) }}</small>
-      </div>
-    </div>
-    <div *ngIf="notifications.length === 0" class="empty-notifications">
-      <i class="fas fa-bell-slash"></i>
-      <p>No notifications</p>
-    </div>
-    <div class="dropdown-footer" *ngIf="notifications.length > 0">
-      <a routerLink="/customer/notifications" (click)="showNotifications = false">View all notifications</a>
-    </div>
-  </div>
+  <!-- Bottom tabs (phones) -->
+  <nav class="tp-tabs" aria-label="Quick navigation">
+    <a *ngFor="let t of tabs" [routerLink]="t.path" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: !!t.exact }">
+      <lucide-icon [name]="t.icon" [size]="20"></lucide-icon>
+      <span>{{ t.label }}</span>
+    </a>
+  </nav>
 </div>

@@ -6,6 +6,7 @@ import { AdminService, Merchant, Transaction } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface Document {
   id: number;
   document_id: string;
@@ -474,8 +475,8 @@ export class MerchantDetailsComponent implements OnInit {
     }
   }
 
-  deleteDocument(doc: Document): void {
-    if (confirm(`Are you sure you want to delete "${doc.document_name}"?`)) {
+  async deleteDocument(doc: Document): Promise<void> {
+    if (await ask(`Are you sure you want to delete "${doc.document_name}"?`)) {
       this.adminService.deleteDocument(doc.id).subscribe({
         next: () => {
           this.loadMerchantDocuments();
@@ -497,8 +498,8 @@ export class MerchantDetailsComponent implements OnInit {
     }
   }
 
-  disableMerchant(): void {
-    if (confirm('Are you sure you want to disable this merchant?')) {
+  async disableMerchant(): Promise<void> {
+    if (await ask('Are you sure you want to disable this merchant?')) {
       this.adminService.updateMerchant(this.merchantId, { status: 'inactive' }).subscribe({
         next: () => {
           if (this.merchant) {

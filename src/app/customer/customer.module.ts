@@ -1,3 +1,4 @@
+import { UiModule } from '../ui/ui.module';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 
@@ -53,7 +54,7 @@ import { VerifyIdentityComponent } from './verify-identity/verify-identity.compo
   // <smart-camera-web> is Smile ID's web component (Phase 6)
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
-    CommonModule,
+    UiModule, CommonModule,
     CustomerRoutingModule,RouterModule,FormsModule,ReactiveFormsModule,TitleCasePipe
     
     

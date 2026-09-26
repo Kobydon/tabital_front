@@ -1,0 +1,69 @@
+/*
+ * Tabital Pay design tokens: Concept A "Vault" (founder decision, 2026-09-27).
+ * Navy frames the app; gold marks the single main action (always with navy text).
+ * Colours come from tabitalpay.com. Use these variables; never hard-code colours in components.
+ */
+:root {
+  /* Brand */
+  --tp-gold: #f5b700;          /* primary action; navy text on it is 9.8:1, white would fail (1.8:1) */
+  --tp-gold-press: #e8a400;
+  --tp-gold-soft: #fff4d1;
+  --tp-navy: #02163f;          /* frame, headings, strong text (17.7:1 on white) */
+  --tp-navy-2: #0a2d73;        /* links, secondary actions, info (12.8:1 on white) */
+  --tp-navy-soft: #e8eefc;
+  --tp-on-navy: #ffffff;
+  --tp-on-navy-muted: #c7d2e5;
+
+  /* Neutrals (slight navy bias) */
+  --tp-text: #475569;          /* body text, 7.2:1 on --tp-bg */
+  --tp-muted: #64748b;         /* secondary text, 4.8:1 on white */
+  --tp-bg: #f8f9fc;
+  --tp-surface: #ffffff;
+  --tp-surface-2: #f1f4f9;
+  --tp-line: #e2e8f0;
+  --tp-line-strong: #cfd6e3;
+
+  /* Status: text colour on its tint passes AA */
+  --tp-success: #15803d;
+  --tp-success-bg: #e7f6ee;
+  --tp-warn: #8a5a00;
+  --tp-warn-bg: #fff4d1;
+  --tp-error: #b42318;
+  --tp-error-bg: #fdecea;
+  --tp-info: #0a2d73;
+  --tp-info-bg: #e8eefc;
+
+  /* Type */
+  --tp-font-heading: 'Poppins', 'Segoe UI', Roboto, Arial, sans-serif;
+  --tp-font-body: 'Open Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+  --tp-text-xs: 12px;
+  --tp-text-sm: 13px;
+  --tp-text-md: 15px;
+  --tp-text-lg: 17px;
+  --tp-text-xl: 20px;
+  --tp-text-2xl: 26px;
+  --tp-text-3xl: 32px;
+
+  /* Space (4px grid) */
+  --tp-space-1: 4px;
+  --tp-space-2: 8px;
+  --tp-space-3: 12px;
+  --tp-space-4: 16px;
+  --tp-space-5: 20px;
+  --tp-space-6: 24px;
+  --tp-space-8: 32px;
+
+  /* Shape and depth */
+  --tp-radius-sm: 6px;
+  --tp-radius: 10px;
+  --tp-radius-lg: 14px;
+  --tp-shadow-1: 0 1px 2px rgba(2, 22, 63, 0.06);
+  --tp-shadow-2: 0 6px 20px rgba(2, 22, 63, 0.12);
+  --tp-control-height: 48px;
+  --tp-control-height-sm: 36px;
+
+  /* Motion (off under prefers-reduced-motion) */
+  --tp-ease: cubic-bezier(0.2, 0, 0, 1);
+  --tp-fast: 120ms;
+  --tp-normal: 180ms;
+}

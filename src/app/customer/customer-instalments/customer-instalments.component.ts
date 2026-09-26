@@ -94,6 +94,33 @@ export class CustomerInstalmentsComponent implements OnInit {
     { value: 'cash', label: 'Cash', icon: '💰' }
   ];
 
+  /** The earliest unpaid instalment across active plans (Vault "next payment" card). */
+  get nextDue(): { plan: InstalmentPlan; payment: PaymentSchedule } | null {
+    let best: { plan: InstalmentPlan; payment: PaymentSchedule } | null = null;
+    for (const plan of this.instalments) {
+      if (plan.status !== 'active') continue;
+      for (const payment of plan.payment_schedule || []) {
+        if (payment.status !== 'pending' && payment.status !== 'overdue') continue;
+        if (!best || new Date(payment.due_date) < new Date(best.payment.due_date)) best = { plan, payment };
+      }
+    }
+    return best;
+  }
+
+  /** Worth offering Defer on the next payment (the server checks the real rules when asked). */
+  get canDeferNext(): boolean {
+    const nd = this.nextDue;
+    return !!nd && nd.payment.installment_number > 1 && nd.payment.status === 'pending' &&
+      !(nd.payment.late_fee || 0) && this.getDaysRemaining(nd.payment.due_date) >= 0;
+  }
+
+  deferNext(): void {
+    const nd = this.nextDue;
+    if (!nd) return;
+    this.viewInstalmentDetails(nd.plan);     // the deferment panel lives in the plan details
+    this.openDeferment(nd.payment, nd.plan);
+  }
+
   // Deferment (§4)
   deferQuote: any = null;
   deferLoading = false;

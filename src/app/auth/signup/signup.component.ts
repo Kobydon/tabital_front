@@ -8,6 +8,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
@@ -188,12 +189,12 @@ export class SignupComponent implements OnInit, OnDestroy {
     });
   }
 
-  showDuplicateAlert(fieldType: 'email' | 'phone', value: string) {
+  async showDuplicateAlert(fieldType: 'email' | 'phone', value: string) {
     const alertMessage = fieldType === 'email' 
       ? `⚠️ This email (${value}) is already registered.\n\nDo you want to login instead?`
       : `⚠️ This phone number (${value}) is already registered.\n\nDo you want to login instead?`;
     
-    const userConfirmed = confirm(alertMessage + '\n\nClick OK to go to login page, Cancel to continue with registration.');
+    const userConfirmed = await ask({ title: 'Already registered', message: alertMessage.replace('⚠️ ', ''), confirm: 'Go to login', cancel: 'Keep registering' });
     
     if (userConfirmed) {
       this.router.navigate(['/login']);

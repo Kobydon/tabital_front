@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { CustomerService } from '../../customers.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface CustomerOrder {
   id: number;
   order_id: string;
@@ -106,8 +107,8 @@ export class CustomerOrdersComponent implements OnInit {
     window.open(`https://www.google.com/maps/search/${address}`, '_blank');
   }
 
-  cancelOrder(order: CustomerOrder): void {
-    if (confirm(`Are you sure you want to cancel order ${order.order_id}?`)) {
+  async cancelOrder(order: CustomerOrder): Promise<void> {
+    if (await ask(`Are you sure you want to cancel order ${order.order_id}?`)) {
       this.customerService.cancelOrder(order.id).subscribe({
         next: (response) => {
           this.loadOrders();

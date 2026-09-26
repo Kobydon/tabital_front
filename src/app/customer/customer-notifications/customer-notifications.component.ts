@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface NotificationMessage {
   id: number;
   notification_id: string;
@@ -281,8 +282,8 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
     });
   }
 
-  deleteNotification(notification: NotificationMessage): void {
-    if (confirm('Are you sure you want to delete this notification?')) {
+  async deleteNotification(notification: NotificationMessage): Promise<void> {
+    if (await ask('Are you sure you want to delete this notification?')) {
       this.customerService.deleteNotification(notification.id).subscribe({
         next: () => {
           this.notifications = this.notifications.filter(n => n.id !== notification.id);
@@ -296,8 +297,8 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
     }
   }
 
-  clearAll(): void {
-    if (confirm('Are you sure you want to clear all notifications?')) {
+  async clearAll(): Promise<void> {
+    if (await ask('Are you sure you want to clear all notifications?')) {
       this.customerService.clearAllNotifications().subscribe({
         next: () => {
           this.notifications = [];
@@ -341,8 +342,8 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
     });
   }
 
-  resetSettings(): void {
-    if (confirm('Reset all notification settings to default?')) {
+  async resetSettings(): Promise<void> {
+    if (await ask('Reset all notification settings to default?')) {
       this.settingsForm.reset({
         email_notifications: true,
         sms_notifications: true,

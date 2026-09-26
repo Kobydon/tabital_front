@@ -13,6 +13,7 @@ import { ForgotPasswordComponent } from './forgot-password/forgot-password.compo
 import { AdminModule } from './admin/admin.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
+import { UiModule } from './ui/ui.module';
 // Interceptors - FIXED PATH (added .interceptor)
 
 
@@ -37,6 +38,7 @@ import { ToastrModule } from 'ngx-toastr';
     ReactiveFormsModule,
     BrowserAnimationsModule,
     FormsModule,
+    UiModule,
     // Toast messages (shared/notify.ts) instead of alert() pop-ups
     ToastrModule.forRoot({
       positionClass: 'toast-top-right',
