@@ -7,7 +7,6 @@ import { CustomersComponent } from './customers/customers.component';
 import { MerchantsComponent } from './merchants/merchants.component';
 import { TransactionsComponent } from './transactions/transactions.component';
 import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
-import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
 import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 import { ApproveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
@@ -42,7 +41,7 @@ const routes: Routes = [
       {path: 'customers', component: CustomersComponent },  // Replace with actual component
         {path: 'transactions', component: TransactionsComponent } , // Replace with actual component
           {path: 'merchants-details/:id', component: MerchantDetailsComponent } , // Replace with actual component
-           {path: 'charges', component: ChargesComponent } , 
+           { path: 'charges', redirectTo: 'system-settings', pathMatch: 'full' },  // retired: edited settings without validation 
                {path: 'orders', component: AdminOrdersComponent } , 
    
     

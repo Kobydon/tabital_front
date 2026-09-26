@@ -1,357 +1,117 @@
-<!-- system-settings.component.html -->
-<div class="system-settings-container">
-  <!-- Header -->
+<div class="settlements-page bs">
   <div class="page-header">
-    <div class="header-left">
-      <h1>System Settings</h1>
-      <p class="description">Configure platform preferences, integrations and operational settings.</p>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-secondary" (click)="resetSettings()">
-        <i class="icon-reset"></i> Reset
-      </button>
-      <button class="btn btn-primary" (click)="saveSettings()" [disabled]="isLoading">
-        <i class="icon-save"></i> {{ isLoading ? 'Saving...' : 'Save Changes' }}
-      </button>
+    <div>
+      <h1>Business Settings</h1>
+      <p class="subtitle">The rates and rules the app runs on. Every change is checked, needs a reason and is kept in the history.
+        Plans already approved keep the schedule they were approved with.</p>
     </div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">⚙️</div>
-      <div class="stat-info">
-        <div class="stat-value">{{ stats.activeGroups }}</div>
-        <div class="stat-label">Active settings groups</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🟢</div>
-      <div class="stat-info">
-        <div class="stat-value">{{ stats.systemStatus }}</div>
-        <div class="stat-label">System Status</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🔒</div>
-      <div class="stat-info">
-        <div class="stat-value">{{ stats.securityScore }}%</div>
-        <div class="stat-label">Security Score</div>
-        <div class="stat-progress">
-          <div class="progress-bar" [style.width.%]="stats.securityScore"></div>
-        </div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">💾</div>
-      <div class="stat-info">
-        <div class="stat-value">{{ stats.lastBackup }}</div>
-        <div class="stat-label">Last Backup</div>
-        <button class="btn-link" (click)="triggerBackup()">Backup now</button>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🔌</div>
-      <div class="stat-info">
-        <div class="stat-value">{{ stats.activeIntegrations }}</div>
-        <div class="stat-label">Active Integrations</div>
-      </div>
-    </div>
+  <div class="filter-tabs">
+    <button [class.active]="tab === 'settings'" (click)="tab = 'settings'">Settings</button>
+    <button [class.active]="tab === 'history'" (click)="openHistory()">Change history</button>
   </div>
 
-  <div class="settings-layout">
-    <!-- Sidebar Categories -->
-    <div class="settings-sidebar">
-      <nav class="settings-nav">
-        <a href="#" class="nav-item active" data-section="general">General Settings</a>
-        <a href="#" class="nav-item" data-section="fees">Fee Configuration</a>
-        <a href="#" class="nav-item" data-section="installments">Installment Plans</a>
-        <a href="#" class="nav-item" data-section="api">API Settings</a>
-        <a href="#" class="nav-item" data-section="security">Security</a>
-        <a href="#" class="nav-item" data-section="notifications">Notifications</a>
-        <a href="#" class="nav-item" data-section="payout">Payout Settings</a>
-      </nav>
-      
-      <!-- System Status Widget -->
-      <div class="system-status-widget">
-        <h3>System Status</h3>
-        <div class="status-item">
-          <span class="status-indicator operational"></span>
-          <span>All Systems Operational</span>
-          <span class="status-value">Uptime: {{ systemUptime }}</span>
+  <div class="notice success" *ngIf="message">{{ message }}</div>
+  <div class="notice error" *ngIf="loadError">{{ loadError }}</div>
+  <div class="notice error" *ngIf="errorKeys().length && !reviewing">
+    Some values need fixing:
+    <ul><li *ngFor="let k of errorKeys()"><strong>{{ labelFor(k) }}</strong>: {{ errors[k] }}</li></ul>
+  </div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- ======================================================== SETTINGS -->
+  <ng-container *ngIf="tab === 'settings' && !loading">
+    <section class="group" *ngFor="let g of groups">
+      <h2>{{ g.label }}</h2>
+      <div class="setting" *ngFor="let s of g.settings" [class.changed]="isChanged(s)" [class.invalid]="errors[s.key]">
+        <div class="about">
+          <label [for]="'set-' + s.key">{{ s.label }}</label>
+          <p class="help">{{ s.help }}</p>
+          <p class="meta">
+            <span>{{ s.applies }}</span>
+            <span *ngIf="s.ref" class="ref">{{ s.ref }}</span>
+          </p>
+          <p class="meta" *ngIf="s.updated_by">Last changed {{ formatDate(s.updated_at) }} by {{ s.updated_by }}</p>
         </div>
-      </div>
-      
-      <!-- Recent Changes Widget -->
-      <div class="recent-changes-widget">
-        <h3>Recent Changes</h3>
-        <div class="changes-list">
-          <div class="change-item" *ngFor="let change of recentChanges">
-            <div class="change-action">{{ change.action }}</div>
-            <div class="change-meta">by {{ change.user }} • {{ change.date }}</div>
+
+        <div class="control">
+          <ng-container [ngSwitch]="s.kind">
+            <label *ngSwitchCase="'boolean'" class="switch">
+              <input type="checkbox" [id]="'set-' + s.key" [(ngModel)]="draft[s.key]">
+              <span>{{ draft[s.key] ? 'On' : 'Off' }}</span>
+            </label>
+            <input *ngSwitchCase="'text'" type="text" [id]="'set-' + s.key" [(ngModel)]="draft[s.key]" maxlength="60">
+            <input *ngSwitchCase="'day_list'" type="text" [id]="'set-' + s.key" [(ngModel)]="draft[s.key]"
+                   placeholder="e.g. 0, 1, 3" inputmode="numeric">
+            <div *ngSwitchDefault class="num">
+              <span class="prefix" *ngIf="s.kind === 'money'">GHS</span>
+              <input type="number" [id]="'set-' + s.key" [(ngModel)]="draft[s.key]"
+                     [attr.min]="s.min" [attr.max]="s.max" [step]="s.kind === 'percent' || s.kind === 'money' ? 0.01 : 1">
+              <span class="suffix" *ngIf="s.kind !== 'money' && unit(s)">{{ unit(s) }}</span>
+            </div>
+          </ng-container>
+          <div class="hint">
+            <span *ngIf="s.min !== null && s.kind !== 'day_list'">Allowed {{ s.min }}–{{ s.max }}</span>
+            <span *ngIf="s.kind === 'day_list'">Days after the due date, {{ s.min }}–{{ s.max }}</span>
+            <span>Default {{ show(s, s.default) }}</span>
+          </div>
+          <div class="field-error" *ngIf="errors[s.key]">{{ errors[s.key] }}</div>
+          <div class="row-actions">
+            <button type="button" class="btn-link" *ngIf="isChanged(s)" (click)="undo(s)">Undo</button>
+            <button type="button" class="btn-link" *ngIf="!isChanged(s) && !s.is_default" (click)="resetToDefault(s)">Use default</button>
           </div>
         </div>
       </div>
+    </section>
+  </ng-container>
+
+  <!-- ======================================================== HISTORY -->
+  <ng-container *ngIf="tab === 'history'">
+    <div class="table-card" *ngIf="history.length; else noHistory">
+      <table>
+        <thead><tr><th>When</th><th>Setting</th><th>From</th><th>To</th><th>By</th><th>Reason</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let h of history">
+            <td>{{ formatDate(h.at) }}</td><td>{{ h.label }}</td>
+            <td class="mono">{{ h.old | json }}</td><td class="mono strong">{{ h.new | json }}</td>
+            <td>{{ h.by }}</td><td class="wrap">{{ h.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <ng-template #noHistory><div class="empty">No changes yet. Everything is on its default.</div></ng-template>
+  </ng-container>
 
-    <!-- Main Content -->
-    <div class="settings-content">
-      <form [formGroup]="settingsForm">
-        <!-- General Settings Section -->
-        <section id="general" class="settings-section">
-          <h2>General Settings</h2>
-          <p class="section-desc">Manage basic platform settings and preferences.</p>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Platform Name</label>
-              <input type="text" formControlName="platformName" class="form-control">
-              <small>The name of your platform</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Default Currency</label>
-              <select formControlName="defaultCurrency" class="form-control">
-                <option value="GHS">Ghana Cedi (GHS)</option>
-                <option value="NGN">Nigerian Naira (NGN)</option>
-                <option value="USD">US Dollar (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-              </select>
-              <small>Default currency for all transactions</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Timezone</label>
-              <select formControlName="timezone" class="form-control">
-                <option value="Africa/Accra">Africa/Accra</option>
-                <option value="Africa/Lagos">Africa/Lagos</option>
-                <option value="Africa/Nairobi">Africa/Nairobi</option>
-                <option value="UTC">UTC</option>
-              </select>
-            </div>
-            
-            <div class="form-field">
-              <label>Date Format</label>
-              <select formControlName="dateFormat" class="form-control">
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              </select>
-            </div>
-            
-            <div class="form-field">
-              <label>Time Format</label>
-              <select formControlName="timeFormat" class="form-control">
-                <option value="12h">12-hour (AM/PM)</option>
-                <option value="24h">24-hour</option>
-              </select>
-            </div>
-            
-            <div class="form-field">
-              <label>Language</label>
-              <select formControlName="language" class="form-control">
-                <option value="en">English</option>
-                <option value="fr">French</option>
-                <option value="pt">Portuguese</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="maintenanceMode">
-              <span>Maintenance Mode</span>
-            </label>
-            <small>Put the platform in maintenance mode</small>
-          </div>
-        </section>
+  <!-- Sticky save bar -->
+  <div class="savebar" *ngIf="tab === 'settings' && changedRows.length">
+    <span>{{ changedRows.length }} unsaved change{{ changedRows.length === 1 ? '' : 's' }}</span>
+    <button type="button" class="btn-secondary" (click)="discardAll()">Discard</button>
+    <button type="button" class="btn-primary" (click)="review()">Review and save</button>
+  </div>
 
-        <!-- Fee Configuration Section -->
-        <section id="fees" class="settings-section">
-          <h2>Fee Configuration</h2>
-          <p class="section-desc">Configure merchant fees, late fees and service charges.</p>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Merchant Fee (%)</label>
-              <input type="number" formControlName="merchantFeePercentage" class="form-control" step="0.1">
-              <small>Percentage charged to merchants per transaction</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Late Fee (%)</label>
-              <input type="number" formControlName="lateFeePercentage" class="form-control" step="0.1">
-              <small>Percentage charged on overdue payments</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Service Fee</label>
-              <input type="number" formControlName="serviceFee" class="form-control">
-              <small>Fixed service fee per transaction (in {{ settingsForm.get('defaultCurrency')?.value }})</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Late Fee Grace Period (Days)</label>
-              <input type="number" formControlName="lateFeeGracePeriodDays" class="form-control">
-              <small>Days after due date before late fee applies</small>
-            </div>
-          </div>
-        </section>
-
-        <!-- Installment Plans Section -->
-        <section id="installments" class="settings-section">
-          <h2>Installment Plans</h2>
-          <p class="section-desc">Configure available installment plan options for customers.</p>
-          
-          <div class="installment-options" [formGroup]="installmentOptionsForm">
-            <div class="installment-header">
-              <div>Months</div>
-              <div>Down Payment %</div>
-              <div>Interest Rate %</div>
-              <div>Enabled</div>
-              <div></div>
-            </div>
-            
-            <div formArrayName="options">
-              <div *ngFor="let option of installmentOptionsArray.controls; let i = index" 
-                   class="installment-row" [formGroupName]="i">
-                <div class="months-badge">{{ option.get('months')?.value }} months</div>
-                <input type="number" formControlName="downPayment" step="1" class="form-control small">
-                <input type="number" formControlName="interestRate" step="0.1" class="form-control small">
-                <label class="toggle-switch">
-                  <input type="checkbox" formControlName="enabled">
-                  <span class="toggle-slider"></span>
-                </label>
-                <button type="button" class="btn-icon" (click)="removeInstallmentOption(i)" *ngIf="i >= 4">
-                  ✕
-                </button>
-              </div>
-            </div>
-            
-            <button type="button" class="btn-secondary" (click)="addInstallmentOption()">
-              + Add Installment Plan
-            </button>
-          </div>
-          
-          <div class="installment-presets">
-            <h4>Preset Plans</h4>
-            <div class="preset-buttons">
-              <button *ngFor="let preset of installmentPresets" 
-                      class="btn-outline" 
-                      (click)="applyPreset(preset)">
-                {{ preset.months }} Month{{ preset.months > 1 ? 's' : '' }} - {{ preset.downPayment }}% Down
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- API Settings Section -->
-        <section id="api" class="settings-section">
-          <h2>API Settings</h2>
-          <p class="section-desc">Configure API rate limits and access controls.</p>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Rate Limit (requests per window)</label>
-              <input type="number" formControlName="apiRateLimit" class="form-control">
-              <small>Maximum API requests per window</small>
-            </div>
-            
-            <div class="form-field">
-              <label>Rate Limit Window (seconds)</label>
-              <input type="number" formControlName="apiRateLimitWindow" class="form-control">
-              <small>Time window for rate limiting</small>
-            </div>
-          </div>
-          
-          <button type="button" class="btn-secondary" (click)="testApiConnection()">
-            Test API Connection
-          </button>
-        </section>
-
-        <!-- Security Settings Section -->
-        <section id="security" class="settings-section">
-          <h2>Security Settings</h2>
-          <p class="section-desc">Configure security policies and access controls.</p>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Session Timeout (minutes)</label>
-              <input type="number" formControlName="sessionTimeout" class="form-control">
-            </div>
-            
-            <div class="form-field">
-              <label>Max Login Attempts</label>
-              <input type="number" formControlName="maxLoginAttempts" class="form-control">
-            </div>
-          </div>
-          
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="twoFactorRequired">
-              <span>Require Two-Factor Authentication for all admin users</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Notification Settings -->
-        <section id="notifications" class="settings-section">
-          <h2>Notification Settings</h2>
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="emailNotifications">
-              <span>Enable Email Notifications</span>
-            </label>
-          </div>
-          
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="smsNotifications">
-              <span>Enable SMS Notifications</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Payout Settings -->
-        <section id="payout" class="settings-section">
-          <h2>Payout Settings</h2>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Minimum Payout Amount</label>
-              <input type="number" formControlName="minimumPayoutAmount" class="form-control">
-            </div>
-            
-            <div class="form-field">
-              <label>Payout Schedule</label>
-              <select formControlName="payoutSchedule" class="form-control">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="biweekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="autoPayoutEnabled">
-              <span>Enable Automatic Payouts</span>
-            </label>
-          </div>
-        </section>
-      </form>
-      
-      <div class="settings-footer">
-        <div class="warning-message">
-          ⚠️ Changes to system settings may affect platform operations. Please review carefully before saving.
+  <!-- Review modal: what changes, what it affects, and why -->
+  <div class="modal" *ngIf="reviewing" (click)="reviewing = false">
+    <div class="modal-content" (click)="$event.stopPropagation()" role="dialog" aria-labelledby="review-title">
+      <div class="modal-header">
+        <h2 id="review-title">Review {{ changedRows.length }} change{{ changedRows.length === 1 ? '' : 's' }}</h2>
+        <button class="close" (click)="reviewing = false" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="change" *ngFor="let s of changedRows">
+          <div class="row"><strong>{{ s.label }}</strong><span>{{ show(s, s.value) }} → <strong>{{ showInput(s) }}</strong></span></div>
+          <p class="sub">{{ s.applies }}</p>
         </div>
-        <div class="footer-actions">
-          <button class="btn-secondary" (click)="exportSettings()">Export Settings</button>
-          <button class="btn-primary" (click)="saveSettings()" [disabled]="isLoading">
-            {{ isLoading ? 'Saving...' : 'Save All Changes' }}
-          </button>
-        </div>
+        <label for="change-reason" class="reason-label">Reason for the change (kept in the history)</label>
+        <textarea id="change-reason" rows="3" [(ngModel)]="reason"
+                  placeholder="e.g. Founder approved 8% MDR for premium merchants, email 27 Sep"></textarea>
+        <div class="field-error" *ngIf="errors['reason']">{{ errors['reason'] }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="reviewing = false">Back</button>
+        <button class="btn-primary" [disabled]="saving || reason.trim().length < 5" (click)="save()">
+          {{ saving ? 'Saving…' : 'Save changes' }}
+        </button>
       </div>
     </div>
   </div>

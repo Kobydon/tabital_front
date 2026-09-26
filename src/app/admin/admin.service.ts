@@ -821,6 +821,19 @@ getSettlementStats(): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// Business settings (validated, audited)
+getBusinessSettings(): Observable<any> {
+  return this.http.get(`${this.API}/admin/business-settings`, { headers: this.getAuthHeaders() });
+}
+
+saveBusinessSettings(changes: Record<string, any>, reason: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/business-settings`, { changes, reason }, { headers: this.getAuthHeaders() });
+}
+
+getBusinessSettingsHistory(): Observable<any> {
+  return this.http.get(`${this.API}/admin/business-settings/history`, { headers: this.getAuthHeaders() });
+}
+
 // Phase 7: unit economics and portfolio reporting
 getEconomicsSummary(from: string, to: string): Observable<any> {
   return this.http.get(`${this.API}/admin/economics/summary?from=${from}&to=${to}`, { headers: this.getAuthHeaders() });
