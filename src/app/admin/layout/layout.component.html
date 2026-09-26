@@ -4,8 +4,10 @@
 
   <aside class="tp-side" aria-label="Admin navigation">
     <div class="tp-side__brand">
-      <span class="logo-icon tp-mark-box" aria-hidden="true">T</span>
-      <span class="tp-side__name" *ngIf="!isCollapsed">Tabital Pay <small class="tp-side__role">Admin</small></span>
+      <img class="tp-side__logo" src="assets/brand/logo-on-navy@1x.png"
+           srcset="assets/brand/logo-on-navy@1x.png 1x, assets/brand/logo-on-navy@2x.png 2x"
+           width="40" height="30" alt="Tabital Pay">
+      <span class="tp-side__name" *ngIf="!isCollapsed"><span aria-hidden="true">Tabital Pay</span> <small class="tp-side__role">Admin</small></span>
       <button type="button" class="tp-side__close" (click)="closeSidebar()" aria-label="Close menu">
         <lucide-icon name="x" [size]="20"></lucide-icon>
       </button>

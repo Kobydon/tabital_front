@@ -53,7 +53,14 @@ wordmark by a clear gap) is never recoloured. If there are no dark pixels, the l
   published ochre `#c69435` on white is only about 2.7:1, so `logo-on-white` will warn if the mark
   is ochre. That is a brand decision for the founder, not a script bug.
 
-## 4. Wiring it in (for the lead developer, not applied yet)
+## 4. Wiring it in
+
+**Applied (2026-09-26).** The founder supplied the mark only (`source/tabital-mark-original.webp`,
+cleaned into `source/mark.png`: soft glow removed, trimmed). No Poppins TTF exists locally, so the
+script runs in mark-only mode and the "Tabital Pay" wordmark is HTML text (Poppins webfont) next to
+the mark in the three shells and the login page. The manifest lives at `src/manifest.webmanifest`
+(listed in `angular.json` assets, icon paths `assets/brand/icon-*.png`). The snippets below are the
+reference for a future full logo (`logo.*`).
 
 `angular.json` already copies `src/assets`, so everything under `assets/brand/` is served.
 

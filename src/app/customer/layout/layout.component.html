@@ -5,8 +5,10 @@
   <!-- Sidebar (desktop) / drawer (phone) -->
   <aside class="tp-side" aria-label="Main navigation">
     <div class="tp-side__brand">
-      <span class="logo-icon tp-mark-box" aria-hidden="true">T</span>
-      <span class="tp-side__name" *ngIf="!isSidebarCollapsed">Tabital Pay</span>
+      <img class="tp-side__logo" src="assets/brand/logo-on-navy@1x.png"
+           srcset="assets/brand/logo-on-navy@1x.png 1x, assets/brand/logo-on-navy@2x.png 2x"
+           width="40" height="30" alt="Tabital Pay">
+      <span class="tp-side__name" *ngIf="!isSidebarCollapsed" aria-hidden="true">Tabital Pay</span>
       <button type="button" class="tp-side__close" (click)="drawerOpen = false" aria-label="Close menu">
         <lucide-icon name="x" [size]="20"></lucide-icon>
       </button>

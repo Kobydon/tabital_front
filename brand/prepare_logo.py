@@ -9,7 +9,8 @@ logo/icon asset the Angular app needs into ``src/assets/brand/`` (or ``--out``).
     python prepare_logo.py --source DIR --out DIR
 
 Inputs (case-insensitive names, SVG preferred, PNG >= 1024 px on transparency otherwise):
-    logo.svg | logo.png   full logo: mark + "Tabital Pay" wordmark
+    logo.svg | logo.png   full logo: mark + "Tabital Pay" wordmark (optional if mark.* is given:
+                          then logo-on-* are the mark alone and the app sets the wordmark as HTML text)
     mark.svg | mark.png   the square mark alone (optional, derived from logo if missing)
 
 Outputs:
@@ -465,7 +466,10 @@ def run(source: Path, out: Path) -> dict:
     if logo is None:
         assert mark is not None
         logo = mark
-        warnings.append("logo: no logo.* file; the mark alone is used for the logo images (no wordmark).")
+        # Mark-only mode: the app sets the "Tabital Pay" wordmark as HTML text (Poppins webfont)
+        # next to the mark, so this is expected, not a problem with the inputs.
+        notes.append("logo: no logo.* file; mark-only mode, logo-on-* images are the mark alone. "
+                     "The app renders the \"Tabital Pay\" wordmark as HTML text.")
     if mark is None:
         if mark_box is not None:
             mark = logo.crop(mark_box)
