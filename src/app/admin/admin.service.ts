@@ -120,18 +120,19 @@ export class AdminService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('API Error:', error);
-    let errorMessage = 'An unexpected error occurred';
+    // The API explains itself in { error } (sometimes { message }); keep that text
+    const serverMessage: string | undefined = error.error?.error || error.error?.message;
+    let errorMessage = serverMessage || 'An unexpected error occurred';
     if (error.status === 401) {
       errorMessage = 'Session expired. Please login again.';
       localStorage.removeItem(this.TOKEN_KEY);
-    } else if (error.status === 403) {
+    } else if (error.status === 403 && !serverMessage) {
       errorMessage = 'You do not have permission to perform this action.';
-    } else if (error.status === 404) {
+    } else if (error.status === 404 && !serverMessage) {
       errorMessage = 'Resource not found.';
-    } else if (error.error?.message) {
-      errorMessage = error.error.message;
     }
-    return throwError(() => new Error(errorMessage));
+    // Keep status and body too, so callers can read err.error.error as with a raw HTTP error
+    return throwError(() => Object.assign(new Error(errorMessage), { status: error.status, error: error.error }));
   }
 
   // ============================================
@@ -433,8 +434,25 @@ exportOverduePayments(filters?: any): Observable<Blob> {
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  approveMerchantKYC(merchantId: number): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, {}, { headers: this.getAuthHeaders() })
+  /** Merchant fee tiers (§6.1): the options, a merchant's tier and history, and changing it (with a reason). */
+  getMerchantFeeTiers(): Observable<any> {
+    return this.http.get(`${this.API}/admin/merchant-fee-tiers`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getMerchantFeeTier(merchantId: number): Observable<any> {
+    return this.http.get(`${this.API}/admin/merchants/${merchantId}/fee-tier`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  setMerchantFeeTier(merchantId: number, feeTier: string, reason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/merchants/${merchantId}/fee-tier`, { fee_tier: feeTier, reason },
+      { headers: this.getAuthHeaders() }).pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /** body.fee_tier (optional): the merchant fee tier chosen at approval. */
+  approveMerchantKYC(merchantId: number, body: { fee_tier?: string; fee_tier_reason?: string } = {}): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, body, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 

@@ -24,7 +24,10 @@ interface Customer {
 @Component({
   selector: 'app-customers-overview',
   templateUrl: './customers-overview.component.html',
-  styleUrls: ['./customers-overview.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+    .tp-row-actions--start { justify-content: flex-start; margin: 0 0 12px; }
+    .co-employment { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+    @media (max-width: 640px) { .co-employment { grid-template-columns: 1fr; } }`]
 })
 export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // Data
@@ -102,7 +105,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
     
     this.updateLimitForm = this.fb.group({
@@ -402,6 +405,22 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // ============================================
   // FILTERS & SORTING
   // ============================================
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
+
+  riskTone(level: string | null | undefined): 'success' | 'warn' | 'error' | 'neutral' {
+    const l = (level || '').toLowerCase();
+    return l === 'low' ? 'success' : l === 'medium' ? 'warn' : l === 'high' ? 'error' : 'neutral';
+  }
 
   applyFilters(): void {
     this.currentPage = 1;

@@ -24,7 +24,7 @@ interface Merchant {
 @Component({
   selector: 'app-merchant-overview',
   templateUrl: './merchant-overview.component.html',
-  styleUrls: ['./merchant-overview.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }`]
 })
 export class MerchantOverviewComponent implements OnInit {
   // Data
@@ -102,7 +102,7 @@ export class MerchantOverviewComponent implements OnInit {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
     
     this.updateCommissionForm = this.fb.group({
@@ -339,6 +339,56 @@ formatDate(dateString: string): string {
   // FILTERS & SORTING
   // ============================================
 
+  // Merchant fee tier (§6.1): shown on the merchant; management changes it with a reason
+  tiers: { value: string; label: string; fee_percentage: number }[] = [];
+  showTierDialog = false;
+  tierValue = 'standard';
+  tierReason = '';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
+
+  riskTone(level: string | null | undefined): 'success' | 'warn' | 'error' | 'neutral' {
+    const l = (level || '').toLowerCase();
+    return l === 'low' ? 'success' : l === 'medium' ? 'warn' : l === 'high' ? 'error' : 'neutral';
+  }
+
+  tierTone(tier: string | null | undefined): 'success' | 'info' | 'warn' {
+    return tier === 'premium' ? 'success' : tier === 'high_risk' ? 'warn' : 'info';
+  }
+
+  openTierDialog(): void {
+    this.tierValue = this.selectedMerchant?.merchant?.fee_tier || 'standard';
+    this.tierReason = '';
+    this.showTierDialog = true;
+    if (!this.tiers.length) {
+      this.adminService.getMerchantFeeTiers().subscribe({ next: (res: any) => this.tiers = res.tiers || [] });
+    }
+  }
+
+  saveTier(): void {
+    const id = this.selectedMerchant?.merchant?.id;
+    if (!id || this.tierReason.trim().length < 5) return;
+    this.isSubmitting = true;
+    this.adminService.setMerchantFeeTier(id, this.tierValue, this.tierReason.trim()).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showTierDialog = false;
+        Object.assign(this.selectedMerchant.merchant, {
+          fee_tier: res.fee_tier, fee_tier_label: res.fee_tier_label, fee_percentage: res.fee_percentage });
+        notify(res?.message || 'Fee tier saved', 'success');
+        this.loadMerchants();
+      },
+      error: (err: any) => { this.isSubmitting = false; notify(err?.message || 'Could not save the fee tier', 'error'); }
+    });
+  }
   applyFilters(): void {
     this.currentPage = 1;
     this.loadMerchants();

@@ -1,604 +1,257 @@
-<div class="customers-overview-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="breadcrumb">
-        <a routerLink="/admin/dashboard">Dashboard</a>
-        <span class="separator">></span>
-        <span class="current">Customers</span>
-      </div>
-      <h1 class="title">Customer Overview</h1>
-      <p class="subtitle">View and manage customer information, limits, activity and repayment behavior</p>
-    </div>
-    <div class="header-right">
-      <button class="btn-export" (click)="exportCustomers()">
-        <i class="fas fa-download"></i> Export
-      </button>
-    </div>
+<!-- Customers: Vault. Personal data arrives masked; changes need Management Access (notes are open to all admins). -->
+<tp-page-header title="Customers"
+  subtitle="Every customer's limit, what they owe and how they repay. Open a customer for their underwriting decision and history.">
+  <button *tpManagement tpButton="secondary" size="sm" type="button" (click)="exportCustomers()">
+    <lucide-icon name="download" [size]="16"></lucide-icon> Export CSV
+  </button>
+</tp-page-header>
+
+<div class="tp-kpis">
+  <div class="tp-kpi"><span>Customers</span><strong>{{ customerStats.total_customers || 0 }}</strong></div>
+  <div class="tp-kpi"><span>Active</span><strong>{{ customerStats.active_customers || 0 }}</strong></div>
+  <div class="tp-kpi"><span>New in 30 days</span><strong>{{ customerStats.new_customers || 0 }}</strong></div>
+  <div class="tp-kpi"><span>Bought more than once</span><strong>{{ customerStats.repeat_purchase_rate || 0 }}%</strong></div>
+  <div class="tp-kpi"><span>Still owed</span><strong>{{ customerStats.total_outstanding || 0 | money }}</strong></div>
+</div>
+
+<div class="tp-toolbar">
+  <div class="tp-search">
+    <lucide-icon name="search" [size]="18" aria-hidden="true"></lucide-icon>
+    <input type="search" aria-label="Search customers" placeholder="Name, phone, email or ID" [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
   </div>
+  <select class="tp-input" aria-label="KYC status" [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
+    <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+  </select>
+  <select class="tp-input" aria-label="Risk level" [(ngModel)]="selectedRiskLevel" (change)="applyFilters()">
+    <option *ngFor="let opt of riskLevelOptions" [value]="opt.value">{{ opt.label }}</option>
+  </select>
+  <select class="tp-input" aria-label="Account status" [(ngModel)]="selectedCustomerStatus" (change)="applyFilters()">
+    <option *ngFor="let opt of customerStatusOptions" [value]="opt.value">{{ opt.label }}</option>
+  </select>
+  <button tpButton="ghost" size="sm" type="button" (click)="resetFilters()">Reset</button>
+</div>
 
-  <!-- Stats Cards - Using customerStats, NOT stats -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon blue">
-        <i class="fas fa-users"></i>
-      </div>
-      <div class="stat-info">
-        <h3>Total Customers</h3>
-        <p class="stat-value">{{ formatNumber(customerStats.total_customers) }}</p>
-        <span class="stat-trend positive">
-          <i class="fas fa-arrow-up"></i> {{ customerStats.total_customers_growth || 0 }}% vs last 30 days
-        </span>
-      </div>
-    </div>
+<div *ngIf="isLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading customers…</div>
 
-    <div class="stat-card">
-      <div class="stat-icon green">
-        <i class="fas fa-user-check"></i>
-      </div>
-      <div class="stat-info">
-        <h3>Active Customers</h3>
-        <p class="stat-value">{{ formatNumber(customerStats.active_customers) }}</p>
-        <span class="stat-trend positive">
-          <i class="fas fa-arrow-up"></i> {{ customerStats.active_customers_growth || 0 }}% vs last 30 days
-        </span>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon purple">
-        <i class="fas fa-user-plus"></i>
-      </div>
-      <div class="stat-info">
-        <h3>New Customers (30 Days)</h3>
-        <p class="stat-value">{{ formatNumber(customerStats.new_customers) }}</p>
-        <span class="stat-trend positive">
-          <i class="fas fa-arrow-up"></i> {{ customerStats.new_customers_growth || 0 }}% vs last 30 days
-        </span>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon orange">
-        <i class="fas fa-sync-alt"></i>
-      </div>
-      <div class="stat-info">
-        <h3>Repeat Purchase Rate</h3>
-        <p class="stat-value">{{ customerStats.repeat_purchase_rate || 0 }}%</p>
-        <span class="stat-trend positive">
-          <i class="fas fa-arrow-up"></i> {{ customerStats.repeat_purchase_rate_growth || 0 }}pp vs last 30 days
-        </span>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon red">
-        <i class="fas fa-money-bill-wave"></i>
-      </div>
-      <div class="stat-info">
-        <h3>Total Outstanding</h3>
-        <p class="stat-value">{{ formatCurrency(customerStats.total_outstanding) }}</p>
-        <span class="stat-trend down">
-          <i class="fas fa-arrow-down"></i> {{ Math.abs(customerStats.outstanding_growth || 0) }}% vs last 30 days
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filters Section -->
-  <div class="filters-section">
-    <div class="filters-row">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input
-          type="text"
-          placeholder="Search by name, phone, email or ID..."
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="applyFilters()"
-        />
-        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="filter-group">
-        <select [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
-          <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <select [(ngModel)]="selectedRiskLevel" (change)="applyFilters()">
-          <option *ngFor="let opt of riskLevelOptions" [value]="opt.value">{{ opt.label }}</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <select [(ngModel)]="selectedCustomerStatus" (change)="applyFilters()">
-          <option *ngFor="let opt of customerStatusOptions" [value]="opt.value">{{ opt.label }}</option>
-        </select>
-      </div>
-
-      <button class="reset-btn" (click)="resetFilters()">
-        <i class="fas fa-undo-alt"></i> Reset
-      </button>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading customers...</p>
-  </div>
-
-  <!-- Customers Table -->
-  <div *ngIf="!isLoading" class="customers-table-container">
-    <div class="table-header">
-      <h3>Customers ({{ totalItems }})</h3>
-    </div>
-    <table class="customers-table">
+<tp-card *ngIf="!isLoading && customers.length" [title]="'Customers (' + totalItems + ')'">
+  <div class="tp-table-wrap">
+    <table class="tp-table">
       <thead>
         <tr>
-          <th (click)="onSort('customer_id')" class="sortable">
-            Customer ID
-            <i class="fas" [class.fa-sort]="sortBy !== 'customer_id'" 
-               [class.fa-sort-up]="sortBy === 'customer_id' && sortOrder === 'asc'"
-               [class.fa-sort-down]="sortBy === 'customer_id' && sortOrder === 'desc'"></i>
-          </th>
-          <th (click)="onSort('full_name')" class="sortable">
-            Name
-            <i class="fas" [class.fa-sort]="sortBy !== 'full_name'" 
-               [class.fa-sort-up]="sortBy === 'full_name' && sortOrder === 'asc'"
-               [class.fa-sort-down]="sortBy === 'full_name' && sortOrder === 'desc'"></i>
-          </th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>KYC Status</th>
-          <th>Risk Level</th>
-          <th (click)="onSort('credit_limit')" class="sortable">
-            Credit Limit
-            <i class="fas" [class.fa-sort]="sortBy !== 'credit_limit'" 
-               [class.fa-sort-up]="sortBy === 'credit_limit' && sortOrder === 'asc'"
-               [class.fa-sort-down]="sortBy === 'credit_limit' && sortOrder === 'desc'"></i>
-          </th>
-          <th (click)="onSort('outstanding')" class="sortable">
-            Outstanding
-            <i class="fas" [class.fa-sort]="sortBy !== 'outstanding'" 
-               [class.fa-sort-up]="sortBy === 'outstanding' && sortOrder === 'asc'"
-               [class.fa-sort-down]="sortBy === 'outstanding' && sortOrder === 'desc'"></i>
-          </th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th scope="col"><button type="button" class="tp-sort" (click)="onSort('full_name')">Customer {{ sortMark('full_name') }}</button></th>
+          <th scope="col">KYC</th>
+          <th scope="col">Risk</th>
+          <th scope="col" class="num"><button type="button" class="tp-sort" (click)="onSort('credit_limit')">Limit {{ sortMark('credit_limit') }}</button></th>
+          <th scope="col" class="num"><button type="button" class="tp-sort" (click)="onSort('outstanding')">Owed {{ sortMark('outstanding') }}</button></th>
+          <th scope="col">Account</th>
+          <th scope="col"><span class="tp-sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let customer of customers">
-          <td class="customer-id">{{ customer.customer_id }}</td>
-          <td class="customer-name">
-            <strong>{{ customer.full_name }}</strong>
-          </td>
-          <td>{{ customer.phone }}</td>
-          <td>{{ customer.business_email }}</td>
-          <td>
-            <span class="kyc-badge" [class]="getKYCStatusClass(customer.kyc_status)">
-              {{ customer.kyc_status | titlecase }}
-            </span>
-          </td>
-          <td>
-            <span class="risk-badge" [class]="getRiskClass(customer.risk_level)">
-              {{ customer.risk_level }}
-            </span>
-          </td>
-          <td class="amount">{{ formatCurrency(customer.credit_limit) }}</td>
-          <td class="amount">{{ formatCurrency(customer.outstanding) }}</td>
-          <td>
-            <span class="status-badge" [class]="getStatusClass(customer.status)">
-              {{ customer.status | titlecase }}
-            </span>
-          </td>
-          <td class="actions">
-            <button class="action-btn view" (click)="viewCustomerDetails(customer)" title="View Details">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="action-btn edit" (click)="openUpdateStatusModal(customer)" title="Update Status">
-              <i class="fas fa-user-edit"></i>
-            </button>
-            <button class="action-btn limit" (click)="openUpdateLimitModal(customer)" title="Update Limit">
-              <i class="fas fa-chart-line"></i>
-            </button>
-            <button class="action-btn note" (click)="openAddNoteModal(customer)" title="Add Note">
-              <i class="fas fa-sticky-note"></i>
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="customers.length === 0">
-          <td colspan="10" class="empty-row">
-            <div class="empty-state">
-              <i class="fas fa-users"></i>
-              <p>No customers found</p>
-              <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
-            </div>
-          </td>
+          <td><strong>{{ customer.full_name }}</strong><div class="tp-sub">{{ customer.customer_id }} · {{ customer.phone }}</div>
+            <div class="tp-sub" *ngIf="customer.business_email">{{ customer.business_email }}</div></td>
+          <td><tp-chip [status]="customer.kyc_status"></tp-chip></td>
+          <td><tp-chip [tone]="riskTone(customer.risk_level)" [label]="customer.risk_level || '—'"></tp-chip></td>
+          <td class="num">{{ customer.credit_limit | money }}</td>
+          <td class="num">{{ customer.outstanding | money }}</td>
+          <td><tp-chip [status]="customer.status"></tp-chip></td>
+          <td><div class="tp-row-actions">
+            <button tpButton="ghost" size="sm" type="button" (click)="viewCustomerDetails(customer)">Open</button>
+            <button tpButton="ghost" size="sm" type="button" (click)="openAddNoteModal(customer)">Note</button>
+          </div></td>
         </tr>
       </tbody>
     </table>
-
-    <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
-      <div class="pagination-info">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} customers
-      </div>
-      <div class="pagination-controls">
-        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-          <i class="fas fa-chevron-left"></i> Previous
-        </button>
-        <div class="page-numbers">
-          <button
-            *ngFor="let page of getPageNumbers()"
-            class="page-number"
-            [class.active]="currentPage === page"
-            (click)="changePage(page)">
-            {{ page }}
-          </button>
-        </div>
-        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-          Next <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
-    </div>
   </div>
+  <div card-footer class="tp-pager" *ngIf="totalPages > 1">
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">Previous</button>
+    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">Next</button>
+  </div>
+</tp-card>
 
-  <!-- Customer Details Modal -->
-  <div class="modal-overlay" *ngIf="showCustomerModal" (click)="closeModals()">
-    <div class="modal-container large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-user-circle"></i>
-          Customer Details
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
+<tp-card *ngIf="!isLoading && !customers.length">
+  <tp-empty-state icon="users" title="No customers found" text="Try other filters.">
+    <button tpButton="secondary" size="sm" type="button" (click)="resetFilters()">Clear filters</button>
+  </tp-empty-state>
+</tp-card>
+
+<!-- A customer -->
+<div class="tp-dialog-backdrop" *ngIf="showCustomerModal && selectedCustomer" (click)="closeModals()">
+  <div class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="co-cust-title" (click)="$event.stopPropagation()">
+    <h2 id="co-cust-title">{{ selectedCustomer.customer?.full_name }}
+      <tp-chip [status]="selectedCustomer.customer?.status"></tp-chip></h2>
+    <p class="tp-sub">{{ selectedCustomer.customer?.customer_id }}</p>
+
+    <dl class="tp-dl">
+      <dt>Phone</dt><dd><tp-reveal [userId]="selectedCustomer.customer?.id" field="phone" [value]="selectedCustomer.customer?.phone" label="phone"></tp-reveal></dd>
+      <dt>Email</dt><dd>{{ selectedCustomer.customer?.business_email || '—' }}</dd>
+      <dt>Address</dt><dd>{{ selectedCustomer.customer?.address || '—' }}<ng-container *ngIf="selectedCustomer.customer?.city">, {{ selectedCustomer.customer?.city }}</ng-container></dd>
+      <dt>KYC</dt><dd><tp-chip [status]="selectedCustomer.customer?.kyc_status"></tp-chip></dd>
+    </dl>
+
+    <h3 class="tp-section-title">Money</h3>
+    <div class="tp-kpis">
+      <div class="tp-kpi"><span>Credit limit</span><strong>{{ selectedCustomer.financial?.credit_limit | money }}</strong></div>
+      <div class="tp-kpi"><span>Still owed</span><strong>{{ selectedCustomer.financial?.outstanding | money }}</strong></div>
+      <div class="tp-kpi"><span>Paid so far</span><strong>{{ selectedCustomer.financial?.total_paid | money }}</strong></div>
+      <div class="tp-kpi"><span>Active plans</span><strong>{{ selectedCustomer.financial?.active_plans_count || 0 }}</strong></div>
+    </div>
+    <p class="tp-sub" *ngIf="selectedCustomer.financial?.next_payment_due">Next payment due {{ selectedCustomer.financial?.next_payment_due }}</p>
+
+    <!-- Underwriting (Phase 3) -->
+    <ng-container *ngIf="underwriting">
+      <h3 class="tp-section-title">Underwriting</h3>
+      <div class="tp-note" [class.tp-note--error]="!underwriting.current.eligible" [class.tp-note--success]="underwriting.current.eligible">
+        <lucide-icon [name]="underwriting.current.eligible ? 'circle-check' : 'circle-x'" [size]="16"></lucide-icon>
+        <span>
+          <strong>{{ underwriting.current.eligible ? ((underwriting.current.tier | titlecase) + ' tier') : 'Not eligible' }}</strong>
+          <ng-container *ngIf="underwriting.current.eligible"> · limit {{ underwriting.current.credit_limit | money }}
+            · available {{ underwriting.current.available_limit | money }} · Pay in 4 down payment {{ underwriting.current.pay_in_4_down_payment_percent }}%</ng-container>
+          <ul><li *ngFor="let reason of underwriting.current.reasons">{{ reason }}</li></ul>
+        </span>
       </div>
+      <p class="tp-sub">Rules {{ underwriting.current.rules_version }}<ng-container *ngIf="underwriting.current.extended_plans_eligible"> · eligible for extended plans</ng-container></p>
 
-      <div class="modal-body" *ngIf="selectedCustomer">
-        <!-- Customer Profile -->
-        <div class="profile-section">
-          <div class="profile-header">
-            <div class="profile-avatar">
-              <i class="fas fa-user-circle fa-4x"></i>
-            </div>
-            <div class="profile-info">
-              <h3>{{ selectedCustomer.customer?.full_name }}</h3>
-              <p class="customer-id">ID: {{ selectedCustomer.customer?.customer_id }}</p>
-              <div class="profile-meta">
-                <span class="status-badge" [class]="getStatusClass(selectedCustomer.customer?.status)">
-                  {{ selectedCustomer.customer?.status | titlecase }}
-                </span>
-                <span class="risk-badge" [class]="getRiskClass(selectedCustomer.customer?.risk_level || 'Low')">
-                  Risk: {{ selectedCustomer.customer?.risk_level || 'Low' }}
-                </span>
-              </div>
-            </div>
-          </div>
+      <dl class="tp-dl">
+        <dt>Ghana Card</dt><dd><tp-reveal [userId]="selectedCustomer.customer?.id" field="national_id" [value]="underwriting.details.national_id" label="Ghana Card"></tp-reveal></dd>
+        <dt>Date of birth</dt><dd>{{ underwriting.details.date_of_birth || '—' }}</dd>
+        <dt>Monthly salary</dt><dd>{{ underwriting.details.monthly_salary !== null ? (underwriting.details.monthly_salary | money) : '—' }}
+          <tp-chip [tone]="underwriting.details.salary_verified ? 'success' : 'warn'" [label]="underwriting.details.salary_verified ? 'Verified' : 'Not verified'"></tp-chip></dd>
+        <dt>Employed since</dt><dd>{{ underwriting.details.employment_start_date || '—' }}</dd>
+        <dt>Salary paid to a bank</dt><dd>{{ underwriting.details.salary_paid_to_bank ? 'Yes' : 'No' }}</dd>
+        <dt>MoMo number</dt><dd><tp-reveal [userId]="selectedCustomer.customer?.id" field="momo_number" [value]="underwriting.details.momo_number" label="MoMo number"></tp-reveal></dd>
+        <dt>Identity</dt><dd>{{ underwriting.details.verification_level === 'biometric' ? 'Smile ID selfie check' : (underwriting.details.kyc_status | titlecase) }}</dd>
+        <dt>Employer</dt><dd>{{ underwriting.details.company || '—' }}
+          <tp-chip [tone]="underwriting.details.employment_verified_at ? 'success' : 'warn'"
+                   [label]="underwriting.details.employment_verified_at ? ('Verified · ' + (underwriting.details.employment_verification_method || '')) : 'Not verified'"></tp-chip></dd>
+        <ng-container *ngIf="underwriting.details.employment_verification_note"><dt>Employment note</dt><dd>{{ underwriting.details.employment_verification_note }}</dd></ng-container>
+        <ng-container *ngIf="underwriting.details.credit_limit_override !== null"><dt>Limit override</dt><dd>{{ underwriting.details.credit_limit_override | money }}</dd></ng-container>
+      </dl>
 
-          <div class="profile-details">
-            <div class="detail-item">
-              <label>Phone:</label>
-              <span><tp-reveal [userId]="selectedCustomer.customer?.id" field="phone" [value]="selectedCustomer.customer?.phone" label="phone"></tp-reveal></span>
-            </div>
-            <div class="detail-item">
-              <label>Business Email:</label>
-              <span>{{ selectedCustomer.customer?.business_email }}</span>
-            </div>
-            <div class="detail-item">
-              <label>City:</label>
-              <span>{{ selectedCustomer.customer?.city || 'N/A' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Address:</label>
-              <span>{{ selectedCustomer.customer?.address || 'N/A' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>Income Range:</label>
-              <span>{{ selectedCustomer.customer?.income_range || 'N/A' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>KYC Status:</label>
-              <span class="kyc-badge" [class]="getKYCStatusClass(selectedCustomer.customer?.kyc_status)">
-                {{ selectedCustomer.customer?.kyc_status | titlecase }}
-              </span>
-            </div>
-          </div>
+      <ng-container *tpManagement>
+        <div class="tp-row-actions tp-row-actions--start">
+          <button *ngIf="!underwriting.details.salary_verified && underwriting.details.monthly_salary !== null" tpButton="secondary" size="sm"
+                  type="button" (click)="verifySalary()" [disabled]="isSubmitting">Mark salary verified</button>
+          <button tpButton="ghost" size="sm" type="button" (click)="rerunUnderwriting()" [disabled]="isSubmitting">Re-run assessment</button>
+          <button *ngIf="underwriting.details.employment_verified_at" tpButton="ghost" size="sm" type="button"
+                  (click)="verifyEmployment(false)" [disabled]="isSubmitting">Remove employment verification</button>
         </div>
-
-        <!-- Financial Overview -->
-        <div class="financial-section">
-          <h3><i class="fas fa-chart-line"></i> Financial Overview</h3>
-          <div class="financial-grid">
-            <div class="financial-card">
-              <span class="label">Current Credit Limit</span>
-              <span class="value">{{ formatCurrency(selectedCustomer.financial?.credit_limit) }}</span>
-            </div>
-            <div class="financial-card">
-              <span class="label">Total Outstanding</span>
-              <span class="value">{{ formatCurrency(selectedCustomer.financial?.outstanding) }}</span>
-            </div>
-            <div class="financial-card">
-              <span class="label">Total Paid</span>
-              <span class="value">{{ formatCurrency(selectedCustomer.financial?.total_paid) }}</span>
-            </div>
-            <div class="financial-card">
-              <span class="label">Total Financed</span>
-              <span class="value">{{ formatCurrency(selectedCustomer.financial?.total_financed) }}</span>
-            </div>
-            <div class="financial-card">
-              <span class="label">Next Payment Due</span>
-              <span class="value">{{ selectedCustomer.financial?.next_payment_due || 'N/A' }}</span>
-            </div>
-            <div class="financial-card">
-              <span class="label">Active Plans</span>
-              <span class="value">{{ selectedCustomer.financial?.active_plans_count || 0 }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Underwriting (Phase 3): decision, the facts behind it, and history -->
-        <div class="underwriting-section" *ngIf="underwriting">
-          <h3><i class="fas fa-balance-scale"></i> Underwriting</h3>
-
-          <div class="uw-decision" [class.declined]="!underwriting.current.eligible">
-            <div class="uw-headline">
-              <span class="uw-badge" [class]="'tier-' + (underwriting.current.tier || 'none')">
-                {{ underwriting.current.eligible ? ((underwriting.current.tier | titlecase) + ' tier') : 'Not eligible' }}
-              </span>
-              <span *ngIf="underwriting.current.eligible">
-                Limit <strong>{{ formatCurrency(underwriting.current.credit_limit) }}</strong>
-                · Available <strong>{{ formatCurrency(underwriting.current.available_limit) }}</strong>
-                · Pay in 4 down payment <strong>{{ underwriting.current.pay_in_4_down_payment_percent }}%</strong>
-              </span>
-            </div>
-            <ul class="uw-reasons">
-              <li *ngFor="let reason of underwriting.current.reasons">{{ reason }}</li>
-            </ul>
-            <small class="uw-meta">Rules {{ underwriting.current.rules_version }}
-              <ng-container *ngIf="underwriting.current.extended_plans_eligible"> · Eligible for extended plans</ng-container>
-            </small>
-          </div>
-
-          <div class="uw-details">
-            <div><span>Ghana Card</span><strong><tp-reveal [userId]="selectedCustomer?.customer?.id" field="national_id" [value]="underwriting.details.national_id" label="Ghana Card"></tp-reveal></strong></div>
-            <div><span>Date of birth</span><strong>{{ underwriting.details.date_of_birth || '—' }}</strong></div>
-            <div><span>Monthly salary</span>
-              <strong>
-                {{ underwriting.details.monthly_salary !== null ? formatCurrency(underwriting.details.monthly_salary) : '—' }}
-                <em [class.ok]="underwriting.details.salary_verified">{{ underwriting.details.salary_verified ? 'verified' : 'not verified' }}</em>
-              </strong>
-            </div>
-            <div><span>Employed since</span><strong>{{ underwriting.details.employment_start_date || '—' }}</strong></div>
-            <div><span>Salary paid to bank</span><strong>{{ underwriting.details.salary_paid_to_bank ? 'Yes' : 'No' }}</strong></div>
-            <div><span>MoMo number</span><strong><tp-reveal [userId]="selectedCustomer?.customer?.id" field="momo_number" [value]="underwriting.details.momo_number" label="MoMo number"></tp-reveal></strong></div>
-            <div><span>Identity</span><strong>{{ underwriting.details.kyc_status }}
-              <em [class.ok]="underwriting.details.verification_level === 'biometric'">{{ underwriting.details.verification_level === 'biometric' ? 'Smile ID selfie' : underwriting.details.verification_level }}</em></strong></div>
-            <div><span>Employer</span><strong>{{ underwriting.details.company || '—' }}
-              <em [class.ok]="underwriting.details.employment_verified_at">{{ underwriting.details.employment_verified_at ? ('verified · ' + (underwriting.details.employment_verification_method || '')) : 'not verified' }}</em></strong></div>
-            <div *ngIf="underwriting.details.employment_verification_note"><span>Employment note</span><strong>{{ underwriting.details.employment_verification_note }}</strong></div>
-            <div *ngIf="underwriting.details.credit_limit_override !== null">
-              <span>Limit override</span><strong>{{ formatCurrency(underwriting.details.credit_limit_override) }}</strong>
-            </div>
-          </div>
-
-          <div class="uw-actions">
-            <button class="btn-primary small" *ngIf="!underwriting.details.salary_verified && underwriting.details.monthly_salary !== null"
-                    (click)="verifySalary()" [disabled]="isSubmitting">
-              <i class="fas fa-check"></i> Mark salary verified
-            </button>
-            <button class="btn-secondary small" (click)="rerunUnderwriting()" [disabled]="isSubmitting">
-              <i class="fas fa-redo"></i> Re-run assessment
-            </button>
-          </div>
-
-          <!-- Employment verification (Phase 6, §9B): needed for a first credit plan and orders of GHS 10,000+ -->
-          <div class="uw-actions" *ngIf="!underwriting.details.employment_verified_at">
-            <select [(ngModel)]="employmentMethod" style="padding:6px;border-radius:6px">
+        <!-- Employment verification (§9B): a first credit plan and orders of GHS 10,000+ need it -->
+        <div class="co-employment" *ngIf="!underwriting.details.employment_verified_at">
+          <tp-field label="How was employment confirmed?" for="co-emp-method">
+            <select id="co-emp-method" [(ngModel)]="employmentMethod" name="employmentMethod">
               <option value="employer_call">Called the employer</option>
               <option value="employer_letter">Employer letter</option>
               <option value="payslip">Payslip</option>
               <option value="ssnit">SSNIT record</option>
             </select>
-            <input type="text" [(ngModel)]="employmentNote" placeholder="Who confirmed it, and when"
-                   style="flex:1;min-width:180px;padding:6px;border-radius:6px;border:1px solid #d1d5db">
-            <button class="btn-primary small" (click)="verifyEmployment(true)" [disabled]="isSubmitting || employmentNote.trim().length < 5">
-              <i class="fas fa-briefcase"></i> Mark employment verified
-            </button>
-          </div>
-          <div class="uw-actions" *ngIf="underwriting.details.employment_verified_at">
-            <button class="btn-secondary small" (click)="verifyEmployment(false)" [disabled]="isSubmitting">
-              Remove employment verification
-            </button>
-          </div>
-
-          <div class="uw-history" *ngIf="underwriting.history?.length">
-            <h4>Decision history</h4>
-            <div class="uw-history-row header">
-              <span>Date</span><span>Source</span><span>Result</span><span>Limit</span><span>Note</span>
-            </div>
-            <div class="uw-history-row" *ngFor="let h of underwriting.history">
-              <span>{{ h.created_at | date:'d MMM y, HH:mm' }}</span>
-              <span>{{ h.source | titlecase }}</span>
-              <span>{{ h.eligible ? ((h.tier | titlecase) + ' tier') : 'Declined' }}</span>
-              <span>{{ formatCurrency(h.credit_limit) }}</span>
-              <span>{{ h.note || '—' }}</span>
-            </div>
-          </div>
+          </tp-field>
+          <tp-field label="Who confirmed it, and when" for="co-emp-note">
+            <input id="co-emp-note" type="text" [(ngModel)]="employmentNote" name="employmentNote">
+          </tp-field>
+          <button tpButton="navy" size="sm" type="button" (click)="verifyEmployment(true)" [disabled]="isSubmitting || employmentNote.trim().length < 5">
+            Mark employment verified</button>
         </div>
+      </ng-container>
 
-        <!-- Recent Activity -->
-        <div class="activity-section">
-          <h3><i class="fas fa-history"></i> Recent Activity</h3>
-          <div class="activity-timeline">
-            <div class="activity-item" *ngFor="let activity of selectedCustomer.recent_activity">
-              <div class="activity-icon" [class]="activity.type">
-                <i class="fas" [class.fa-credit-card]="activity.type === 'payment'"
-                   [class.fa-file-alt]="activity.type === 'plan'"
-                   [class.fa-user-plus]="activity.type === 'account'"></i>
-              </div>
-              <div class="activity-content">
-                <p class="activity-description">{{ activity.description }}</p>
-                <span class="activity-date">{{ activity.date }}</span>
-              </div>
-              <div class="activity-status" [class]="activity.status">
-                {{ activity.status | titlecase }}
-              </div>
-            </div>
-          </div>
+      <ng-container *ngIf="underwriting.history?.length">
+        <h3 class="tp-section-title">Decision history</h3>
+        <div class="tp-table-wrap tp-table-wrap--flush">
+          <table class="tp-table">
+            <thead><tr><th scope="col">When</th><th scope="col">Source</th><th scope="col">Result</th><th scope="col" class="num">Limit</th><th scope="col">Note</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let h of underwriting.history">
+                <td>{{ h.created_at | tpDate }}</td>
+                <td>{{ h.source | titlecase }}</td>
+                <td>{{ h.eligible ? ((h.tier | titlecase) + ' tier') : 'Declined' }}</td>
+                <td class="num">{{ h.credit_limit | money }}</td>
+                <td>{{ h.note || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
+      </ng-container>
+    </ng-container>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openUpdateStatusModal(selectedCustomer.customer)">
-          <i class="fas fa-user-edit"></i> Update Status
-        </button>
-        <button class="btn-primary" (click)="openUpdateLimitModal(selectedCustomer.customer)">
-          <i class="fas fa-chart-line"></i> Update Limit
-        </button>
-      </div>
+    <ng-container *ngIf="selectedCustomer.recent_activity?.length">
+      <h3 class="tp-section-title">Recent activity</h3>
+      <dl class="tp-dl">
+        <ng-container *ngFor="let a of selectedCustomer.recent_activity">
+          <dt>{{ a.date }}</dt><dd>{{ a.description }} <tp-chip [status]="a.status"></tp-chip></dd>
+        </ng-container>
+      </dl>
+    </ng-container>
+
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Close</button>
+      <button tpButton="ghost" type="button" (click)="openAddNoteModal(selectedCustomer.customer)">Add note</button>
+      <ng-container *tpManagement>
+        <button tpButton="ghost" type="button" (click)="openUpdateStatusModal(selectedCustomer.customer)">Change account status</button>
+        <button tpButton="navy" type="button" (click)="openUpdateLimitModal(selectedCustomer.customer)">Override limit</button>
+      </ng-container>
     </div>
   </div>
+</div>
 
-  <!-- Update Status Modal -->
-  <div class="modal-overlay" *ngIf="showUpdateStatusModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-user-edit"></i>
-          Update Customer Status
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Update status for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
-        </p>
-
-        <form [formGroup]="updateStatusForm">
-          <div class="form-group">
-            <label>Status *</label>
-            <select formControlName="status">
-              <option value="active">Active</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="restricted">Restricted</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Reason (Optional)</label>
-            <textarea formControlName="reason" rows="3" placeholder="Provide reason for status change..."></textarea>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-primary" (click)="updateCustomerStatus()" [disabled]="updateStatusForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Updating...' : 'Update Status' }}
-        </button>
-      </div>
+<!-- Account status -->
+<div class="tp-dialog-backdrop" *ngIf="showUpdateStatusModal" (click)="closeModals()">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-status-title" [formGroup]="updateStatusForm"
+        (ngSubmit)="updateCustomerStatus()" (click)="$event.stopPropagation()">
+    <h2 id="co-status-title">Account status: {{ selectedCustomer?.customer?.full_name }}</h2>
+    <p>Restricting or suspending stops new purchases. Plans already running carry on, and so do their payments and collections.</p>
+    <tp-field label="Status" for="co-status" [required]="true">
+      <select id="co-status" formControlName="status">
+        <option value="approved">Active (approved)</option>
+        <option value="restricted">Restricted</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </tp-field>
+    <tp-field label="Reason" for="co-status-reason" [required]="true" hint="At least 5 characters. Kept with the change.">
+      <textarea id="co-status-reason" formControlName="reason" rows="2"></textarea>
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="updateStatusForm.invalid || isSubmitting" [loading]="isSubmitting">Save</button>
     </div>
-  </div>
+  </form>
+</div>
 
-  <!-- Update Credit Limit Modal -->
-  <div class="modal-overlay" *ngIf="showUpdateLimitModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-chart-line"></i>
-          Update Credit Limit
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Update credit limit for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
-        </p>
-        <p class="current-limit">Current Limit: <strong>{{ formatCurrency(selectedCustomer?.customer?.credit_limit) }}</strong></p>
-
-        <form [formGroup]="updateLimitForm">
-          <div class="form-group">
-            <label>New Credit Limit (GHS) *</label>
-            <input type="number" formControlName="credit_limit" placeholder="Enter new credit limit" step="100">
-            <small *ngIf="updateLimitForm.get('credit_limit')?.invalid && updateLimitForm.get('credit_limit')?.touched" class="error">
-              Credit limit must be at least GHS 100
-            </small>
-          </div>
-
-          <div class="form-group">
-            <label>Reason *</label>
-            <textarea formControlName="reason" rows="3" placeholder="Why is this limit being overridden? (stored with the decision)"></textarea>
-            <small>This overrides the limit worked out by the underwriting rules until it's cleared.</small>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-secondary" (click)="clearCreditLimitOverride()" [disabled]="!updateLimitForm.get('reason')?.value || isSubmitting">
-          Clear override
-        </button>
-        <button class="btn-primary" (click)="updateCreditLimit()" [disabled]="updateLimitForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Updating...' : 'Update Limit' }}
-        </button>
-      </div>
+<!-- Credit limit override -->
+<div class="tp-dialog-backdrop" *ngIf="showUpdateLimitModal" (click)="closeModals()">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-limit-title" [formGroup]="updateLimitForm"
+        (ngSubmit)="updateCreditLimit()" (click)="$event.stopPropagation()">
+    <h2 id="co-limit-title">Override the credit limit</h2>
+    <p>{{ selectedCustomer?.customer?.full_name }} · now {{ selectedCustomer?.customer?.credit_limit | money }}.
+      The override replaces the limit worked out by the underwriting rules until it's cleared.</p>
+    <tp-field label="New credit limit (GHS)" for="co-limit" [required]="true"
+              [error]="updateLimitForm.get('credit_limit')?.invalid && updateLimitForm.get('credit_limit')?.touched ? 'At least GHS 100' : null">
+      <input id="co-limit" type="number" inputmode="decimal" formControlName="credit_limit" step="100">
+    </tp-field>
+    <tp-field label="Reason" for="co-limit-reason" [required]="true" hint="Stored with the decision.">
+      <textarea id="co-limit-reason" formControlName="reason" rows="2"></textarea>
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
+      <button tpButton="ghost" type="button" (click)="clearCreditLimitOverride()" [disabled]="!updateLimitForm.get('reason')?.value || isSubmitting">Clear override</button>
+      <button tpButton="navy" type="submit" [disabled]="updateLimitForm.invalid || isSubmitting" [loading]="isSubmitting">Save limit</button>
     </div>
-  </div>
+  </form>
+</div>
 
-  <!-- Add Note Modal -->
-  <div class="modal-overlay" *ngIf="showAddNoteModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-sticky-note"></i>
-          Add Customer Note
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Add note for <strong>{{ selectedCustomer?.customer?.full_name }}</strong>
-        </p>
-
-        <form [formGroup]="addNoteForm">
-          <div class="form-group">
-            <label>Note *</label>
-            <textarea formControlName="note" rows="4" placeholder="Enter your note here..."></textarea>
-            <small *ngIf="addNoteForm.get('note')?.invalid && addNoteForm.get('note')?.touched" class="error">
-              Note is required (minimum 10 characters)
-            </small>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-primary" (click)="addCustomerNote()" [disabled]="addNoteForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Adding...' : 'Add Note' }}
-        </button>
-      </div>
+<!-- Note (open to all admins) -->
+<div class="tp-dialog-backdrop" *ngIf="showAddNoteModal" (click)="closeModals()">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-note-title" [formGroup]="addNoteForm"
+        (ngSubmit)="addCustomerNote()" (click)="$event.stopPropagation()">
+    <h2 id="co-note-title">Note on {{ selectedCustomer?.customer?.full_name }}'s file</h2>
+    <tp-field label="Note" for="co-note" [required]="true"
+              [error]="addNoteForm.get('note')?.invalid && addNoteForm.get('note')?.touched ? 'At least 10 characters' : null">
+      <textarea id="co-note" formControlName="note" rows="4"></textarea>
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="addNoteForm.invalid || isSubmitting" [loading]="isSubmitting">Add note</button>
     </div>
-  </div>
+  </form>
 </div>

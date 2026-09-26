@@ -3,10 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LayoutComponent } from './layout/layout.component';
 import { AuthGuard } from '../auth/auth.guard';
-import { CustomersComponent } from './customers/customers.component';
-import { MerchantsComponent } from './merchants/merchants.component';
 import { TransactionsComponent } from './transactions/transactions.component';
-import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 import { AdminOrdersComponent } from './orders/orders.component';
 import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
 import { ApproveCustomerKycComponent } from './appove-customer-kyc/appove-customer-kyc.component';
@@ -37,12 +34,12 @@ const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       
       // Future pages
-      { path: 'users', component: DashboardComponent },  // Replace with actual component
-      { path: 'merchants', component: MerchantsComponent },  // Replace with actual component
-      { path: 'settings', component: DashboardComponent }  ,// Replace with actual component
-      {path: 'customers', component: CustomersComponent },  // Replace with actual component
+      { path: 'users', redirectTo: 'all-users', pathMatch: 'full' },  // old duplicate page: use the current one
+      { path: 'merchants', redirectTo: 'merchant-overview', pathMatch: 'full' },  // old duplicate page: use the current one
+      { path: 'settings', redirectTo: 'system-settings', pathMatch: 'full' }  ,// Replace with actual component
+      { path: 'customers', redirectTo: 'customer-overview', pathMatch: 'full' },  // old duplicate page: use the current one
         {path: 'transactions', component: TransactionsComponent } , // Replace with actual component
-          {path: 'merchants-details/:id', component: MerchantDetailsComponent } , // Replace with actual component
+          { path: 'merchants-details/:id', redirectTo: 'merchant-overview' }, // Replace with actual component
            { path: 'charges', redirectTo: 'system-settings', pathMatch: 'full' },  // retired: edited settings without validation 
                {path: 'orders', component: AdminOrdersComponent } , 
    

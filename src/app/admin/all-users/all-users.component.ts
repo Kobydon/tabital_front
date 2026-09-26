@@ -22,7 +22,7 @@ interface User {
 @Component({
   selector: 'app-all-users',
   templateUrl: './all-users.component.html',
-  styleUrls: ['./all-users.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }`]
 })
 export class AllUsersComponent implements OnInit {
   // Data
@@ -57,14 +57,14 @@ export class AllUsersComponent implements OnInit {
   
   // Stats Cards
   statsCards = [
-    { label: 'Total Users', value: 0, icon: '👥', color: 'blue', isCurrency: false },
-    { label: 'Customers', value: 0, icon: '👤', color: 'green', isCurrency: false },
-    { label: 'Merchants', value: 0, icon: '🏪', color: 'purple', isCurrency: false },
-    { label: 'Active', value: 0, icon: '✅', color: 'green', isCurrency: false },
-    { label: 'Pending', value: 0, icon: '⏳', color: 'orange', isCurrency: false },
-    { label: 'Suspended', value: 0, icon: '🚫', color: 'red', isCurrency: false },
-    { label: 'KYC Verified', value: 0, icon: '✓', color: 'teal', isCurrency: false },
-    { label: 'New (30 Days)', value: 0, icon: '🆕', color: 'purple', isCurrency: false }
+    { label: 'Total Users', value: 0, color: 'blue', isCurrency: false },
+    { label: 'Customers', value: 0, color: 'green', isCurrency: false },
+    { label: 'Merchants', value: 0, color: 'purple', isCurrency: false },
+    { label: 'Active', value: 0, color: 'green', isCurrency: false },
+    { label: 'Pending', value: 0, color: 'orange', isCurrency: false },
+    { label: 'Suspended', value: 0, color: 'red', isCurrency: false },
+    { label: 'KYC Verified', value: 0, color: 'teal', isCurrency: false },
+    { label: 'New (30 Days)', value: 0, color: 'purple', isCurrency: false }
   ];
 
   // Role Options
@@ -98,7 +98,7 @@ export class AllUsersComponent implements OnInit {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
   }
 
@@ -190,6 +190,7 @@ export class AllUsersComponent implements OnInit {
   // ============================================
 
   openUpdateStatusModal(user: User): void {
+    this.showUserModal = false;
     this.selectedUser = { user };
     this.updateStatusForm.patchValue({ status: user.status, reason: '' });
     this.showUpdateStatusModal = true;
@@ -212,12 +213,13 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        notify('Failed to update user status', 'error');
+        notify(error?.message || 'Failed to update user status', 'error');
       }
     });
   }
 
   openDeleteConfirmModal(user: User): void {
+    this.showUserModal = false;
     this.selectedUser = { user };
     this.showDeleteConfirmModal = true;
   }
@@ -236,7 +238,7 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error deleting user:', error);
         this.isSubmitting = false;
-        notify('Failed to deactivate user', 'error');
+        notify(error?.message || 'Failed to deactivate user', 'error');
       }
     });
   }
@@ -269,6 +271,17 @@ export class AllUsersComponent implements OnInit {
   // ============================================
   // FILTERS & SORTING
   // ============================================
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
 
   applyFilters(): void {
     this.currentPage = 1;
