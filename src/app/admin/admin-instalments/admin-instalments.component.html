@@ -250,7 +250,7 @@
             </div>
             <div class="info-item">
               <label>Phone:</label>
-              <span>{{ selectedPlan.customer?.phone }}</span>
+              <span><tp-reveal [userId]="selectedPlan.customer?.id" field="phone" [value]="selectedPlan.customer?.phone" label="customer phone"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Email:</label>
@@ -269,7 +269,7 @@
             </div>
             <div class="info-item">
               <label>Phone:</label>
-              <span>{{ selectedPlan.merchant?.phone }}</span>
+              <span><tp-reveal [userId]="selectedPlan.merchant?.id" field="phone" [value]="selectedPlan.merchant?.phone" label="merchant phone"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Email:</label>

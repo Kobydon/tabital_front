@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { notify } from 'src/app/shared/notify';
 
 /** Smile ID checks that need a person: "attention" results, name/DOB mismatches, and blocks to override. */
 @Component({
   selector: 'app-identity-review',
-  templateUrl: './identity-review.component.html',
-  styleUrls: ['../settlements/settlements.component.scss']
+  templateUrl: './identity-review.component.html'
 })
 export class IdentityReviewComponent implements OnInit {
   readonly filters = [
@@ -23,7 +23,6 @@ export class IdentityReviewComponent implements OnInit {
   selected: any = null;
   note = '';
   busy = false;
-  message = '';
   error = '';
 
   constructor(private adminService: AdminService) {}
@@ -70,7 +69,7 @@ export class IdentityReviewComponent implements OnInit {
     this.adminService.decideIdentityCheck(this.selected.id, approve, this.note.trim()).subscribe({
       next: () => {
         this.busy = false;
-        this.message = approve ? 'Customer verified.' : 'Check rejected.';
+        notify(approve ? 'Customer verified.' : 'Check rejected.', 'success');
         this.selected = null;
         this.load();
       },
@@ -79,15 +78,10 @@ export class IdentityReviewComponent implements OnInit {
   }
 
   match(value: boolean | null): string {
-    return value === true ? '✅ Match' : value === false ? '❌ Mismatch' : '—';
+    return value === true ? 'Match' : value === false ? 'Mismatch' : 'Not checked';
   }
 
-  statusClass(status: string): string {
-    return ({ clear: 'status-paid', blocked: 'status-failed', submitted: 'status-processing' } as any)[status] || 'status-pending';
-  }
-
-  formatDate(date: string | null): string {
-    if (!date) return '—';
-    return new Date(date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  matchTone(value: boolean | null): 'success' | 'error' | 'neutral' {
+    return value === true ? 'success' : value === false ? 'error' : 'neutral';
   }
 }

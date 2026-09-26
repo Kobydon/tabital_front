@@ -45,6 +45,7 @@ export class LayoutComponent {
     ]},
     { label: 'Settings', items: [
       { path: '/admin/system-settings', label: 'Rates and rules', icon: 'sliders-horizontal' },
+      { path: '/admin/data-access', label: 'Personal data access', icon: 'eye' },
     ]},
   ];
 

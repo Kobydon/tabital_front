@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import {
@@ -7,12 +8,13 @@ import {
   TpNextPaymentComponent, TpPageHeaderComponent, TpPayBarComponent
 } from './components';
 import { TpConfirmHostComponent } from './confirm';
+import { TpRevealComponent } from './reveal';
 import { TP_ICONS } from './icons';
 import { MoneyPipe, TpDatePipe } from './pipes';
 
 const PARTS = [
   TpButtonDirective, TpFieldComponent, TpCardComponent, TpChipComponent, TpPageHeaderComponent,
-  TpEmptyStateComponent, TpNextPaymentComponent, TpPayBarComponent, TpConfirmHostComponent,
+  TpEmptyStateComponent, TpNextPaymentComponent, TpPayBarComponent, TpConfirmHostComponent, TpRevealComponent,
   MoneyPipe, TpDatePipe
 ];
 
@@ -22,7 +24,7 @@ const PARTS = [
  */
 @NgModule({
   declarations: PARTS,
-  imports: [CommonModule, LucideAngularModule.pick(TP_ICONS)],
+  imports: [CommonModule, FormsModule, LucideAngularModule.pick(TP_ICONS)],
   exports: [...PARTS, LucideAngularModule]
 })
 export class UiModule {}

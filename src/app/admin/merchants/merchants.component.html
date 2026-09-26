@@ -352,11 +352,11 @@
             <h3>📞 Contact Information</h3>
             <div class="detail-row">
               <strong>Primary Phone:</strong>
-              <span>{{ selectedMerchant.phone || 'N/A' }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.id" field="phone" [value]="selectedMerchant.phone" label="phone"></tp-reveal></span>
             </div>
             <div class="detail-row" *ngIf="selectedMerchant.business_phone">
               <strong>Business Phone:</strong>
-              <span>{{ selectedMerchant.business_phone }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.id" field="business_phone" [value]="selectedMerchant.business_phone" label="business phone"></tp-reveal></span>
             </div>
             <div class="detail-row" *ngIf="selectedMerchant.business_email">
               <strong>Business Email:</strong>
@@ -431,7 +431,7 @@
             </div>
             <div class="detail-row" *ngIf="selectedMerchant.momo_number">
               <strong>MoMo Number:</strong>
-              <span>{{ selectedMerchant.momo_number }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.id" field="momo_number" [value]="selectedMerchant.momo_number" label="MoMo number"></tp-reveal></span>
             </div>
             <div class="detail-row" *ngIf="selectedMerchant.bank_name">
               <strong>Bank Name:</strong>
@@ -443,7 +443,7 @@
             </div>
             <div class="detail-row" *ngIf="selectedMerchant.account_number">
               <strong>Account Number:</strong>
-              <span>{{ selectedMerchant.account_number }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.id" field="account_number" [value]="selectedMerchant.account_number" label="account number"></tp-reveal></span>
             </div>
           </div>
           

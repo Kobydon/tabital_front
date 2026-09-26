@@ -294,7 +294,7 @@
             </div>
             <div class="detail-row">
               <strong>Phone:</strong>
-              <span>{{ selectedCustomer.phone }}</span>
+              <span><tp-reveal [userId]="selectedCustomer.id" field="phone" [value]="selectedCustomer.phone" label="phone"></tp-reveal></span>
             </div>
             <div class="detail-row">
               <strong>Email:</strong>
@@ -306,7 +306,7 @@
             <h3>📍 Location Information</h3>
             <div class="detail-row">
               <strong>National ID:</strong>
-              <span>{{ selectedCustomer.national_id || 'N/A' }}</span>
+              <span><tp-reveal [userId]="selectedCustomer.id" field="national_id" [value]="selectedCustomer.national_id" label="Ghana Card"></tp-reveal></span>
             </div>
             <div class="detail-row">
               <strong>City:</strong>
@@ -352,7 +352,7 @@
             </div>
             <div class="detail-row">
               <strong>Referrer Phone:</strong>
-              <span>{{ selectedCustomer.ref_phone }}</span>
+              <span><tp-reveal [userId]="selectedCustomer.id" field="ref_phone" [value]="selectedCustomer.ref_phone" label="referee phone"></tp-reveal></span>
             </div>
             <div class="detail-row">
               <strong>Relationship:</strong>

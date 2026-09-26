@@ -19,6 +19,7 @@ import { AdminDisputesComponent } from './admin-disputes/admin-disputes.componen
 import { IdentityReviewComponent } from './identity-review/identity-review.component';
 import { FraudReviewComponent } from './fraud-review/fraud-review.component';
 import { UnitEconomicsComponent } from './unit-economics/unit-economics.component';
+import { PiiAccessLogComponent } from './pii-access-log/pii-access-log.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -56,6 +57,7 @@ const routes: Routes = [
       { path: 'identity-review', component: IdentityReviewComponent },
       { path: 'fraud-review', component: FraudReviewComponent },
       { path: 'unit-economics', component: UnitEconomicsComponent },
+      { path: 'data-access', component: PiiAccessLogComponent },
          { path: 'settlements', component: SettlementsComponent   },
           { path: 'all-reports', component: ReportsAnalyticsComponent   },
             { path: 'product-plans', component: ProductPlansComponent   },

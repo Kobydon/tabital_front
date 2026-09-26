@@ -6,7 +6,7 @@
 import {
   ArrowRightLeft, BadgeCheck, Banknote, Bell, Briefcase, CalendarClock, CalendarPlus, ChartLine,
   Check, ChevronLeft, ChevronRight, CircleCheck, CircleX, ClipboardList, Clock, Copy, CreditCard,
-  Download, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
+  Download, Eye, EyeOff, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
   Link, ListChecks, Lock, LogOut, Menu, MessageCircle, Package, Percent, PhoneCall, QrCode, Receipt,
   Scale, ScanFace, Search, Settings, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Store,
   TrendingUp, TriangleAlert, Truck, Undo2, User, Users, Wallet, X
@@ -15,7 +15,7 @@ import {
 export const TP_ICONS = {
   ArrowRightLeft, BadgeCheck, Banknote, Bell, Briefcase, CalendarClock, CalendarPlus, ChartLine,
   Check, ChevronLeft, ChevronRight, CircleCheck, CircleX, ClipboardList, Clock, Copy, CreditCard,
-  Download, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
+  Download, Eye, EyeOff, FileText, Flag, Gavel, History, House, IdCard, Info, Landmark, LayoutDashboard, LifeBuoy,
   Link, ListChecks, Lock, LogOut, Menu, MessageCircle, Package, Percent, PhoneCall, QrCode, Receipt,
   Scale, ScanFace, Search, Settings, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Store,
   TrendingUp, TriangleAlert, Truck, Undo2, User, Users, Wallet, X

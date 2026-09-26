@@ -208,7 +208,7 @@
             </div>
             <div class="info-item">
               <label>Phone Number:</label>
-              <span>{{ selectedMerchant.phone }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.merchant_id" field="phone" [value]="selectedMerchant.phone" label="phone"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Email Address:</label>
@@ -247,7 +247,7 @@
             </div>
             <div class="info-item">
               <label>Account Number:</label>
-              <span>{{ selectedMerchant.bank_details.account_number || 'Not provided' }}</span>
+              <span><tp-reveal [userId]="selectedMerchant.merchant_id" field="account_number" [value]="selectedMerchant.bank_details.account_number" label="account number"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Branch:</label>

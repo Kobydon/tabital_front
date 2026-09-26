@@ -285,7 +285,7 @@
           <div class="profile-details">
             <div class="detail-item">
               <label>Phone:</label>
-              <span>{{ selectedCustomer.customer?.phone }}</span>
+              <span><tp-reveal [userId]="selectedCustomer.customer?.id" field="phone" [value]="selectedCustomer.customer?.phone" label="phone"></tp-reveal></span>
             </div>
             <div class="detail-item">
               <label>Business Email:</label>
@@ -367,7 +367,7 @@
           </div>
 
           <div class="uw-details">
-            <div><span>Ghana Card</span><strong>{{ underwriting.details.national_id || '—' }}</strong></div>
+            <div><span>Ghana Card</span><strong><tp-reveal [userId]="selectedCustomer?.customer?.id" field="national_id" [value]="underwriting.details.national_id" label="Ghana Card"></tp-reveal></strong></div>
             <div><span>Date of birth</span><strong>{{ underwriting.details.date_of_birth || '—' }}</strong></div>
             <div><span>Monthly salary</span>
               <strong>
@@ -377,7 +377,7 @@
             </div>
             <div><span>Employed since</span><strong>{{ underwriting.details.employment_start_date || '—' }}</strong></div>
             <div><span>Salary paid to bank</span><strong>{{ underwriting.details.salary_paid_to_bank ? 'Yes' : 'No' }}</strong></div>
-            <div><span>MoMo number</span><strong>{{ underwriting.details.momo_number || '—' }}</strong></div>
+            <div><span>MoMo number</span><strong><tp-reveal [userId]="selectedCustomer?.customer?.id" field="momo_number" [value]="underwriting.details.momo_number" label="MoMo number"></tp-reveal></strong></div>
             <div><span>Identity</span><strong>{{ underwriting.details.kyc_status }}
               <em [class.ok]="underwriting.details.verification_level === 'biometric'">{{ underwriting.details.verification_level === 'biometric' ? 'Smile ID selfie' : underwriting.details.verification_level }}</em></strong></div>
             <div><span>Employer</span><strong>{{ underwriting.details.company || '—' }}

@@ -230,7 +230,7 @@
             <div class="info-grid">
               <div class="info-item">
                 <label>Phone:</label>
-                <span>{{ selectedUser.phone }}</span>
+                <span><tp-reveal [userId]="selectedUser.id" field="phone" [value]="selectedUser.phone" label="phone"></tp-reveal></span>
               </div>
               <div class="info-item">
                 <label>Email:</label>
@@ -289,7 +289,7 @@
               </div>
               <div class="info-item">
                 <label>Reference Phone:</label>
-                <span>{{ selectedUser.ref_phone || 'N/A' }}</span>
+                <span><tp-reveal [userId]="selectedUser.id" field="ref_phone" [value]="selectedUser.ref_phone" label="referee phone"></tp-reveal></span>
               </div>
               <div class="info-item">
                 <label>Reference Relationship:</label>
@@ -320,7 +320,7 @@
               </div>
               <div class="info-item">
                 <label>Business Phone:</label>
-                <span>{{ selectedUser.business_phone || 'N/A' }}</span>
+                <span><tp-reveal [userId]="selectedUser.id" field="business_phone" [value]="selectedUser.business_phone" label="business phone"></tp-reveal></span>
               </div>
               <div class="info-item">
                 <label>Business Email:</label>

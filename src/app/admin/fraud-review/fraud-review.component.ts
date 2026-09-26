@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
+import { notify } from 'src/app/shared/notify';
 
 /** Fraud signals (CLAUDE.md §9D/E). "block" stops purchases, order approval and payouts until reviewed. */
 @Component({
   selector: 'app-fraud-review',
-  templateUrl: './fraud-review.component.html',
-  styleUrls: ['../settlements/settlements.component.scss']
+  templateUrl: './fraud-review.component.html'
 })
 export class FraudReviewComponent implements OnInit {
   readonly statuses = [
@@ -13,6 +13,9 @@ export class FraudReviewComponent implements OnInit {
     { value: 'confirmed', label: 'Confirmed fraud' },
     { value: 'cleared', label: 'Cleared' },
     { value: '', label: 'All' }
+  ];
+  readonly severities = [
+    { value: '', label: 'Any severity' }, { value: 'block', label: 'Block' }, { value: 'review', label: 'Review' }
   ];
   status = 'open';
   severity = '';
@@ -22,7 +25,6 @@ export class FraudReviewComponent implements OnInit {
   selected: any = null;
   note = '';
   busy = false;
-  message = '';
   error = '';
 
   readonly labels: Record<string, string> = {
@@ -74,7 +76,7 @@ export class FraudReviewComponent implements OnInit {
     this.adminService.reviewFraudSignal(this.selected.id, status, this.note.trim()).subscribe({
       next: () => {
         this.busy = false;
-        this.message = status === 'cleared' ? 'Signal cleared.' : 'Marked as fraud. The block stays in place.';
+        notify(status === 'cleared' ? 'Signal cleared.' : 'Marked as fraud. The block stays in place.', 'success');
         this.selected = null;
         this.load();
       },
@@ -88,20 +90,27 @@ export class FraudReviewComponent implements OnInit {
 
   who(u: any): string {
     if (!u) return '—';
-    return `${u.name || 'Unnamed'} (${u.role}, ${u.phone})`;
+    return u.name || 'Unnamed';
   }
 
-  severityClass(sev: string): string {
-    return ({ block: 'status-failed', review: 'status-pending', info: 'status-processing' } as any)[sev] || '';
+  severityTone(sev: string): 'error' | 'warn' | 'info' | 'neutral' {
+    return ({ block: 'error', review: 'warn', info: 'info' } as Record<string, 'error' | 'warn' | 'info'>)[sev] || 'neutral';
+  }
+
+  severityLabel(sev: string): string {
+    return ({ block: 'Block', review: 'Review', info: 'Info' } as Record<string, string>)[sev] || sev;
+  }
+
+  statusTone(status: string): 'warn' | 'error' | 'success' | 'neutral' {
+    return ({ open: 'warn', confirmed: 'error', cleared: 'success' } as Record<string, 'warn' | 'error' | 'success'>)[status] || 'neutral';
+  }
+
+  statusLabel(status: string): string {
+    return ({ open: 'Open', confirmed: 'Confirmed fraud', cleared: 'Cleared' } as Record<string, string>)[status] || status;
   }
 
   detailsList(details: any): { key: string; value: string }[] {
     return Object.entries(details || {}).filter(([k]) => k !== 'history')
       .map(([key, value]) => ({ key, value: Array.isArray(value) ? value.join(', ') : String(value) }));
-  }
-
-  formatDate(date: string | null): string {
-    if (!date) return '—';
-    return new Date(date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 }

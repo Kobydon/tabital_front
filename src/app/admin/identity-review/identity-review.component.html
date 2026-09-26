@@ -1,90 +1,93 @@
-<div class="settlements-page">
-  <div class="page-header">
-    <div>
-      <h1>Identity Review</h1>
-      <p class="subtitle">Ghana Card + selfie checks from Smile ID that need a person: results marked "attention",
-        a name or date of birth that doesn't match the profile, or blocks you may want to override.</p>
-    </div>
+<!-- Identity review queue: Vault. Ghana Card numbers arrive masked. -->
+<tp-page-header title="Identity review"
+  subtitle="Smile ID Ghana Card and selfie checks that need a person: results marked for attention, a name or date of birth that doesn't match the profile, or blocks you may want to override.">
+</tp-page-header>
+
+<div class="tp-note tp-note--warn" *ngIf="!configured" role="status">
+  <lucide-icon name="triangle-alert" [size]="16"></lucide-icon>
+  <span>Smile ID isn't configured on the server, so customers are verified from documents only (Customer KYC).
+    Add SMILEID_PARTNER_ID and SMILEID_API_KEY to the server environment to turn selfie checks on.</span>
+</div>
+<div class="tp-note tp-note--error" *ngIf="error && !selected" role="alert">
+  <lucide-icon name="circle-x" [size]="16"></lucide-icon><span>{{ error }}</span>
+</div>
+
+<div class="tp-toolbar">
+  <div class="tp-pills" role="tablist" aria-label="Check status">
+    <button type="button" role="tab" *ngFor="let f of filters" [attr.aria-selected]="status === f.value"
+            [class.is-on]="status === f.value" (click)="setFilter(f.value)">{{ f.label }}</button>
   </div>
+</div>
 
-  <div class="notice error" *ngIf="!configured">
-    Smile ID isn't configured on the server, so customers are verified from documents only (the KYC pages).
-    Add SMILEID_PARTNER_ID and SMILEID_API_KEY to the server environment to switch selfie checks on.
-  </div>
-  <div class="notice success" *ngIf="message">{{ message }}</div>
-  <div class="notice error" *ngIf="error && !selected">{{ error }}</div>
+<div *ngIf="isLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading checks…</div>
 
-  <div class="filter-tabs">
-    <button *ngFor="let f of filters" [class.active]="status === f.value" (click)="setFilter(f.value)">{{ f.label }}</button>
-  </div>
-
-  <div *ngIf="isLoading" class="loading">Loading…</div>
-
-  <div class="table-card" *ngIf="!isLoading && checks.length">
-    <table>
-      <thead><tr><th>Customer</th><th>Ghana Card</th><th>Smile ID</th><th>Name</th><th>Date of birth</th><th>Status</th><th>Date</th><th></th></tr></thead>
+<tp-card *ngIf="!isLoading && checks.length">
+  <div class="tp-table-wrap">
+    <table class="tp-table">
+      <thead><tr><th scope="col">Customer</th><th scope="col">Ghana Card</th><th scope="col">Smile ID</th><th scope="col">Name</th>
+        <th scope="col">Date of birth</th><th scope="col">Status</th><th scope="col">Date</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
       <tbody>
         <tr *ngFor="let c of checks">
-          <td>{{ c.customer_name }}<div class="sub">{{ c.customer_phone }}</div></td>
-          <td class="mono">{{ c.id_number || '—' }}</td>
+          <td>{{ c.customer_name }}<div class="tp-sub">{{ c.customer_phone }}</div></td>
+          <td><span class="tp-reveal__value">{{ c.id_number || '—' }}</span></td>
           <td>{{ c.provider === 'manual' ? 'Manual' : (c.provider_status || '—') }}</td>
-          <td>{{ match(c.name_match) }}</td>
-          <td>{{ match(c.dob_match) }}</td>
-          <td>
-            <span class="badge" [ngClass]="statusClass(c.status)">{{ c.status }}</span>
-            <div class="sub" *ngFor="let r of c.reasons">{{ r }}</div>
-          </td>
-          <td>{{ formatDate(c.completed_at || c.created_at) }}</td>
-          <td><button class="btn-link" (click)="open(c)">{{ canDecide(c) ? 'Decide' : 'View' }}</button></td>
+          <td><tp-chip [tone]="matchTone(c.name_match)" [label]="match(c.name_match)"></tp-chip></td>
+          <td><tp-chip [tone]="matchTone(c.dob_match)" [label]="match(c.dob_match)"></tp-chip></td>
+          <td><tp-chip [status]="c.status"></tp-chip>
+            <div class="tp-sub" *ngFor="let r of c.reasons">{{ r }}</div></td>
+          <td>{{ c.completed_at || c.created_at | tpDate }}</td>
+          <td><div class="tp-row-actions">
+            <button [tpButton]="canDecide(c) ? 'navy' : 'ghost'" size="sm" type="button" (click)="open(c)">{{ canDecide(c) ? 'Decide' : 'View' }}</button>
+          </div></td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div class="empty" *ngIf="!isLoading && !checks.length">Nothing here.</div>
+</tp-card>
 
-  <div class="modal" *ngIf="selected" (click)="selected = null">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ selected.customer_name }} · {{ selected.id_number }}</h2>
-        <button class="close" (click)="selected = null">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="grid2">
-          <div>
-            <h4>From the ID authority</h4>
-            <ng-container *ngIf="selected.id_fields; else noFields">
-              <div class="row" *ngFor="let f of selected.id_fields | keyvalue"><span>{{ f.key }}</span><span>{{ f.value }}</span></div>
-            </ng-container>
-            <ng-template #noFields><p class="sub">No details came back.</p></ng-template>
-          </div>
-          <div>
-            <h4>Result</h4>
-            <div class="row"><span>Smile ID</span><span>{{ selected.provider_status || '—' }}</span></div>
-            <div class="row" *ngIf="selected.provider_message"><span>Message</span><span>{{ selected.provider_message }}</span></div>
-            <div class="row"><span>Name</span><span>{{ match(selected.name_match) }}</span></div>
-            <div class="row"><span>Date of birth</span><span>{{ match(selected.dob_match) }}</span></div>
-            <div class="row"><span>Job</span><span class="mono">{{ selected.job_id || '—' }}</span></div>
-            <div class="warn" *ngFor="let r of selected.reasons">{{ r }}</div>
-            <div class="row" *ngIf="selected.review_note"><span>Decision note</span><span>{{ selected.review_note }}</span></div>
-          </div>
-        </div>
+<tp-card *ngIf="!isLoading && !checks.length">
+  <tp-empty-state icon="scan-face" title="Nothing to review" text="Checks that need a person appear here."></tp-empty-state>
+</tp-card>
 
-        <ng-container *ngIf="canDecide(selected)">
-          <h4>Decision</h4>
-          <p class="sub">Compare the details with the customer's profile and documents. If in doubt, call the customer
-            or reject: the safer credit decision wins.</p>
-          <textarea rows="3" [(ngModel)]="note" placeholder="What did you check? e.g. Called customer; surname spelled differently on card"
-                    style="width:100%;padding:8px;border-radius:8px;border:1px solid #d1d5db"></textarea>
-          <div class="notice error" *ngIf="error">{{ error }}</div>
-        </ng-container>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="selected = null">Close</button>
-        <ng-container *ngIf="canDecide(selected)">
-          <button class="btn-secondary" [disabled]="busy" (click)="decide(false)">Reject</button>
-          <button class="btn-primary" [disabled]="busy" (click)="decide(true)">Verify customer</button>
-        </ng-container>
-      </div>
+<div class="tp-dialog-backdrop" *ngIf="selected" (click)="selected = null">
+  <div class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="ir-title" (click)="$event.stopPropagation()">
+    <h2 id="ir-title">{{ selected.customer_name }} <tp-chip [status]="selected.status"></tp-chip></h2>
+
+    <h3 class="tp-section-title">Result</h3>
+    <dl class="tp-dl">
+      <dt>Ghana Card</dt>
+      <dd><tp-reveal [userId]="selected.user_id" field="national_id" [value]="selected.id_number" label="Ghana Card"></tp-reveal></dd>
+      <dt>Smile ID</dt><dd>{{ selected.provider_status || '—' }}</dd>
+      <ng-container *ngIf="selected.provider_message"><dt>Message</dt><dd>{{ selected.provider_message }}</dd></ng-container>
+      <dt>Name</dt><dd><tp-chip [tone]="matchTone(selected.name_match)" [label]="match(selected.name_match)"></tp-chip></dd>
+      <dt>Date of birth</dt><dd><tp-chip [tone]="matchTone(selected.dob_match)" [label]="match(selected.dob_match)"></tp-chip></dd>
+      <dt>Job</dt><dd><span class="tp-reveal__value">{{ selected.job_id || '—' }}</span></dd>
+      <ng-container *ngIf="selected.review_note"><dt>Decision note</dt><dd>{{ selected.review_note }}</dd></ng-container>
+    </dl>
+    <div class="tp-note tp-note--warn" *ngFor="let r of selected.reasons">
+      <lucide-icon name="triangle-alert" [size]="16"></lucide-icon><span>{{ r }}</span>
+    </div>
+
+    <h3 class="tp-section-title">From the ID authority</h3>
+    <dl class="tp-dl" *ngIf="selected.id_fields; else noFields">
+      <ng-container *ngFor="let f of selected.id_fields | keyvalue"><dt>{{ f.key }}</dt><dd>{{ f.value }}</dd></ng-container>
+    </dl>
+    <ng-template #noFields><p class="tp-sub">No details came back.</p></ng-template>
+
+    <ng-container *ngIf="canDecide(selected)">
+      <h3 class="tp-section-title">Decision</h3>
+      <tp-field label="What did you check?" for="ir-note" [required]="true" [error]="error"
+                hint="Compare with the profile and documents. If in doubt, call the customer or reject: the safer credit decision wins.">
+        <textarea id="ir-note" rows="3" [(ngModel)]="note" placeholder="e.g. Called customer; surname spelled differently on card"></textarea>
+      </tp-field>
+    </ng-container>
+
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="selected = null">Close</button>
+      <ng-container *ngIf="canDecide(selected)">
+        <button tpButton="danger" type="button" [disabled]="busy" (click)="decide(false)">Reject</button>
+        <button tpButton="navy" type="button" [disabled]="busy" [loading]="busy" (click)="decide(true)">Verify customer</button>
+      </ng-container>
     </div>
   </div>
 </div>

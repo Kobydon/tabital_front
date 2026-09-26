@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { notify } from 'src/app/shared/notify';
+
 interface OverduePayment {
   id: number;
   payment_id: string;
@@ -23,86 +24,59 @@ interface OverduePayment {
   collection_stage: string;
 }
 
+/**
+ * Collections queue (CLAUDE.md §8.4, §8.5). Due dates can't be changed here: the customer can defer
+ * one instalment for the 10% fee, and any other arrangement needs a founder-approved policy.
+ */
 @Component({
   selector: 'app-admin-collection',
-  templateUrl: './admin-collection.component.html',
-  styleUrls: ['./admin-collection.component.scss']
+  templateUrl: './admin-collection.component.html'
 })
 export class AdminCollectionComponent implements OnInit {
-  // Data
   overduePayments: OverduePayment[] = [];
   selectedPayment: any = null;
   collectionStats: any = {};
-  
-  // UI State
+
   isLoading = true;
   showPaymentModal = false;
   showReminderModal = false;
   showMarkReceivedModal = false;
-  showPaymentPlanModal = false;
   isSubmitting = false;
-  
-  // Filters
+
   searchTerm = '';
   selectedOverdueRange = '';
-  selectedStatus = '';
   currentPage = 1;
   pageSize = 20;
   totalItems = 0;
   totalPages = 1;
-  
-  // Forms
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
   reminderForm: FormGroup;
   markReceivedForm: FormGroup;
-  paymentPlanForm: FormGroup;
-  
-  // Math for template
-  Math = Math;
-  
-  // Stats Cards
-  statsCards = [
-    { label: 'Total Overdue Amount', value: 0, icon: '💰', color: 'red', growth: 0, isCurrency: true },
-    { label: 'Accounts Overdue', value: 0, icon: '👥', color: 'orange', growth: 0, isCurrency: false },
-    { label: '1-30 Days Overdue', value: 0, icon: '📅', color: 'yellow', growth: 0, isCurrency: true },
-    { label: '31-60 Days Overdue', value: 0, icon: '📅', color: 'orange', growth: 0, isCurrency: true },
-    { label: '61-90 Days Overdue', value: 0, icon: '⚠️', color: 'red', growth: 0, isCurrency: true },
-    { label: '90+ Days (charge-off)', value: 0, icon: '🚨', color: 'darkred', growth: 0, isCurrency: true }
+
+  // Delinquency buckets (§8.4)
+  readonly overdueRangeOptions = [
+    { value: '', label: 'All overdue' },
+    { value: '1-30', label: '1–30 days' },
+    { value: '31-60', label: '31–60 days' },
+    { value: '61-90', label: '61–90 days' },
+    { value: '90+', label: '90+ days' }
   ];
 
-  // Overdue Range Options
-  overdueRangeOptions = [
-    { value: '', label: 'All Overdue' },
-    { value: '1-30', label: '1-30 Days' },
-    { value: '31-60', label: '31-60 Days' },
-    { value: '61-90', label: '61-90 Days' },
-    { value: '90+', label: '90+ Days' }
+  // Only channels that are connected (WhatsApp isn't yet)
+  readonly reminderTypeOptions = [
+    { value: 'sms', label: 'SMS (mNotify)' },
+    { value: 'in_app', label: 'In-app notification' }
   ];
 
-  // Reminder Type Options
-  reminderTypeOptions = [
-    { value: 'sms', label: 'SMS', icon: 'fa-envelope' },
-    { value: 'whatsapp', label: 'WhatsApp', icon: 'fa-whatsapp' },
-    { value: 'email', label: 'Email', icon: 'fa-at' }
-  ];
-
-  constructor(
-    private adminService: AdminService,
-    private fb: FormBuilder
-  ) {
+  constructor(private adminService: AdminService, private fb: FormBuilder) {
     this.reminderForm = this.fb.group({
       reminder_type: ['sms', Validators.required]
     });
-    
     this.markReceivedForm = this.fb.group({
       amount_received: ['', [Validators.required, Validators.min(0.01)]],
-      payment_method: ['manual', Validators.required],
-      payment_reference: ['']
-    });
-    
-    this.paymentPlanForm = this.fb.group({
-      plan_type: ['installments', Validators.required],
-      new_due_date: [''],
-      notes: ['']
+      payment_method: ['mobile_money', Validators.required],
+      payment_reference: ['', [Validators.required, Validators.minLength(3)]]
     });
   }
 
@@ -111,67 +85,34 @@ export class AdminCollectionComponent implements OnInit {
     this.loadOverduePayments();
   }
 
-  // ============================================
-  // DATA LOADING
-  // ============================================
-
   loadCollectionStats(): void {
     this.adminService.getCollectionStats().subscribe({
-      next: (response: any) => {
-        this.collectionStats = response;
-        this.updateStatsCards();
-      },
-      error: (error) => {
-        console.error('Error loading collection stats:', error);
-      }
+      next: (response: any) => { this.collectionStats = response || {}; },
+      error: () => { this.collectionStats = {}; }
     });
-  }
-
-  updateStatsCards(): void {
-    this.statsCards[0].value = this.collectionStats.total_overdue || 0;
-    // Growth figures were made up by the old API; only real totals are shown now
-    this.statsCards[1].value = this.collectionStats.accounts_overdue || 0;
-
-    this.statsCards[2].value = this.collectionStats.overdue_dpd_1_30 || 0;
-    this.statsCards[3].value = this.collectionStats.overdue_dpd_31_60 || 0;
-    this.statsCards[4].value = this.collectionStats.overdue_dpd_61_90 || 0;
-    this.statsCards[5].value = this.collectionStats.overdue_dpd_90_plus || 0;
   }
 
   loadOverduePayments(): void {
     this.isLoading = true;
-    
     const filters: any = {
       page: this.currentPage,
       per_page: this.pageSize,
       search: this.searchTerm,
-      overdue_range: this.selectedOverdueRange,
-      status: this.selectedStatus
+      overdue_range: this.selectedOverdueRange
     };
-    
     this.adminService.getOverduePayments(filters).subscribe({
       next: (response: any) => {
-        if (Array.isArray(response)) {
-          this.overduePayments = response;
-          this.totalItems = response.length;
-          this.totalPages = 1;
-        } else {
-          this.overduePayments = response.overdue_payments || [];
-          this.totalItems = response.total || 0;
-          this.totalPages = response.total_pages || 1;
-        }
+        this.overduePayments = response.overdue_payments || [];
+        this.totalItems = response.total || 0;
+        this.totalPages = response.total_pages || 1;
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading overdue payments:', error);
         this.isLoading = false;
+        notify(error?.error?.error || 'Could not load overdue accounts', 'error');
       }
     });
   }
-
-  // ============================================
-  // PAYMENT DETAILS
-  // ============================================
 
   viewPaymentDetails(payment: OverduePayment): void {
     this.adminService.getOverduePaymentDetail(payment.id).subscribe({
@@ -179,48 +120,42 @@ export class AdminCollectionComponent implements OnInit {
         this.selectedPayment = response;
         this.showPaymentModal = true;
       },
-      error: (error) => {
-        console.error('Error loading payment details:', error);
-        notify('Failed to load payment details', 'error');
-      }
+      error: (error) => notify(error?.error?.error || 'Failed to load payment details', 'error')
     });
   }
 
-  // ============================================
-  // COLLECTION ACTIONS
-  // ============================================
-
+  // The detail view passes its own payment object, which has the same fields
   openReminderModal(payment: OverduePayment): void {
+    this.showPaymentModal = false;
     this.selectedPayment = { payment };
-    this.reminderForm.patchValue({ reminder_type: 'sms' });
+    this.reminderForm.reset({ reminder_type: 'sms' });
     this.showReminderModal = true;
   }
 
   sendReminder(): void {
     if (this.reminderForm.invalid) return;
-    
     this.isSubmitting = true;
     const data = this.reminderForm.value;
-    
     this.adminService.sendPaymentReminder(this.selectedPayment.payment.id, data).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isSubmitting = false;
-        notify(`Reminder sent via ${data.reminder_type}`);
         this.showReminderModal = false;
+        notify(response?.status === 'failed' ? `Reminder not sent: ${response?.message}` : 'Reminder sent',
+          response?.status === 'failed' ? 'error' : 'success');
       },
       error: (error) => {
-        console.error('Error sending reminder:', error);
         this.isSubmitting = false;
-        notify('Failed to send reminder', 'error');
+        notify(error?.error?.error || 'Failed to send reminder', 'error');
       }
     });
   }
 
   openMarkReceivedModal(payment: OverduePayment): void {
+    this.showPaymentModal = false;
     this.selectedPayment = { payment };
-    this.markReceivedForm.patchValue({ 
+    this.markReceivedForm.reset({
       amount_received: payment.total_due,
-      payment_method: 'manual',
+      payment_method: 'mobile_money',
       payment_reference: ''
     });
     this.showMarkReceivedModal = true;
@@ -228,58 +163,25 @@ export class AdminCollectionComponent implements OnInit {
 
   markAsReceived(): void {
     if (this.markReceivedForm.invalid) return;
-    
     this.isSubmitting = true;
-    const data = this.markReceivedForm.value;
-    
+    const data = { ...this.markReceivedForm.value, payment_reference: (this.markReceivedForm.value.payment_reference || '').trim() };
     this.adminService.markPaymentReceived(this.selectedPayment.payment.id, data).subscribe({
-      next: (response) => {
+      next: () => {
         this.isSubmitting = false;
-        notify('Payment marked as received');
         this.showMarkReceivedModal = false;
+        notify('Payment recorded', 'success');
         this.loadOverduePayments();
         this.loadCollectionStats();
       },
       error: (error) => {
-        console.error('Error marking payment:', error);
         this.isSubmitting = false;
-        notify('Failed to mark payment', 'error');
-      }
-    });
-  }
-
-  openPaymentPlanModal(payment: OverduePayment): void {
-    this.selectedPayment = { payment };
-    this.paymentPlanForm.reset({ plan_type: 'installments', notes: '' });
-    this.showPaymentPlanModal = true;
-  }
-
-  setPaymentPlan(): void {
-    if (this.paymentPlanForm.invalid) return;
-    
-    this.isSubmitting = true;
-    const data = this.paymentPlanForm.value;
-    
-    this.adminService.setPaymentPlan(this.selectedPayment.payment.id, data).subscribe({
-      next: (response) => {
-        this.isSubmitting = false;
-        notify('Payment plan arranged successfully');
-        this.showPaymentPlanModal = false;
-      },
-      error: (error) => {
-        console.error('Error setting payment plan:', error);
-        this.isSubmitting = false;
-        notify('Failed to set payment plan', 'error');
+        notify(error?.error?.error || 'Failed to record the payment', 'error');
       }
     });
   }
 
   exportOverduePayments(): void {
-    const filters: any = {
-      overdue_range: this.selectedOverdueRange
-    };
-    
-    this.adminService.exportOverduePayments(filters).subscribe({
+    this.adminService.exportOverduePayments({ overdue_range: this.selectedOverdueRange }).subscribe({
       next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -289,18 +191,20 @@ export class AdminCollectionComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        notify('Overdue payments exported successfully!');
       },
-      error: (error) => {
-        console.error('Error exporting overdue payments:', error);
-        notify('Failed to export overdue payments', 'error');
-      }
+      error: () => notify('Failed to export overdue payments', 'error')
     });
   }
 
-  // ============================================
-  // FILTERS & SORTING
-  // ============================================
+  setRange(value: string): void {
+    this.selectedOverdueRange = value;
+    this.applyFilters();
+  }
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
 
   applyFilters(): void {
     this.currentPage = 1;
@@ -310,9 +214,7 @@ export class AdminCollectionComponent implements OnInit {
   resetFilters(): void {
     this.searchTerm = '';
     this.selectedOverdueRange = '';
-    this.selectedStatus = '';
-    this.currentPage = 1;
-    this.loadOverduePayments();
+    this.applyFilters();
   }
 
   changePage(page: number): void {
@@ -321,84 +223,23 @@ export class AdminCollectionComponent implements OnInit {
     this.loadOverduePayments();
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
+  dpdTone(days: number | null | undefined): 'warn' | 'error' | 'neutral' {
+    if (!days) return 'neutral';
+    return days > 30 ? 'error' : 'warn';
   }
 
-  // ============================================
-  // HELPER METHODS
-  // ============================================
-
-  getOverdueRangeClass(range: string): string {
-    switch(range) {
-      case '1-30 Days': return 'range-1-15';
-      case '31-60 Days': return 'range-16-30';
-      case '61-90 Days': return 'range-31-60';
-      case '90+ Days': return 'range-60-plus';
-      default: return '';
-    }
-  }
-
-  getCollectionStageClass(stage: string): string {
-    switch(stage) {
-      case 'Payment Reminder': return 'stage-reminder';
-      case 'Late Fee Applied': return 'stage-late-fee';
-      case 'Agent Assigned': return 'stage-agent';
-      case 'Escalated to Legal': return 'stage-legal';
-      default: return '';
-    }
-  }
-
-  getTrendClass(growth: number): string {
-    if (growth > 0) return 'trend-up';
-    if (growth < 0) return 'trend-down';
-    return 'trend-neutral';
-  }
-
-  formatCurrency(amount: number): string {
-    if (!amount && amount !== 0) return 'GHS 0.00';
-    return new Intl.NumberFormat('en-GH', { 
-      style: 'currency', 
-      currency: 'GHS', currencyDisplay: 'code',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  }
-
-  formatNumber(num: number): string {
-    if (!num) return '0';
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-  }
-
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  dpdLabel(days: number | null | undefined): string {
+    if (!days) return 'Current';
+    if (days <= 30) return 'Early delinquency';
+    if (days <= 60) return 'High risk';
+    if (days <= 90) return 'Default watch';
+    return 'Charge-off';
   }
 
   closeModals(): void {
     this.showPaymentModal = false;
     this.showReminderModal = false;
     this.showMarkReceivedModal = false;
-    this.showPaymentPlanModal = false;
     this.selectedPayment = null;
     this.isSubmitting = false;
   }
