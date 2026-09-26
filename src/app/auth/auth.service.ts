@@ -60,12 +60,4 @@ verifyOTP(data: { email: string; otp: string }): Observable<any> {
 resetPassword(data: { reset_token: string; new_password: string }): Observable<any> {
   return this.http.post(`${this.API}/reset-password`, data);
 }
-
- checkUserExists(email: string, phone: string): Observable<any> {
-    return this.http.post(`${this.API}/api/check-user-exists`, {
-      business_email: email,
-      phone: phone
-    });
-  }
-   
 }

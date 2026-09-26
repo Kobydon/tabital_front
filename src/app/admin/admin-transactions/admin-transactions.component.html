@@ -153,15 +153,6 @@
               <button class="action-btn view" (click)="viewTransactionDetails(transaction)" title="View Details">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn edit" (click)="openUpdateStatusModal(transaction)" title="Update Status">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="action-btn delivery" (click)="openUpdateDeliveryModal(transaction)" title="Update Delivery">
-                <i class="fas fa-truck"></i>
-              </button>
-              <button class="action-btn refund" (click)="openRefundModal(transaction)" title="Refund" *ngIf="transaction.status === 'completed'">
-                <i class="fas fa-undo-alt"></i>
-              </button>
             </td>
           </tr>
           <tr *ngIf="transactions.length === 0">
@@ -394,15 +385,6 @@
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openUpdateStatusModal(selectedTransaction.transaction)">
-          <i class="fas fa-edit"></i> Update Status
-        </button>
-        <button class="btn-primary" (click)="openUpdateDeliveryModal(selectedTransaction.transaction)">
-          <i class="fas fa-truck"></i> Update Delivery
-        </button>
-        <button class="btn-danger" (click)="openRefundModal(selectedTransaction.transaction)" *ngIf="selectedTransaction.transaction?.status === 'completed'">
-          <i class="fas fa-undo-alt"></i> Refund
-        </button>
       </div>
     </div>
   </div>

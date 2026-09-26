@@ -182,8 +182,6 @@
           <td class="actions">
             <button class="action-icon view" (click)="viewTransactionDetails(tx)" title="View Details">👁️</button>
             <button class="action-icon edit" (click)="openUpdateModal(tx)" title="Update">✏️</button>
-            <button *ngIf="tx.status === 'completed'" class="action-icon refund" (click)="openRefundModal(tx)" title="Refund">↩️</button>
-            <button *ngIf="tx.status === 'pending'" class="action-icon cancel" (click)="updateStatus(tx, 'cancelled')" title="Cancel">❌</button>
           </td>
         </tr>
       </tbody>

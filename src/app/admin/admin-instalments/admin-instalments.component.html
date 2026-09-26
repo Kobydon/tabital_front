@@ -122,9 +122,6 @@
               <button class="action-btn view" (click)="viewPlanDetails(plan)" title="View Details">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn edit" (click)="openUpdateStatusModal(plan)" title="Update Status">
-                <i class="fas fa-edit"></i>
-              </button>
             </td>
           </tr>
           <tr *ngIf="instalments.length === 0">
@@ -380,9 +377,6 @@
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openUpdateStatusModal(selectedPlan.plan)">
-          <i class="fas fa-edit"></i> Update Status
-        </button>
       </div>
     </div>
   </div>

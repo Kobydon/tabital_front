@@ -121,13 +121,11 @@ export class LoginComponent implements OnDestroy {
         this.subscriptions.push(userSub);
       },
       error: (err) => {
-        console.error('❌ Login error:', err);
         this.loading = false;
 
-        if (err.status === 401) {
+        // Same wording whether or not the account exists; 429 = too many attempts (server message)
+        if (err.status === 401 || err.status === 404) {
           this.error = 'Invalid phone or password';
-        } else if (err.status === 404) {
-          this.error = 'User not found';
         } else if (err.status === 0) {
           this.error = 'Network error. Check your connection.';
         } else {
