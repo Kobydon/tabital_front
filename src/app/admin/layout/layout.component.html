@@ -150,6 +150,16 @@
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Disputes</span>
       </a>
 
+      <a routerLink="identity-review" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">🪪</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Identity Review</span>
+      </a>
+
+      <a routerLink="fraud-review" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">🚩</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Fraud Review</span>
+      </a>
+
       <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
         <span class="icon">💸</span>
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settlements</span>

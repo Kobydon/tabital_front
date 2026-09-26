@@ -55,7 +55,7 @@
         <div class="error" *ngIf="orderError">
           {{ orderError }}
           <ul *ngIf="orderReasons.length"><li *ngFor="let r of orderReasons">{{ r }}</li></ul>
-          <a *ngIf="orderError.includes('KYC')" routerLink="/customer/documents">Verify my identity</a>
+          <a *ngIf="orderError.includes('KYC')" routerLink="/customer/verify-identity">Verify my identity</a>
         </div>
 
         <button class="btn primary" [disabled]="!agreed || placing || !!blockReason()" (click)="confirm()">

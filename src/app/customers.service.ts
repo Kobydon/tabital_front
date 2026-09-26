@@ -718,6 +718,20 @@ createPurchaseOrder(orderData: any): Observable<any> {
   return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() });
 }
 
+// Identity check with Smile ID (Phase 6)
+getIdentityStatus(): Observable<any> {
+  return this.http.get(`${this.API}/customer/identity`, { headers: this.getAuthHeaders() });
+}
+
+startIdentityCheck(consent: boolean): Observable<any> {
+  return this.http.post(`${this.API}/customer/identity/start`, { consent }, { headers: this.getAuthHeaders() });
+}
+
+reportIdentitySubmitted(checkId: number, jobId: string): Observable<any> {
+  return this.http.post(`${this.API}/customer/identity/${checkId}/submitted`, { job_id: jobId },
+    { headers: this.getAuthHeaders() });
+}
+
 // Merchant payment link / QR code (in-store sale)
 getPaymentLink(token: string): Observable<any> {
   return this.http.get(`${this.API}/customer/payment-links/${encodeURIComponent(token)}`, { headers: this.getAuthHeaders() });

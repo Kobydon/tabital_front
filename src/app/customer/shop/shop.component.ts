@@ -196,7 +196,7 @@ export class CustomerShopComponent implements OnInit {
 
   navigateToKYC(): void {
     this.showKYCBlockModal = false;
-    this.router.navigate(['/customer/documents']);
+    this.router.navigate(['/customer/verify-identity']);     // Phase 6: selfie + Ghana Card check
   }
 
   // ============================================

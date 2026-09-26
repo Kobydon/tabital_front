@@ -1,0 +1,81 @@
+<div class="settlements-page">
+  <div class="page-header">
+    <div>
+      <h1>Fraud Review</h1>
+      <p class="subtitle">Automatic checks for duplicate accounts, shared devices and customer-merchant links.
+        <strong>Block</strong> signals stop the customer's purchases, order approval and the merchant's payouts until
+        you clear them. <strong>Review</strong> signals don't stop anything on their own.</p>
+    </div>
+  </div>
+
+  <div class="totals">
+    Open: {{ counts.block || 0 }} block · {{ counts.review || 0 }} review · {{ counts.info || 0 }} info
+  </div>
+  <div class="notice success" *ngIf="message">{{ message }}</div>
+  <div class="notice error" *ngIf="error && !selected">{{ error }}</div>
+
+  <div class="filter-tabs">
+    <button *ngFor="let s of statuses" [class.active]="status === s.value" (click)="setStatus(s.value)">{{ s.label }}</button>
+  </div>
+  <div class="filter-tabs">
+    <button [class.active]="severity === ''" (click)="setSeverity('')">Any severity</button>
+    <button [class.active]="severity === 'block'" (click)="setSeverity('block')">Block</button>
+    <button [class.active]="severity === 'review'" (click)="setSeverity('review')">Review</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Loading…</div>
+
+  <div class="table-card" *ngIf="!isLoading && signals.length">
+    <table>
+      <thead><tr><th>Severity</th><th>Signal</th><th>Account</th><th>Linked account</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let s of signals">
+          <td><span class="badge" [ngClass]="severityClass(s.severity)">{{ s.severity }}</span></td>
+          <td>{{ label(s.code) }}<div class="sub">{{ s.message }}</div></td>
+          <td>{{ who(s.user) }}</td>
+          <td>{{ who(s.related_user) }}</td>
+          <td>{{ s.status }}</td>
+          <td>{{ formatDate(s.created_at) }}</td>
+          <td><button class="btn-link" (click)="open(s)">{{ s.status === 'open' ? 'Review' : 'View' }}</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="empty" *ngIf="!isLoading && !signals.length">Nothing here.</div>
+
+  <div class="modal" *ngIf="selected" (click)="selected = null">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ label(selected.code) }}</h2>
+        <button class="close" (click)="selected = null">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>{{ selected.message }}</p>
+        <div class="row"><span>Severity</span><span class="badge" [ngClass]="severityClass(selected.severity)">{{ selected.severity }}</span></div>
+        <div class="row"><span>Account</span><span>{{ who(selected.user) }}</span></div>
+        <div class="row"><span>Linked account</span><span>{{ who(selected.related_user) }}</span></div>
+        <div class="row" *ngFor="let d of detailsList(selected.details)"><span>{{ d.key }}</span><span class="mono">{{ d.value }}</span></div>
+        <ng-container *ngIf="selected.details?.history?.length">
+          <h4>History</h4>
+          <div class="row" *ngFor="let h of selected.details.history"><span>{{ formatDate(h.at) }} · {{ h.status }}</span><span>{{ h.note }}</span></div>
+        </ng-container>
+
+        <ng-container *ngIf="selected.status !== 'cleared'">
+          <h4>Decision</h4>
+          <p class="sub">Clear it if there's an innocent explanation (e.g. family members sharing a phone). Confirm it if
+            it's fraud: a confirmed block stays in place.</p>
+          <textarea rows="3" [(ngModel)]="note" placeholder="What did you find?"
+                    style="width:100%;padding:8px;border-radius:8px;border:1px solid #d1d5db"></textarea>
+          <div class="notice error" *ngIf="error">{{ error }}</div>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="selected = null">Close</button>
+        <ng-container *ngIf="selected.status !== 'cleared'">
+          <button class="btn-secondary" [disabled]="busy" (click)="review('confirmed')">Confirm fraud</button>
+          <button class="btn-primary" [disabled]="busy" (click)="review('cleared')">Clear</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

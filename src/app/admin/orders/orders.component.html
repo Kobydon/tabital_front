@@ -148,6 +148,10 @@
             </span>
             <small class="dp-status" *ngIf="order.down_payment_status === 'paid'">✓ Down payment paid</small>
             <small class="dp-status refund" *ngIf="order.refund_status">{{ getRefundLabel(order.refund_status) }}</small>
+            <!-- Phase 6: fraud flags on the customer or merchant -->
+            <a class="dp-status refund" *ngFor="let f of order.fraud_flags" routerLink="/admin/fraud-review"
+               [title]="f.message">🚩 {{ f.severity === 'block' ? 'Blocked: ' : '' }}{{ f.message }}</a>
+            <small class="dp-status refund" *ngIf="order.number_of_installments > 1 && !order.employment_verified">Employment not verified</small>
           </td>
           <td>{{ formatDate(order.created_at) }}</td>
           <td class="actions">
@@ -332,6 +336,14 @@
           <div class="form-group">
             <label>Admin Notes (Optional)</label>
             <textarea formControlName="admin_notes" rows="3" placeholder="Add any notes about this approval"></textarea>
+          </div>
+
+          <div class="approval-info" *ngIf="selectedOrder.fraud_flags?.length" style="background:#fef2f2;color:#991b1b">
+            <i class="fas fa-flag"></i>
+            <span>
+              Fraud flags: <ng-container *ngFor="let f of selectedOrder.fraud_flags; let last = last">{{ f.message }} ({{ f.severity }}){{ last ? '' : '; ' }}</ng-container>.
+              Block flags must be resolved in <a routerLink="/admin/fraud-review">Fraud review</a> before approval.
+            </span>
           </div>
 
           <div class="approval-info paid" *ngIf="selectedOrder.down_payment_status === 'paid'">

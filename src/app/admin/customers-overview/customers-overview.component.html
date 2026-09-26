@@ -378,6 +378,11 @@
             <div><span>Employed since</span><strong>{{ underwriting.details.employment_start_date || '—' }}</strong></div>
             <div><span>Salary paid to bank</span><strong>{{ underwriting.details.salary_paid_to_bank ? 'Yes' : 'No' }}</strong></div>
             <div><span>MoMo number</span><strong>{{ underwriting.details.momo_number || '—' }}</strong></div>
+            <div><span>Identity</span><strong>{{ underwriting.details.kyc_status }}
+              <em [class.ok]="underwriting.details.verification_level === 'biometric'">{{ underwriting.details.verification_level === 'biometric' ? 'Smile ID selfie' : underwriting.details.verification_level }}</em></strong></div>
+            <div><span>Employer</span><strong>{{ underwriting.details.company || '—' }}
+              <em [class.ok]="underwriting.details.employment_verified_at">{{ underwriting.details.employment_verified_at ? ('verified · ' + (underwriting.details.employment_verification_method || '')) : 'not verified' }}</em></strong></div>
+            <div *ngIf="underwriting.details.employment_verification_note"><span>Employment note</span><strong>{{ underwriting.details.employment_verification_note }}</strong></div>
             <div *ngIf="underwriting.details.credit_limit_override !== null">
               <span>Limit override</span><strong>{{ formatCurrency(underwriting.details.credit_limit_override) }}</strong>
             </div>
@@ -390,6 +395,26 @@
             </button>
             <button class="btn-secondary small" (click)="rerunUnderwriting()" [disabled]="isSubmitting">
               <i class="fas fa-redo"></i> Re-run assessment
+            </button>
+          </div>
+
+          <!-- Employment verification (Phase 6, §9B): needed for a first credit plan and orders of GHS 10,000+ -->
+          <div class="uw-actions" *ngIf="!underwriting.details.employment_verified_at">
+            <select [(ngModel)]="employmentMethod" style="padding:6px;border-radius:6px">
+              <option value="employer_call">Called the employer</option>
+              <option value="employer_letter">Employer letter</option>
+              <option value="payslip">Payslip</option>
+              <option value="ssnit">SSNIT record</option>
+            </select>
+            <input type="text" [(ngModel)]="employmentNote" placeholder="Who confirmed it, and when"
+                   style="flex:1;min-width:180px;padding:6px;border-radius:6px;border:1px solid #d1d5db">
+            <button class="btn-primary small" (click)="verifyEmployment(true)" [disabled]="isSubmitting || employmentNote.trim().length < 5">
+              <i class="fas fa-briefcase"></i> Mark employment verified
+            </button>
+          </div>
+          <div class="uw-actions" *ngIf="underwriting.details.employment_verified_at">
+            <button class="btn-secondary small" (click)="verifyEmployment(false)" [disabled]="isSubmitting">
+              Remove employment verification
             </button>
           </div>
 

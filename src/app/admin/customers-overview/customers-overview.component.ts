@@ -287,6 +287,28 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     });
   }
 
+  employmentMethod = 'employer_call';
+  employmentNote = '';
+
+  verifyEmployment(verified: boolean): void {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    const note = verified ? this.employmentNote.trim() : (prompt('Why remove the employment verification?') || '').trim();
+    if (!verified && note.length < 5) return;
+    this.isSubmitting = true;
+    this.adminService.setEmploymentVerification(customerId, { verified, method: this.employmentMethod, note }).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.employmentNote = '';
+        this.loadUnderwriting(customerId);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        alert(error?.error?.error || 'Failed to save employment verification');
+      }
+    });
+  }
+
   verifySalary(): void {
     const customerId = this.selectedCustomer?.customer?.id;
     if (!customerId) return;

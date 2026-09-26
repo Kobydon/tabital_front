@@ -821,6 +821,31 @@ getSettlementStats(): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// Phase 6: identity checks (Smile ID), fraud signals, employment verification
+getIdentityChecks(status = 'review'): Observable<any> {
+  return this.http.get(`${this.API}/admin/identity-checks?status=${encodeURIComponent(status)}`, { headers: this.getAuthHeaders() });
+}
+
+decideIdentityCheck(id: number, approve: boolean, note: string): Observable<any> {
+  return this.http.post(`${this.API}/admin/identity-checks/${id}/decide`, { approve, note }, { headers: this.getAuthHeaders() });
+}
+
+getFraudSignals(filters: { status?: string; severity?: string; user_id?: number } = {}): Observable<any> {
+  const qs = new URLSearchParams();
+  qs.append('status', filters.status ?? 'open');
+  if (filters.severity) qs.append('severity', filters.severity);
+  if (filters.user_id) qs.append('user_id', String(filters.user_id));
+  return this.http.get(`${this.API}/admin/fraud-signals?${qs.toString()}`, { headers: this.getAuthHeaders() });
+}
+
+reviewFraudSignal(id: number, status: 'cleared' | 'confirmed', note: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/fraud-signals/${id}`, { status, note }, { headers: this.getAuthHeaders() });
+}
+
+setEmploymentVerification(customerId: number, body: { verified: boolean; method?: string; note: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/employment-verification`, body, { headers: this.getAuthHeaders() });
+}
+
 // Phase 5: settlement batches (reviewed and approved here, paid by Paystack transfer)
 getSettlementBatches(status?: string): Observable<any> {
   const qs = status ? `?status=${encodeURIComponent(status)}` : '';

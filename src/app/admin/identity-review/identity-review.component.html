@@ -1,0 +1,90 @@
+<div class="settlements-page">
+  <div class="page-header">
+    <div>
+      <h1>Identity Review</h1>
+      <p class="subtitle">Ghana Card + selfie checks from Smile ID that need a person: results marked "attention",
+        a name or date of birth that doesn't match the profile, or blocks you may want to override.</p>
+    </div>
+  </div>
+
+  <div class="notice error" *ngIf="!configured">
+    Smile ID isn't configured on the server, so customers are verified from documents only (the KYC pages).
+    Add SMILEID_PARTNER_ID and SMILEID_API_KEY to the server environment to switch selfie checks on.
+  </div>
+  <div class="notice success" *ngIf="message">{{ message }}</div>
+  <div class="notice error" *ngIf="error && !selected">{{ error }}</div>
+
+  <div class="filter-tabs">
+    <button *ngFor="let f of filters" [class.active]="status === f.value" (click)="setFilter(f.value)">{{ f.label }}</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Loading…</div>
+
+  <div class="table-card" *ngIf="!isLoading && checks.length">
+    <table>
+      <thead><tr><th>Customer</th><th>Ghana Card</th><th>Smile ID</th><th>Name</th><th>Date of birth</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let c of checks">
+          <td>{{ c.customer_name }}<div class="sub">{{ c.customer_phone }}</div></td>
+          <td class="mono">{{ c.id_number || '—' }}</td>
+          <td>{{ c.provider === 'manual' ? 'Manual' : (c.provider_status || '—') }}</td>
+          <td>{{ match(c.name_match) }}</td>
+          <td>{{ match(c.dob_match) }}</td>
+          <td>
+            <span class="badge" [ngClass]="statusClass(c.status)">{{ c.status }}</span>
+            <div class="sub" *ngFor="let r of c.reasons">{{ r }}</div>
+          </td>
+          <td>{{ formatDate(c.completed_at || c.created_at) }}</td>
+          <td><button class="btn-link" (click)="open(c)">{{ canDecide(c) ? 'Decide' : 'View' }}</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="empty" *ngIf="!isLoading && !checks.length">Nothing here.</div>
+
+  <div class="modal" *ngIf="selected" (click)="selected = null">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ selected.customer_name }} · {{ selected.id_number }}</h2>
+        <button class="close" (click)="selected = null">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid2">
+          <div>
+            <h4>From the ID authority</h4>
+            <ng-container *ngIf="selected.id_fields; else noFields">
+              <div class="row" *ngFor="let f of selected.id_fields | keyvalue"><span>{{ f.key }}</span><span>{{ f.value }}</span></div>
+            </ng-container>
+            <ng-template #noFields><p class="sub">No details came back.</p></ng-template>
+          </div>
+          <div>
+            <h4>Result</h4>
+            <div class="row"><span>Smile ID</span><span>{{ selected.provider_status || '—' }}</span></div>
+            <div class="row" *ngIf="selected.provider_message"><span>Message</span><span>{{ selected.provider_message }}</span></div>
+            <div class="row"><span>Name</span><span>{{ match(selected.name_match) }}</span></div>
+            <div class="row"><span>Date of birth</span><span>{{ match(selected.dob_match) }}</span></div>
+            <div class="row"><span>Job</span><span class="mono">{{ selected.job_id || '—' }}</span></div>
+            <div class="warn" *ngFor="let r of selected.reasons">{{ r }}</div>
+            <div class="row" *ngIf="selected.review_note"><span>Decision note</span><span>{{ selected.review_note }}</span></div>
+          </div>
+        </div>
+
+        <ng-container *ngIf="canDecide(selected)">
+          <h4>Decision</h4>
+          <p class="sub">Compare the details with the customer's profile and documents. If in doubt, call the customer
+            or reject: the safer credit decision wins.</p>
+          <textarea rows="3" [(ngModel)]="note" placeholder="What did you check? e.g. Called customer; surname spelled differently on card"
+                    style="width:100%;padding:8px;border-radius:8px;border:1px solid #d1d5db"></textarea>
+          <div class="notice error" *ngIf="error">{{ error }}</div>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="selected = null">Close</button>
+        <ng-container *ngIf="canDecide(selected)">
+          <button class="btn-secondary" [disabled]="busy" (click)="decide(false)">Reject</button>
+          <button class="btn-primary" [disabled]="busy" (click)="decide(true)">Verify customer</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

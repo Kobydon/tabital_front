@@ -22,6 +22,10 @@ export interface AdminOrder {
   down_payment_reference?: string;
   down_payment_paid_at?: string;
   refund_status?: string | null;
+  // Phase 6
+  fraud_flags?: { id: number; code: string; severity: string; message: string }[];
+  identity_verified_by?: string | null;
+  employment_verified?: boolean;
   delivery_address: string;
   created_at: string;
   approved_at?: string;
