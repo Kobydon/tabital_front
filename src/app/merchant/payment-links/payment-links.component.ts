@@ -22,7 +22,7 @@ interface PaymentLink {
 @Component({
   selector: 'app-payment-links',
   templateUrl: './payment-links.component.html',
-  styleUrls: ['../merchant-settlements/merchant-settlements.component.scss', './payment-links.component.scss']
+  styleUrls: ['./payment-links.component.scss']
 })
 export class PaymentLinksComponent implements OnInit {
   links: PaymentLink[] = [];

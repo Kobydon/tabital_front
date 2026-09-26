@@ -1,215 +1,180 @@
-<div class="settlements-container">
-  <div class="header">
-    <div class="header-left">
-      <h1 class="title"><span class="icon">💰</span> Settlements</h1>
+<!-- Merchant settlements: Vault -->
+<tp-page-header title="Settlements and payouts"
+  subtitle="You're owed the product price minus the merchant fee once you confirm delivery. Sales are paid at the end of each billing cycle.">
+  <button tpButton="secondary" size="sm" type="button" (click)="openTab('statement')"><lucide-icon name="file-text" [size]="16"></lucide-icon> Statement</button>
+</tp-page-header>
+
+<div class="ms-banner" role="status" *ngIf="account && !account.payouts_ready">
+  <lucide-icon name="triangle-alert" [size]="20"></lucide-icon>
+  <span><strong>Payouts are paused:</strong> {{ account.payouts_blocked_reason }}</span>
+  <button *ngIf="tab !== 'account'" tpButton="navy" size="sm" type="button" (click)="openTab('account')">Update payout account</button>
+</div>
+
+<div class="ms-tabs" role="tablist" aria-label="Settlements">
+  <button type="button" role="tab" [attr.aria-selected]="tab === 'settlements'" [class.is-on]="tab === 'settlements'" (click)="openTab('settlements')">Settlements</button>
+  <button type="button" role="tab" [attr.aria-selected]="tab === 'statement'" [class.is-on]="tab === 'statement'" (click)="openTab('statement')">Statement</button>
+  <button type="button" role="tab" [attr.aria-selected]="tab === 'account'" [class.is-on]="tab === 'account'" (click)="openTab('account')">Payout account</button>
+</div>
+
+<!-- ============================================================ SETTLEMENTS -->
+<ng-container *ngIf="tab === 'settlements'">
+  <div class="ms-kpis">
+    <div class="ms-kpi ms-kpi--lead">
+      <span>Next settlement</span><strong>{{ next.net | money }}</strong>
+      <em>{{ next.lines }} delivered sale(s) and adjustments waiting</em>
     </div>
-    <div class="header-right">
-      <a class="action-btn secondary" routerLink="/merchant/payment-links">🔗 Payment links</a>
+    <div class="ms-kpi"><span>Billing cycle</span><strong>Every {{ next.period_days }} days</strong><em>Change it under Payout account</em></div>
+    <div class="ms-kpi">
+      <span>Paid to</span>
+      <strong class="ms-kpi__small" *ngIf="account?.payout_method === 'bank'">{{ account?.bank_name || 'Bank' }} · {{ account?.account_number || '—' }}</strong>
+      <strong class="ms-kpi__small" *ngIf="account?.payout_method !== 'bank'">Mobile Money · {{ account?.momo_number || 'not set' }}</strong>
+      <em><tp-chip [tone]="account?.payouts_ready ? 'success' : 'warn'" [label]="account?.payouts_ready ? 'Ready for payouts' : 'Payouts paused'"></tp-chip></em>
     </div>
   </div>
 
-  <!-- Payout blocked banner -->
-  <div class="notice warn" *ngIf="account && !account.payouts_ready">
-    ⚠️ Payouts are paused: {{ account.payouts_blocked_reason }}
-    <button class="link-btn" *ngIf="tab !== 'account'" (click)="openTab('account')">Update payout account</button>
-  </div>
+  <p class="ms-note">If a customer wins a dispute, that sale is removed, or taken off your next settlement if it was already paid.</p>
 
-  <div class="tabs">
-    <button [class.active]="tab === 'settlements'" (click)="openTab('settlements')">Settlements</button>
-    <button [class.active]="tab === 'statement'" (click)="openTab('statement')">Statement</button>
-    <button [class.active]="tab === 'account'" (click)="openTab('account')">Payout account</button>
-  </div>
+  <div *ngIf="isLoading" class="ms-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading settlements…</div>
 
-  <!-- ============================================================ SETTLEMENTS -->
-  <ng-container *ngIf="tab === 'settlements'">
-    <div class="summary-grid">
-      <div class="summary-card">
-        <div class="summary-header"><span class="summary-icon green">💵</span><span class="summary-label">Next settlement</span></div>
-        <div class="summary-value">{{ formatCurrency(next.net) }}</div>
-        <div class="summary-sub">{{ next.lines }} delivered sale(s) and adjustments waiting</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-header"><span class="summary-icon orange">📅</span><span class="summary-label">Billing cycle</span></div>
-        <div class="summary-value">Every {{ next.period_days }} days</div>
-        <div class="summary-sub">Change it under Payout account</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-header"><span class="summary-icon blue">🏦</span><span class="summary-label">Paid to</span></div>
-        <div class="summary-value small" *ngIf="account?.payout_method === 'bank'">{{ account?.bank_name || 'Bank' }} · {{ account?.account_number || '—' }}</div>
-        <div class="summary-value small" *ngIf="account?.payout_method !== 'bank'">Mobile Money · {{ account?.momo_number || 'not set' }}</div>
-        <div class="summary-sub">{{ account?.payouts_ready ? 'Ready for payouts' : 'Payouts paused' }}</div>
-      </div>
-    </div>
-
-    <div class="info-box">
-      <p>You're owed the product price minus the merchant fee once you confirm delivery. Sales are grouped at the end of
-        each billing cycle, checked by Tabital, then sent to your payout account.</p>
-      <p>If a customer wins a dispute, the sale is removed, or taken off your next settlement if it was already paid.</p>
-    </div>
-
-    <div *ngIf="isLoading" class="loading-container"><div class="spinner"></div><p>Loading settlements…</p></div>
-
-    <div class="table-wrapper" *ngIf="!isLoading && batches.length > 0">
-      <table class="settlements-table">
-        <thead>
-          <tr><th>Settlement</th><th>Period</th><th>Sales</th><th>Fees</th><th>Adjustments</th><th>Net</th><th>Status</th><th></th></tr>
-        </thead>
+  <tp-card *ngIf="!isLoading && batches.length > 0">
+    <div class="ms-table-wrap">
+      <table class="ms-table">
+        <thead><tr><th>Settlement</th><th>Period</th><th class="num">Sales</th><th class="num">Fees</th><th class="num">Adjustments</th><th class="num">Net</th><th>Status</th><th><span class="sr-only">Details</span></th></tr></thead>
         <tbody>
           <tr *ngFor="let b of batches">
-            <td class="period">{{ b.settlement_id }}</td>
-            <td class="date-range">{{ formatDate(b.period_start) }} – {{ formatDate(b.period_end) }}</td>
-            <td class="amount">{{ formatCurrency(b.gross) }}</td>
-            <td class="commission">{{ formatCurrency(b.fees) }}</td>
-            <td class="commission">{{ formatCurrency(b.clawbacks) }}</td>
-            <td class="net">{{ formatCurrency(b.net) }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="statusClass(b.status)">{{ statusLabel(b.status) }}</span>
-              <div class="sub-note" *ngIf="b.status === 'paid'">{{ formatDate(b.paid_at) }}</div>
-              <div class="sub-note" *ngIf="b.hold_reason && b.status === 'on_hold'">{{ b.hold_reason }}</div>
-            </td>
-            <td class="actions"><button class="action-icon view" (click)="viewBatch(b)" title="View details">👁️</button></td>
+            <td><strong>{{ b.settlement_id }}</strong></td>
+            <td>{{ b.period_start | tpDate }} – {{ b.period_end | tpDate }}</td>
+            <td class="num">{{ b.gross | money }}</td>
+            <td class="num">− {{ b.fees | money }}</td>
+            <td class="num">{{ b.clawbacks | money }}</td>
+            <td class="num"><strong>{{ b.net | money }}</strong></td>
+            <td><tp-chip [status]="b.status"></tp-chip>
+              <div class="ms-sub" *ngIf="b.status === 'paid'">{{ b.paid_at | tpDate }}</div>
+              <div class="ms-sub" *ngIf="b.hold_reason && b.status === 'on_hold'">{{ b.hold_reason }}</div></td>
+            <td><button tpButton="ghost" size="sm" type="button" (click)="viewBatch(b)">Details</button></td>
           </tr>
         </tbody>
       </table>
     </div>
+  </tp-card>
+  <tp-card *ngIf="!isLoading && batches.length === 0">
+    <tp-empty-state icon="landmark" title="No settlements yet"
+      text="They appear at the end of your billing cycle after you confirm deliveries."></tp-empty-state>
+  </tp-card>
+</ng-container>
 
-    <div *ngIf="!isLoading && batches.length === 0" class="empty-state">
-      <div class="empty-icon">💰</div>
-      <p>No settlements yet. They appear at the end of your billing cycle after you confirm deliveries.</p>
+<!-- ============================================================ STATEMENT -->
+<ng-container *ngIf="tab === 'statement'">
+  <tp-card>
+    <div class="ms-range">
+      <tp-field label="From" for="ms-from"><input id="ms-from" type="date" [(ngModel)]="from"></tp-field>
+      <tp-field label="To" for="ms-to"><input id="ms-to" type="date" [(ngModel)]="to"></tp-field>
+      <button tpButton="navy" type="button" (click)="loadStatement()">Show</button>
+      <button tpButton="secondary" type="button" (click)="downloadCsv()"><lucide-icon name="download" [size]="16"></lucide-icon> CSV</button>
     </div>
-  </ng-container>
-
-  <!-- ============================================================ STATEMENT -->
-  <ng-container *ngIf="tab === 'statement'">
-    <div class="filter-section">
-      <div class="date-range">
-        <div class="date-input"><span class="date-icon">📅</span><input type="date" [(ngModel)]="from"></div>
-        <span class="date-separator">to</span>
-        <div class="date-input"><span class="date-icon">📅</span><input type="date" [(ngModel)]="to"></div>
-      </div>
-      <button class="action-btn primary" (click)="loadStatement()">Show</button>
-      <button class="action-btn secondary" (click)="downloadCsv()">⬇️ Download CSV</button>
+    <p class="ms-error" role="alert" *ngIf="statementError">{{ statementError }}</p>
+  </tp-card>
+  <div *ngIf="statementLoading" class="ms-loading"><span class="tp-spinner" aria-hidden="true"></span></div>
+  <ng-container *ngIf="statement && !statementLoading">
+    <div class="ms-kpis">
+      <div class="ms-kpi"><span>Sales</span><strong>{{ statement.totals.sales | money }}</strong></div>
+      <div class="ms-kpi"><span>Merchant fees</span><strong>{{ statement.totals.fees | money }}</strong></div>
+      <div class="ms-kpi"><span>Adjustments</span><strong>{{ statement.totals.clawbacks | money }}</strong></div>
+      <div class="ms-kpi"><span>Paid out</span><strong>{{ statement.totals.paid_out | money }}</strong></div>
     </div>
-
-    <div class="notice error" *ngIf="statementError">{{ statementError }}</div>
-    <div *ngIf="statementLoading" class="loading-container"><div class="spinner"></div></div>
-
-    <ng-container *ngIf="statement && !statementLoading">
-      <div class="summary-grid">
-        <div class="summary-card"><div class="summary-label">Sales</div><div class="summary-value">{{ formatCurrency(statement.totals.sales) }}</div></div>
-        <div class="summary-card"><div class="summary-label">Merchant fees</div><div class="summary-value">{{ formatCurrency(statement.totals.fees) }}</div></div>
-        <div class="summary-card"><div class="summary-label">Adjustments</div><div class="summary-value">{{ formatCurrency(statement.totals.clawbacks) }}</div></div>
-        <div class="summary-card"><div class="summary-label">Paid out</div><div class="summary-value">{{ formatCurrency(statement.totals.paid_out) }}</div></div>
-      </div>
-
-      <div class="table-wrapper" *ngIf="statement.rows.length > 0">
-        <table class="settlements-table">
-          <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th>Gross</th><th>Fee</th><th>Net</th><th>Settlement</th></tr></thead>
+    <tp-card>
+      <div class="ms-table-wrap" *ngIf="statement.rows.length">
+        <table class="ms-table">
+          <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="num">Gross</th><th class="num">Fee</th><th class="num">Net</th><th>Settlement</th></tr></thead>
           <tbody>
             <tr *ngFor="let r of statement.rows">
-              <td>{{ formatDate(r.date) }}</td>
-              <td><span class="type-pill" [ngClass]="'type-' + r.type">{{ r.type }}</span></td>
-              <td class="tx-id">{{ r.reference }}</td>
+              <td>{{ r.date | tpDate }}</td>
+              <td><tp-chip [tone]="r.type === 'clawback' ? 'error' : r.type === 'payout' ? 'success' : 'info'" [label]="r.type | titlecase"></tp-chip></td>
+              <td class="ms-mono">{{ r.reference }}</td>
               <td>{{ r.description }}</td>
-              <td class="amount">{{ formatCurrency(r.gross) }}</td>
-              <td class="commission">{{ formatCurrency(r.fee) }}</td>
-              <td class="net">{{ formatCurrency(r.net) }}</td>
+              <td class="num">{{ r.gross | money }}</td>
+              <td class="num">{{ r.fee | money }}</td>
+              <td class="num"><strong>{{ r.net | money }}</strong></td>
               <td>{{ r.settlement }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="empty-state" *ngIf="statement.rows.length === 0"><p>Nothing in this period.</p></div>
+      <tp-empty-state *ngIf="!statement.rows.length" icon="file-text" title="Nothing in this period"></tp-empty-state>
+    </tp-card>
+  </ng-container>
+</ng-container>
+
+<!-- ============================================================ PAYOUT ACCOUNT -->
+<ng-container *ngIf="tab === 'account'">
+  <tp-card title="Payout account" subtitle="Where Tabital sends your settlements">
+    <p class="ms-security"><lucide-icon name="lock" [size]="16"></lucide-icon>
+      For your security, changing your payout account pauses payouts for a while and we'll notify you.
+      If you didn't make a change, contact Tabital support straight away.</p>
+
+    <fieldset class="ms-method">
+      <legend>Pay me by</legend>
+      <label><input type="radio" name="method" value="mobile_money" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Mobile Money</label>
+      <label><input type="radio" name="method" value="bank" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Bank account</label>
+    </fieldset>
+
+    <tp-field [label]="form.payout_method === 'bank' ? 'Bank' : 'Network'" for="ms-bank" [required]="true" [error]="banksError || null">
+      <select id="ms-bank" [(ngModel)]="form.payout_bank_code" (change)="bankChosen()">
+        <option value="">Choose…</option>
+        <option *ngFor="let b of banks" [value]="b.code">{{ b.name }}</option>
+      </select>
+    </tp-field>
+    <ng-container *ngIf="form.payout_method === 'bank'">
+      <tp-field label="Account name" for="ms-acct-name"><input id="ms-acct-name" type="text" [(ngModel)]="form.account_name"></tp-field>
+      <tp-field label="Account number" for="ms-acct-no"><input id="ms-acct-no" type="text" inputmode="numeric" [(ngModel)]="form.account_number"></tp-field>
     </ng-container>
-  </ng-container>
+    <ng-container *ngIf="form.payout_method !== 'bank'">
+      <tp-field label="Name on the wallet" for="ms-momo-name"><input id="ms-momo-name" type="text" [(ngModel)]="form.momo_name"></tp-field>
+      <tp-field label="Mobile Money number" for="ms-momo-no" hint="10 digits, e.g. 0241234567">
+        <input id="ms-momo-no" type="tel" inputmode="tel" [(ngModel)]="form.momo_number">
+      </tp-field>
+    </ng-container>
+    <tp-field label="Billing cycle" for="ms-cycle" hint="Delivered sales are grouped and paid at the end of each cycle.">
+      <select id="ms-cycle" [(ngModel)]="form.settlement_period_days">
+        <option *ngFor="let p of periods" [ngValue]="p">Every {{ p }} days</option>
+      </select>
+    </tp-field>
 
-  <!-- ============================================================ PAYOUT ACCOUNT -->
-  <ng-container *ngIf="tab === 'account'">
-    <div class="account-card">
-      <div class="notice warn">
-        🔒 For your security, changing your payout account pauses payouts for 48 hours, and we'll notify you.
-        If you didn't make a change, contact Tabital support straight away.
-      </div>
-
-      <div class="form-group">
-        <label>Pay me by</label>
-        <div class="radio-row">
-          <label><input type="radio" name="method" value="mobile_money" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Mobile Money</label>
-          <label><input type="radio" name="method" value="bank" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Bank account</label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>{{ form.payout_method === 'bank' ? 'Bank' : 'Network' }}</label>
-        <select [(ngModel)]="form.payout_bank_code" (change)="bankChosen()">
-          <option value="">Choose…</option>
-          <option *ngFor="let b of banks" [value]="b.code">{{ b.name }}</option>
-        </select>
-        <small class="hint error" *ngIf="banksError">{{ banksError }}</small>
-      </div>
-
-      <ng-container *ngIf="form.payout_method === 'bank'">
-        <div class="form-group"><label>Account name</label><input type="text" [(ngModel)]="form.account_name"></div>
-        <div class="form-group"><label>Account number</label><input type="text" inputmode="numeric" [(ngModel)]="form.account_number"></div>
-      </ng-container>
-      <ng-container *ngIf="form.payout_method !== 'bank'">
-        <div class="form-group"><label>Name on the wallet</label><input type="text" [(ngModel)]="form.momo_name"></div>
-        <div class="form-group"><label>Mobile Money number</label><input type="tel" placeholder="0241234567" [(ngModel)]="form.momo_number"></div>
-      </ng-container>
-
-      <div class="form-group">
-        <label>Billing cycle</label>
-        <select [(ngModel)]="form.settlement_period_days">
-          <option *ngFor="let p of periods" [ngValue]="p">Every {{ p }} days</option>
-        </select>
-        <small class="hint">Delivered sales are grouped and paid at the end of each cycle.</small>
-      </div>
-
-      <div class="notice success" *ngIf="saveMessage">{{ saveMessage }}</div>
-      <div class="notice error" *ngIf="saveError">{{ saveError }}</div>
-
-      <div class="modal-actions">
-        <button class="btn-primary" [disabled]="saving || !form.payout_bank_code" (click)="saveAccount()">
-          {{ saving ? 'Saving…' : 'Save payout account' }}
-        </button>
-      </div>
+    <p class="ms-ok" role="status" *ngIf="saveMessage"><lucide-icon name="circle-check" [size]="16"></lucide-icon> {{ saveMessage }}</p>
+    <p class="ms-error" role="alert" *ngIf="saveError">{{ saveError }}</p>
+    <div card-footer class="tp-card__foot">
+      <button tpButton="navy" type="button" [disabled]="saving || !form.payout_bank_code" [loading]="saving" (click)="saveAccount()">
+        {{ saving ? 'Saving…' : 'Save payout account' }}
+      </button>
     </div>
-  </ng-container>
+  </tp-card>
+</ng-container>
 
-  <!-- ============================================================ DETAILS MODAL -->
-  <div class="modal" *ngIf="selected" (click)="selected = null">
-    <div class="modal-content large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Settlement {{ selected.settlement_id }}</h2>
-        <button class="close" (click)="selected = null">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="detail-group">
-          <div class="detail-row"><strong>Period</strong><span>{{ formatDate(selected.period_start) }} – {{ formatDate(selected.period_end) }}</span></div>
-          <div class="detail-row"><strong>Status</strong><span class="status-badge" [ngClass]="statusClass(selected.status)">{{ statusLabel(selected.status) }}</span></div>
-          <div class="detail-row" *ngIf="selected.failure_reason"><strong>Reason</strong><span>{{ selected.failure_reason }}</span></div>
-          <div class="detail-row"><strong>Sales</strong><span>{{ formatCurrency(selected.gross) }}</span></div>
-          <div class="detail-row"><strong>Merchant fees</strong><span>− {{ formatCurrency(selected.fees) }}</span></div>
-          <div class="detail-row" *ngIf="selected.clawbacks"><strong>Adjustments</strong><span>{{ formatCurrency(selected.clawbacks) }}</span></div>
-          <div class="detail-row"><strong>Net paid</strong><span class="net">{{ formatCurrency(selected.net) }}</span></div>
-        </div>
-        <div class="table-wrapper" *ngIf="selected.lines?.length">
-          <table class="transactions-table">
-            <thead><tr><th>Plan</th><th>Product</th><th>Type</th><th>Gross</th><th>Fee</th><th>Net</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let l of selected.lines">
-                <td class="tx-id">{{ l.plan_ref }}</td>
-                <td>{{ l.product_name }}</td>
-                <td><span class="type-pill" [ngClass]="'type-' + l.type">{{ l.type }}</span></td>
-                <td>{{ formatCurrency(l.gross) }}</td>
-                <td>{{ formatCurrency(l.fee) }}</td>
-                <td class="net">{{ formatCurrency(l.net) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer"><button class="btn-secondary" (click)="selected = null">Close</button></div>
+<!-- ============================================================ DETAILS -->
+<div class="tp-dialog-backdrop" *ngIf="selected" (click)="selected = null">
+  <div class="tp-dialog ms-dialog" role="dialog" aria-modal="true" aria-labelledby="ms-detail-title" (click)="$event.stopPropagation()">
+    <h2 id="ms-detail-title">Settlement {{ selected.settlement_id }}</h2>
+    <dl class="ms-dl">
+      <dt>Period</dt><dd>{{ selected.period_start | tpDate }} – {{ selected.period_end | tpDate }}</dd>
+      <dt>Status</dt><dd><tp-chip [status]="selected.status"></tp-chip></dd>
+      <ng-container *ngIf="selected.failure_reason"><dt>Reason</dt><dd>{{ selected.failure_reason }}</dd></ng-container>
+      <dt>Sales</dt><dd>{{ selected.gross | money }}</dd>
+      <dt>Merchant fees</dt><dd>− {{ selected.fees | money }}</dd>
+      <ng-container *ngIf="selected.clawbacks"><dt>Adjustments</dt><dd>{{ selected.clawbacks | money }}</dd></ng-container>
+      <dt>Net paid</dt><dd><strong>{{ selected.net | money }}</strong></dd>
+    </dl>
+    <div class="ms-table-wrap ms-table-wrap--flat" *ngIf="selected.lines?.length">
+      <table class="ms-table">
+        <thead><tr><th>Plan</th><th>Product</th><th>Type</th><th class="num">Gross</th><th class="num">Fee</th><th class="num">Net</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let l of selected.lines">
+            <td class="ms-mono">{{ l.plan_ref }}</td><td>{{ l.product_name }}</td>
+            <td><tp-chip [tone]="l.type === 'clawback' ? 'error' : 'info'" [label]="l.type | titlecase"></tp-chip></td>
+            <td class="num">{{ l.gross | money }}</td><td class="num">{{ l.fee | money }}</td><td class="num">{{ l.net | money }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <div class="tp-dialog__actions"><button tpButton="ghost" type="button" (click)="selected = null">Close</button></div>
   </div>
 </div>

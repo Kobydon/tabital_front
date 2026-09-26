@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
 
 import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface MerchantOrder {
   id: number;
   order_id: string;
@@ -20,6 +21,12 @@ export interface MerchantOrder {
   delivery_address: string;
   delivery_status: string;
   created_at: string;
+  // From the server (ledger once approved, else an estimate at today's MDR)
+  product_total: number;
+  merchant_fee: number;
+  merchant_payout: number;
+  payout_estimated: boolean;
+  payout_status: 'after_approval' | 'after_delivery' | 'next_settlement' | 'in_settlement' | 'paid' | 'none';
 }
 
 @Component({
@@ -40,7 +47,7 @@ export class MerchantOrdersComponent implements OnInit {
   pageSize = 10;
   totalItems = 0;
   totalPages = 1;
-  activeTab: 'all' | 'pending' | 'approved' | 'completed' = 'all';
+  activeTab: 'all' | 'pending' | 'approved' | 'completed' = 'approved';     // what needs doing first
   showOrderModal = false;
   showDeliveryModal = false;
   
@@ -70,11 +77,53 @@ export class MerchantOrdersComponent implements OnInit {
   ];
   
   deliveryStatusOptions = [
-    { value: 'pending', label: 'Pending', icon: '⏳' },
-    { value: 'processing', label: 'Processing', icon: '🔄' },
-    { value: 'shipped', label: 'Shipped', icon: '🚚' },
-    { value: 'delivered', label: 'Delivered', icon: '📦' }
+    { value: 'pending', label: 'Not started' },
+    { value: 'processing', label: 'Preparing' },
+    { value: 'shipped', label: 'On the way' },
+    { value: 'delivered', label: 'Delivered (customer has it)' }
   ];
+
+  readonly tabs: { value: 'all' | 'pending' | 'approved' | 'completed'; label: string }[] = [
+    { value: 'approved', label: 'To hand over' },
+    { value: 'pending', label: 'Waiting for approval' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'all', label: 'All' },
+  ];
+
+  get payoutTotal(): number {
+    return this.filteredOrders.filter(o => o.status !== 'rejected' && o.status !== 'cancelled')
+      .reduce((sum, o) => sum + (o.merchant_payout || 0), 0);
+  }
+
+  planLabel(o: MerchantOrder): string {
+    return o.number_of_installments > 1 ? `Pay in ${o.number_of_installments}` : 'Paid in full';
+  }
+
+  payoutNote(o: MerchantOrder): string {
+    const notes: Record<string, string> = {
+      after_approval: 'once Tabital approves the order',
+      after_delivery: 'once you confirm delivery',
+      next_settlement: 'in your next settlement',
+      in_settlement: 'in a settlement being paid',
+      paid: 'paid to you',
+      none: 'no payout',
+    };
+    return (o.payout_estimated ? 'Estimated, ' : '') + (notes[o.payout_status] || '');
+  }
+
+  deliveryLabel(status: string): string {
+    return this.deliveryStatusOptions.find(s => s.value === status)?.label.replace(' (customer has it)', '') || 'Not started';
+  }
+
+  deliveryTone(status: string): 'success' | 'info' | 'neutral' {
+    return status === 'delivered' ? 'success' : status === 'shipped' || status === 'processing' ? 'info' : 'neutral';
+  }
+
+  private searchTimer: any = null;
+  onSearchChange(): void {
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
 
   constructor(
     private merchantService: MerchantService,
@@ -112,6 +161,11 @@ export class MerchantOrdersComponent implements OnInit {
         this.totalItems = response.total || 0;
         this.totalPages = response.total_pages || 1;
         this.calculateStats();
+        // Tab counts come from the server (all orders), not just the page shown
+        const c = response.counts || {};
+        this.stats.pending_orders = (c['pending'] || 0) + (c['awaiting_payment'] || 0);
+        this.stats.approved_orders = c['approved'] || 0;
+        this.stats.completed_orders = c['completed'] || 0;
         this.isLoading = false;
       },
       error: (error) => {
@@ -150,7 +204,7 @@ export class MerchantOrdersComponent implements OnInit {
 
   resetFilters(): void {
     this.searchTerm = '';
-    this.activeTab = 'all';
+    this.activeTab = 'approved';
     this.currentPage = 1;
     this.loadOrders();
   }
@@ -174,9 +228,16 @@ export class MerchantOrdersComponent implements OnInit {
     this.showDeliveryModal = true;
   }
 
-  updateDeliveryStatus(): void {
-    if (this.deliveryForm.invalid || !this.selectedOrder) return;
-    
+  async updateDeliveryStatus(): Promise<void> {
+    if (this.deliveryForm.invalid || !this.selectedOrder || this.isUpdating) return;
+    // Delivered is what makes the sale payable to the merchant, so it's confirmed first
+    if (this.deliveryForm.value.delivery_status === 'delivered' && !(await ask({
+      title: 'Confirm delivery?',
+      message: `Only confirm once ${this.selectedOrder.customer_name} has the ${this.selectedOrder.product_name}. ` +
+        `You'll then be paid in your next settlement.`,
+      confirm: 'Yes, delivered'
+    }))) return;
+
     this.isUpdating = true;
     
     const data = {
