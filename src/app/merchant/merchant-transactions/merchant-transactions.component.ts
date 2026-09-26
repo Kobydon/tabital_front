@@ -263,7 +263,7 @@ export class MerchantTransactionsComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

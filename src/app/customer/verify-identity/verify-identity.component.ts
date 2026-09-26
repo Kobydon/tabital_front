@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CustomerService } from 'src/app/customers.service';
 
@@ -17,6 +18,9 @@ type Step = 'loading' | 'intro' | 'camera' | 'uploading' | 'waiting' | 'done' | 
   styleUrls: ['./verify-identity.component.scss']
 })
 export class VerifyIdentityComponent implements OnInit, OnDestroy {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   step: Step = 'loading';
   status: any = null;
   consent = false;

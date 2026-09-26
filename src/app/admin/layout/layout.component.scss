@@ -10,7 +10,7 @@
 /* ========== SIDEBAR ========== */
 .sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(180deg, #02163f 0%, #16213e 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -47,7 +47,7 @@
     top: 30px;
     width: 24px;
     height: 24px;
-    background: #667eea;
+    background: #0a2d73;
     border: none;
     border-radius: 50%;
     color: white;
@@ -61,7 +61,7 @@
 
     &:hover {
       transform: scale(1.1);
-      background: #764ba2;
+      background: #02163f;
     }
   }
 
@@ -84,7 +84,7 @@
         margin: 0;
         font-size: 20px;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #0a2d73, #02163f);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -125,7 +125,7 @@
         top: 0;
         height: 100%;
         width: 0;
-        background: rgba(102, 126, 234, 0.3);
+        background: rgba(10, 45, 115, 0.3);
         transition: width 0.3s ease;
       }
 
@@ -139,9 +139,9 @@
       }
 
       &.active {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #0a2d73, #02163f);
         color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 15px rgba(10, 45, 115, 0.3);
       }
 
       .icon {
@@ -176,7 +176,7 @@
         }
 
         &.active {
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #0a2d73, #02163f);
           color: white;
         }
 
@@ -225,7 +225,7 @@
           }
 
           &.active {
-            background: rgba(102, 126, 234, 0.3);
+            background: rgba(10, 45, 115, 0.3);
             color: white;
           }
 
@@ -277,7 +277,7 @@
       height: 40px;
       border-radius: 50%;
       overflow: hidden;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -397,7 +397,7 @@
       h1 {
         margin: 0;
         font-size: 24px;
-        color: #1a1a2e;
+        color: #02163f;
       }
       .subtitle {
         margin: 5px 0 0;
@@ -568,7 +568,7 @@
       top: 30px;
       width: 32px; /* Slightly larger for mobile touch */
       height: 32px;
-      background: #667eea;
+      background: #0a2d73;
       border: none;
       border-radius: 50%;
       color: white;
@@ -763,7 +763,7 @@
     .nav-menu {
       > a, .nav-dropdown .dropdown-trigger {
         &:active {
-          background: rgba(102, 126, 234, 0.3);
+          background: rgba(10, 45, 115, 0.3);
           transform: scale(0.98);
         }
       }
@@ -801,7 +801,7 @@
         }
         
         .subtitle {
-          color: #94a3b8;
+          color: #64748b;
         }
       }
       
@@ -810,7 +810,7 @@
           background: #334155;
           
           .icon {
-            color: #94a3b8;
+            color: #64748b;
           }
           
           input {
@@ -843,7 +843,7 @@
     width: 50px;
     height: 50px;
     border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #667eea;
+    border-top-color: #0a2d73;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -867,12 +867,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #667eea;
+  background: #0a2d73;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
+  background: #02163f;
 }
 
 /* Utility Classes for Mobile */
@@ -899,6 +899,6 @@
 .sidebar .nav-menu > a:focus-visible,
 .sidebar .nav-dropdown .dropdown-trigger:focus-visible,
 .main-content .header .header-right .mobile-menu-btn:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid #0a2d73;
   outline-offset: 2px;
 }

@@ -27,7 +27,7 @@
 .title {
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
@@ -43,7 +43,7 @@
 }
 
 .stats-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   color: white;
   padding: 8px 20px;
   border-radius: 25px;
@@ -63,7 +63,7 @@
 }
 
 .create-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #15803d 0%, #15803d 100%);
   color: white;
   border: none;
   padding: 10px 24px;
@@ -123,7 +123,7 @@
     justify-content: center;
     font-size: 24px;
     
-    &.purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    &.purple { background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%); }
     &.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
     &.orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
     &.green { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
@@ -133,7 +133,7 @@
     h3 {
       font-size: 24px;
       font-weight: 700;
-      color: #1a1a2e;
+      color: #02163f;
       margin: 0 0 5px 0;
     }
     
@@ -177,8 +177,8 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      border-color: #0a2d73;
+      box-shadow: 0 0 0 4px rgba(10, 45, 115, 0.1);
     }
   }
   
@@ -246,12 +246,12 @@
   }
   
   &:hover {
-    border-color: #667eea;
+    border-color: #0a2d73;
     background: #f8f9fa;
   }
   
   &.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border-color: transparent;
   }
@@ -284,7 +284,7 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #0a2d73;
       }
     }
   }
@@ -335,7 +335,7 @@
   th {
     background: #f8f9fa;
     font-weight: 600;
-    color: #1a1a2e;
+    color: #02163f;
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -358,7 +358,7 @@
     .id-badge {
       display: inline-block;
       padding: 4px 10px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
       color: white;
       border-radius: 20px;
       font-size: 12px;
@@ -380,7 +380,7 @@
   
   .amount {
     font-weight: 700;
-    color: #28a745;
+    color: #15803d;
     font-size: 16px;
   }
   
@@ -443,7 +443,7 @@
         transform: scale(1.1);
       }
       
-      &.view:hover { color: #667eea; background: #f0f0ff; }
+      &.view:hover { color: #0a2d73; background: #f0f0ff; }
       &.edit:hover { color: #ffc107; background: #fff3cd; }
       &.delete:hover { color: #dc3545; background: #f8d7da; }
     }
@@ -470,7 +470,7 @@
   
   &:hover:not(:disabled) {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &:disabled {
@@ -483,7 +483,7 @@
   padding: 8px 14px;
   
   &.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border-color: transparent;
   }
@@ -498,7 +498,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -525,7 +525,7 @@
   
   h3 {
     font-size: 20px;
-    color: #1a1a2e;
+    color: #02163f;
     margin-bottom: 10px;
   }
   
@@ -569,7 +569,7 @@
       .id-badge {
         display: inline-block;
         padding: 4px 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
         color: white;
         border-radius: 20px;
         font-size: 12px;
@@ -617,7 +617,7 @@
       .amount-value {
         font-size: 18px;
         font-weight: 700;
-        color: #28a745;
+        color: #15803d;
       }
     }
     
@@ -780,7 +780,7 @@
     margin: 0;
     font-size: 20px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #02163f;
   }
   
   .close-modal {
@@ -819,7 +819,7 @@
   padding: 16px;
   
   &.highlight {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     
     .detail-row strong {
@@ -828,7 +828,7 @@
     
     .id-badge {
       background: white;
-      color: #667eea;
+      color: #0a2d73;
     }
   }
   
@@ -836,7 +836,7 @@
     margin: 0 0 12px 0;
     font-size: 14px;
     font-weight: 600;
-    color: #667eea;
+    color: #0a2d73;
   }
 }
 
@@ -866,7 +866,7 @@
   .amount-highlight {
     font-size: 18px;
     font-weight: 700;
-    color: #28a745;
+    color: #15803d;
   }
   
   @media (max-width: 768px) {
@@ -908,7 +908,7 @@
   }
   
   .btn-edit, .btn-save {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
   }
   
@@ -940,8 +940,8 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #0a2d73;
+      box-shadow: 0 0 0 3px rgba(10, 45, 115, 0.1);
     }
   }
 }

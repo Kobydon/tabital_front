@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
@@ -10,6 +11,9 @@ import { InstallmentCalculation } from '../shop/shop.component';
   styleUrls: ['./pay-link.component.scss']
 })
 export class PayLinkComponent implements OnInit {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   token = '';
   link: any = null;
   loading = true;
@@ -88,7 +92,8 @@ export class PayLinkComponent implements OnInit {
     this.orderReasons = [];
     this.customerService.createPurchaseOrder({
       payment_link: this.token,
-      number_of_installments: this.selected
+      number_of_installments: this.selected,
+      accept_terms: this.agreed === true      // recorded with the order (§10)
     }).subscribe({
       next: (res: any) => {
         // Down payment (Payment 1) is collected now through Paystack
@@ -108,7 +113,7 @@ export class PayLinkComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount || 0);
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', currencyDisplay: 'code' }).format(amount || 0);
   }
 
   formatDate(date: string): string {

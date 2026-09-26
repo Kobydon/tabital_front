@@ -122,7 +122,6 @@ export class ProductPlansComponent implements OnInit {
   loadProductStats(): void {
     this.adminService.getProductStats().subscribe({
       next: (response: any) => {
-        console.log('Product stats:', response);
         this.productStats = response;
         this.updateStatsCards();
       },
@@ -158,7 +157,6 @@ export class ProductPlansComponent implements OnInit {
     
     this.adminService.getAllProducts(filters).subscribe({
       next: (response: any) => {
-        console.log('Products response:', response);
         if (Array.isArray(response)) {
           this.products = response;
           this.totalItems = response.length;
@@ -369,7 +367,7 @@ export class ProductPlansComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

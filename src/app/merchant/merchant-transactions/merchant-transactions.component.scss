@@ -37,7 +37,7 @@
   .stat-count {
     font-size: 20px;
     font-weight: 700;
-    color: #667eea;
+    color: #0a2d73;
   }
   
   .stat-label {
@@ -48,7 +48,7 @@
 }
 
 .export-btn {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #15803d, #15803d);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -85,9 +85,9 @@
     .stat-icon {
       font-size: 24px;
       
-      &.purple { color: #667eea; }
+      &.purple { color: #0a2d73; }
       &.blue { color: #4facfe; }
-      &.green { color: #28a745; }
+      &.green { color: #15803d; }
     }
     
     .stat-label {
@@ -135,7 +135,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
   
@@ -185,11 +185,11 @@
   transition: all 0.3s;
   
   &:hover {
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &.active {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0a2d73, #02163f);
     color: white;
     border-color: transparent;
   }
@@ -225,7 +225,7 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #0a2d73;
       }
     }
   }
@@ -321,7 +321,7 @@
   
   .amount {
     font-weight: 600;
-    color: #28a745;
+    color: #15803d;
   }
   
   .status-badge, .payment-badge {
@@ -366,7 +366,7 @@
         transform: scale(1.1);
       }
       
-      &.view:hover { color: #667eea; }
+      &.view:hover { color: #0a2d73; }
       &.edit:hover { color: #ffc107; }
       &.refund:hover { color: #6f42c1; }
       &.status:hover { color: #dc3545; }
@@ -392,7 +392,7 @@
   
   &:hover:not(:disabled) {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &:disabled {
@@ -402,7 +402,7 @@
 }
 
 .page-number.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border-color: transparent;
 }
@@ -415,7 +415,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -441,7 +441,7 @@
   
   .reset-btn {
     padding: 10px 24px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0a2d73, #02163f);
     color: white;
     border: none;
     border-radius: 30px;
@@ -520,7 +520,7 @@
         }
         
         &.save {
-          background: #28a745;
+          background: #15803d;
           color: white;
           border: none;
         }
@@ -536,7 +536,7 @@
     h3 {
       margin: 0 0 12px 0;
       padding-bottom: 8px;
-      border-bottom: 2px solid #667eea;
+      border-bottom: 2px solid #0a2d73;
       font-size: 16px;
     }
     
@@ -551,7 +551,7 @@
       }
       
       .amount {
-        color: #28a745;
+        color: #15803d;
         font-weight: 600;
       }
     }
@@ -587,7 +587,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
 }

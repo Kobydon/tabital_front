@@ -116,7 +116,6 @@ export class AdminInstalmentsComponent implements OnInit {
   loadInstalmentStats(): void {
     this.adminService.getInstalmentStats().subscribe({
       next: (response: any) => {
-        console.log('Instalment stats:', response);
         this.instalmentStats = response;
         this.updateStatsCards();
       },
@@ -149,7 +148,6 @@ export class AdminInstalmentsComponent implements OnInit {
     
     this.adminService.getAllInstalments(filters).subscribe({
       next: (response: any) => {
-        console.log('Instalments response:', response);
         if (Array.isArray(response)) {
           this.instalments = response;
           this.totalItems = response.length;
@@ -443,7 +441,7 @@ export class AdminInstalmentsComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

@@ -137,7 +137,6 @@ formatDate(dateString: string): string {
   loadMerchantStats(): void {
     this.adminService.getMerchantStats().subscribe({
       next: (response: any) => {
-        console.log('Merchant stats:', response);
         this.merchantStats = response;
         this.updateStatsCards();
       },
@@ -178,7 +177,6 @@ formatDate(dateString: string): string {
     
     this.adminService.getAllMerchants(filters).subscribe({
       next: (response: any) => {
-        console.log('Merchants response:', response);
         if (Array.isArray(response)) {
           this.merchants = response;
           this.totalItems = response.length;
@@ -431,7 +429,7 @@ formatDate(dateString: string): string {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

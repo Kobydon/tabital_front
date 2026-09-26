@@ -178,7 +178,6 @@ export class MerchantLayoutComponent implements OnInit {
 
         this.merchantAvatar = firstLetter;
 
-        console.log('Merchant Loaded:', user);
       },
 
       error: (error) => {
@@ -240,10 +239,6 @@ export class MerchantLayoutComponent implements OnInit {
 
   logout(): void {
 
-    this.authService.logout();
-
-    localStorage.clear();
-
-    this.router.navigate(['/login']);
+    this.authService.logout();      // clears the session (keeps only the fraud-check device id)
   }
 }

@@ -34,7 +34,7 @@
     padding: 6px 14px;
     cursor: pointer;
     font-size: 13px;
-    &.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    &.active { background: #0a2d73; border-color: #0a2d73; color: #fff; }
   }
 }
 
@@ -67,8 +67,8 @@ table {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
-  background: #eef2ff;
-  color: #3730a3;
+  background: #e8eefc;
+  color: #02163f;
   text-transform: capitalize;
   &.status-paid { background: #d4edda; color: #155724; }
   &.status-processing { background: #dbeafe; color: #1e40af; }
@@ -84,9 +84,9 @@ table {
   border: none;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
-.btn-primary { background: #4f46e5; color: #fff; }
-.btn-secondary { background: #eef2ff; color: #3730a3; }
-.btn-link { background: none; color: #4f46e5; padding: 4px 8px; }
+.btn-primary { background: #0a2d73; color: #fff; }
+.btn-secondary { background: #e8eefc; color: #02163f; }
+.btn-link { background: none; color: #0a2d73; padding: 4px 8px; }
 
 .modal {
   position: fixed;

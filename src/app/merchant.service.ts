@@ -523,14 +523,11 @@ updateBankDetails(bankDetails: any): Observable<any> {
 
  uploadMerchantDocuments(formData: FormData): Observable<any> {
     // Debug: Log all form data entries using forEach (compatible with all browsers)
-    console.log('=== Uploading Documents ===');
     
     // Use forEach instead of entries() for better compatibility
     formData.forEach((value, key) => {
       if (value instanceof File) {
-        console.log(`${key}: ${value.name} (${value.size} bytes, type: ${value.type})`);
       } else {
-        console.log(`${key}: ${value}`);
       }
     });
     

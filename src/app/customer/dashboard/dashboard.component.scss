@@ -51,7 +51,7 @@
     h1 {
       font-size: 22px;
       font-weight: 600;
-      color: #1a1a2e;
+      color: #02163f;
       margin: 0 0 4px 0;
     }
 
@@ -149,7 +149,7 @@
         .stat-value {
           font-size: 24px;
           font-weight: 700;
-          color: #1a1a2e;
+          color: #02163f;
           margin-bottom: 2px;
           line-height: 1.2;
         }
@@ -199,7 +199,7 @@
         font-size: 16px;
         font-weight: 600;
         margin: 0;
-        color: #1a1a2e;
+        color: #02163f;
       }
 
       .view-options {
@@ -225,7 +225,7 @@
           }
           
           &.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #0a2d73, #02163f);
             color: white;
           }
         }
@@ -362,7 +362,7 @@
           gap: 6px;
           
           i {
-            color: #667eea;
+            color: #0a2d73;
             font-size: 14px;
           }
         }
@@ -398,7 +398,7 @@
 
         .payment-product {
           font-weight: 600;
-          color: #1a1a2e;
+          color: #02163f;
           margin-bottom: 3px;
           font-size: 14px;
         }
@@ -468,7 +468,7 @@
         min-width: 40px;
         width: 40px;
         height: 40px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #0a2d73, #02163f);
         border-radius: 10px;
         display: flex;
         align-items: center;
@@ -482,7 +482,7 @@
 
         .plan-product {
           font-weight: 600;
-          color: #1a1a2e;
+          color: #02163f;
           margin-bottom: 3px;
           font-size: 14px;
         }
@@ -593,7 +593,7 @@
 
         .transaction-title {
           font-weight: 500;
-          color: #1a1a2e;
+          color: #02163f;
           margin-bottom: 2px;
           font-size: 13px;
         }
@@ -658,7 +658,7 @@
 
           .summary-value {
             font-weight: 500;
-            color: #1a1a2e;
+            color: #02163f;
             font-size: 13px;
           }
 
@@ -775,7 +775,7 @@
 
         span {
           font-size: 11px;
-          color: #1a1a2e;
+          color: #02163f;
           font-weight: 500;
         }
       }
@@ -807,7 +807,7 @@
     .btn-primary {
       margin-top: 12px;
       padding: 8px 20px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       color: white;
       border: none;
       border-radius: 30px;
@@ -817,7 +817,7 @@
       
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 2px 8px rgba(10, 45, 115, 0.4);
       }
     }
   }
@@ -836,7 +836,7 @@
       width: 40px;
       height: 40px;
       border: 3px solid #e9ecef;
-      border-top-color: #667eea;
+      border-top-color: #0a2d73;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 12px;

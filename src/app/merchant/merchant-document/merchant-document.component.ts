@@ -158,7 +158,6 @@ export class MerchantDocumentComponent implements OnInit {
     
     this.merchantService.getMerchantDocuments().subscribe({
       next: (response: any) => {
-        console.log('Documents loaded:', response);
         this.documents = response.documents || [];
         this.updateVerificationSteps();
         this.checkUploadPermissions(); // Check permissions after loading documents
@@ -174,7 +173,6 @@ export class MerchantDocumentComponent implements OnInit {
   loadKYCStatus(): void {
     this.merchantService.getKycStatus().subscribe({
       next: (response: any) => {
-        console.log('KYC Status loaded:', response);
         this.kycStatus = response;
         this.updateVerificationSteps();
       },
@@ -187,7 +185,6 @@ export class MerchantDocumentComponent implements OnInit {
   loadBankDetails(): void {
     this.merchantService.getBankDetails().subscribe({
       next: (response: any) => {
-        console.log('Bank details loaded:', response);
         if (response && (response.bank_name || response.momo_name)) {
           this.showBankDetailsForm = true;
           this.bankDetailsForm.patchValue({
@@ -285,7 +282,6 @@ export class MerchantDocumentComponent implements OnInit {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       
-      console.log(`File selected for ${type}:`, file.name, file.size, 'bytes');
       
       const validation = this.validateFile(file);
       if (!validation.valid) {
@@ -397,14 +393,9 @@ export class MerchantDocumentComponent implements OnInit {
       formData.append('notes', notes.trim());
     }
     
-    console.log('========== UPLOADING DOCUMENTS ==========');
-    console.log('Business Registration:', this.businessRegistrationFile!.name);
-    console.log('Tax Document:', this.taxDocumentFile!.name);
-    console.log('Bank Statement:', this.bankStatementFile!.name);
     
     this.merchantService.uploadMerchantDocuments(formData).subscribe({
       next: (response) => {
-        console.log('Upload success:', response);
         this.isUploading = false;
         alert('✅ Documents uploaded successfully! Your verification is pending review.');
         this.resetForm();

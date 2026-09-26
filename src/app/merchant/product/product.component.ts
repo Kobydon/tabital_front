@@ -432,7 +432,7 @@ export class ProductComponent implements OnInit {
     if (!amount) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2
     }).format(amount);
   }

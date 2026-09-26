@@ -64,7 +64,7 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
 ];
   typeOptions = [
     { value: 'all', label: 'All Types', icon: '📋', color: '#6c757d' },
-    { value: 'payment', label: 'Payments', icon: '💰', color: '#28a745' },
+    { value: 'payment', label: 'Payments', icon: '💰', color: '#15803d' },
     { value: 'transaction', label: 'Transactions', icon: '🔄', color: '#17a2b8' },
     { value: 'kyc', label: 'KYC', icon: '🆔', color: '#ffc107' },
     { value: 'promotion', label: 'Promotions', icon: '🎁', color: '#f9a826' },
@@ -422,7 +422,7 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
 
   getTypeColor(type: string): string {
     const colors: Record<string, string> = {
-      payment: '#28a745',
+      payment: '#15803d',
       transaction: '#17a2b8',
       kyc: '#ffc107',
       promotion: '#f9a826',

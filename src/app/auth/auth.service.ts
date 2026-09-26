@@ -27,11 +27,24 @@ export class AuthService {
   }
 
   logout() {
-    // Clear the cached profile too, so the next person on this device can't see it
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
-    sessionStorage.clear();
+    AuthService.clearSession();
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * Remove everything about the signed-in person from this browser (token, cached profile,
+   * any other stored data), so the next person on a shared phone sees nothing. Only the
+   * device id used by the fraud checks is kept.
+   */
+  static clearSession(): void {
+    const keep = new Set(['tabital_device_id']);
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && !keep.has(key)) localStorage.removeItem(key);
+      }
+      sessionStorage.clear();
+    } catch { /* storage blocked: nothing stored either */ }
   }
 
 

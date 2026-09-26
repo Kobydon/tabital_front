@@ -63,11 +63,11 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   typeOptions: { value: NotificationType | 'all'; label: string; icon: string; color: string }[] = [
     { value: 'all', label: 'All Types', icon: '📋', color: '#6c757d' },
     { value: 'order', label: 'Orders', icon: '📦', color: '#f9a826' },
-    { value: 'payment', label: 'Payments', icon: '💰', color: '#28a745' },
+    { value: 'payment', label: 'Payments', icon: '💰', color: '#15803d' },
     { value: 'kyc', label: 'KYC', icon: '🆔', color: '#ffc107' },
     { value: 'settlement', label: 'Settlements', icon: '🏦', color: '#17a2b8' },
     { value: 'warning', label: 'Warnings', icon: '⚠️', color: '#dc3545' },
-    { value: 'success', label: 'Success', icon: '✅', color: '#28a745' },
+    { value: 'success', label: 'Success', icon: '✅', color: '#15803d' },
     { value: 'system', label: 'System', icon: '⚙️', color: '#6c757d' }
   ];
   
@@ -413,11 +413,11 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   getTypeColor(type: string): string {
     const colors: Record<string, string> = {
       order: '#f9a826',
-      payment: '#28a745',
+      payment: '#15803d',
       kyc: '#ffc107',
       settlement: '#17a2b8',
       warning: '#dc3545',
-      success: '#28a745',
+      success: '#15803d',
       system: '#6c757d'
     };
     return colors[type] || '#6c757d';

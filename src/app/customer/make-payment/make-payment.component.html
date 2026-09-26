@@ -18,9 +18,13 @@
       <div class="plan-summary">
         <h3>{{ planName || 'Instalment Plan' }}</h3>
         <div class="summary-details">
+          <ng-container *ngIf="lateFee > 0">
+            <div class="detail-row"><span>Instalment:</span><span>{{ formatCurrency(instalmentAmount) }}</span></div>
+            <div class="detail-row"><span>Late fee:</span><span class="late-fee-line">{{ formatCurrency(lateFee) }}</span></div>
+          </ng-container>
           <div class="detail-row">
             <span>Amount Due:</span>
-            <strong>{{ formatCurrency(amount || 0) }}</strong>
+            <strong>{{ amount === null ? '—' : formatCurrency(amount) }}</strong>
           </div>
         </div>
       </div>

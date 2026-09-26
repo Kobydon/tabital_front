@@ -56,7 +56,6 @@ export class LoginComponent implements OnDestroy {
   login(): void {
     // Prevent multiple login attempts
     if (this.loading || this.isNavigating) {
-      console.log('Login or navigation already in progress');
       return;
     }
 
@@ -71,11 +70,9 @@ export class LoginComponent implements OnDestroy {
 
     const loginSub = this.auth.login(this.form.value).subscribe({
       next: (res: any) => {
-        console.log('✅ Login successful:', res);
         
         if (res.access_token) {
           this.auth.saveToken(res.access_token);
-          console.log('💾 Token saved');
         } else {
           console.error('No access_token in response');
           this.error = 'Invalid server response';
@@ -85,7 +82,6 @@ export class LoginComponent implements OnDestroy {
 
         const userSub = this.adminService.getCurrentUser().subscribe({
           next: (user: any) => {
-            console.log('👤 User data received:', user);
             
             this.loading = false;
 
@@ -108,7 +104,6 @@ export class LoginComponent implements OnDestroy {
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userToStore));
-            console.log('💾 User saved to localStorage');
 
             // IMPORTANT: Use setTimeout to ensure we're outside the current change detection
             setTimeout(() => {
@@ -153,12 +148,10 @@ export class LoginComponent implements OnDestroy {
   private navigateByRole(role: string): void {
     // Prevent multiple navigation calls
     if (this.isNavigating) {
-      console.log('Navigation already in progress, skipping...');
       return;
     }
     
     this.isNavigating = true;
-    console.log('➡️ Starting navigation for role:', role);
     
     let navigationPromise: Promise<boolean>;
 
@@ -189,7 +182,6 @@ export class LoginComponent implements OnDestroy {
     
     navigationPromise.then(
       (success) => {
-        console.log('Navigation result:', success);
         if (!success) {
           console.error('Navigation failed');
           this.error = 'Navigation failed. Please try again.';

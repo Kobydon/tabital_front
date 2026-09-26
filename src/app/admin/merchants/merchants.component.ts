@@ -157,7 +157,6 @@ export class MerchantsComponent implements OnInit {
     this.loading = true;
     this.adminService.getMerchants().subscribe({
       next: (data: any[]) => {
-        console.log('Merchants data from API:', data);
         this.merchants = data.map((merchant: any) => ({
           id: merchant.id,
           merchant_id: merchant.merchant_id || '',
@@ -430,7 +429,7 @@ export class MerchantsComponent implements OnInit {
 
   getColor(id: number): string {
     const colors = [
-      '#667eea', '#764ba2', '#f093fb', '#4facfe', 
+      '#0a2d73', '#02163f', '#f093fb', '#4facfe', 
       '#43e97b', '#fa709a', '#fee140', '#30cfd0',
       '#a8edea', '#fed6e3', '#ff9a9e', '#a18cd1'
     ];
@@ -634,10 +633,7 @@ export class MerchantsComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount || 0);
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', currencyDisplay: 'code' }).format(amount || 0);
   }
 
   resetFilters(): void {

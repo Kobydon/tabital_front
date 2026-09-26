@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from '../../customers.service';
@@ -63,6 +64,21 @@ export interface InstallmentCalculation {
     merchant_payout: number;
   };
   payment_schedule: PaymentSchedule[];
+  // Disclosures shown before the customer commits (§10); values come from the server's settings
+  key_facts?: {
+    late_fee_percentage: number;
+    second_late_fee_percentage: number;
+    second_late_fee_after_days: number;
+    late_fee_cap_percentage: number;
+    deferment_enabled: boolean;
+    deferment_fee_percentage: number;
+    deferment_max_per_plan: number;
+    deferment_months: number;
+    dispute_resolution_days: number;
+    terms_url: string;
+    terms_version: string;
+    privacy_url: string;
+  };
 }
 
 export interface PaymentSchedule {
@@ -85,6 +101,9 @@ export interface CustomerKYC {
   styleUrls: ['./shop.component.scss']
 })
 export class CustomerShopComponent implements OnInit {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   // Data
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -336,8 +355,8 @@ export class CustomerShopComponent implements OnInit {
   }
 
   placeOrder(): void {
-    if (this.purchaseForm.invalid) return;
-    
+    if (this.purchaseForm.invalid || this.isPurchasing) return;     // no double orders from a double tap
+
     this.isPurchasing = true;
     
     // Only the choice is sent. The server prices the order from the stored product.
@@ -345,7 +364,8 @@ export class CustomerShopComponent implements OnInit {
       product_id: this.selectedProduct?.id,
       quantity: this.purchaseForm.value.quantity,
       number_of_installments: this.purchaseForm.value.selected_installments,
-      delivery_address: this.purchaseForm.value.delivery_address
+      delivery_address: this.purchaseForm.value.delivery_address,
+      accept_terms: this.purchaseForm.value.agree_terms === true      // recorded with the order (§10)
     };
     
     this.customerService.createPurchaseOrder(orderData).subscribe({
@@ -374,8 +394,16 @@ export class CustomerShopComponent implements OnInit {
   // ============================================
 
   applyFilters(): void {
+    clearTimeout(this.searchTimer);
     this.currentPage = 1;
     this.loadProducts();
+  }
+
+  // Wait until the customer stops typing, instead of calling the API on every key
+  private searchTimer: any = null;
+  onSearchChange(): void {
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
   }
 
   resetFilters(): void {
@@ -458,7 +486,7 @@ export class CustomerShopComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

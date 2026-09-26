@@ -824,15 +824,11 @@ getCustomerDocuments(): Observable<any> {
 // src/app/services/customer.service.ts
 
 uploadKycDocuments(formData: FormData): Observable<any> {
-  console.log('Uploading KYC documents...');
-  console.log('FormData entries:');
   
   // Log FormData contents for debugging
   formData.forEach((value, key) => {
     if (value instanceof File) {
-      console.log(`${key}: ${value.name} (${value.size} bytes, type: ${value.type})`);
     } else {
-      console.log(`${key}: ${value}`);
     }
   });
   

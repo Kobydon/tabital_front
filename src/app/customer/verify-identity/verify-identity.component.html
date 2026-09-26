@@ -31,7 +31,7 @@
       <input type="checkbox" [(ngModel)]="consent">
       <span>I agree that Tabital Pay and its partner Smile ID may check my Ghana Card with the National
         Identification Authority and compare my selfie with my ID photo, as described in the
-        <a href="https://tabitalpay.com/" target="_blank" rel="noopener">privacy policy</a>.</span>
+        <a [href]="legal.privacy" target="_blank" rel="noopener">privacy policy</a>.</span>
     </label>
 
     <div class="notice error" *ngIf="error">{{ error }}</div>

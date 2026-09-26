@@ -176,7 +176,12 @@
             </div>
             <div class="schedule-row" *ngFor="let payment of selectedInstalment.payment_schedule">
               <span class="installment-num">Installment {{ payment.installment_number }}</span>
-              <span class="amount">{{ formatCurrency(payment.amount) }}</span>
+              <span class="amount">
+                {{ formatCurrency(payment.amount) }}
+                <small *ngIf="(payment.late_fee || 0) > 0 && payment.status !== 'paid'" class="late-fee-line">
+                  + {{ formatCurrency(payment.late_fee || 0) }} late fee = <strong>{{ formatCurrency(payment.amount + (payment.late_fee || 0)) }}</strong>
+                </small>
+              </span>
               <span [class.overdue]="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0">
                 {{ formatDate(payment.due_date) }}
                 <span *ngIf="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0" class="overdue-badge">Overdue</span>
@@ -286,72 +291,4 @@
     </div>
   </div>
 
-  <!-- Make Payment Modal -->
-  <div class="modal" *ngIf="showPaymentModal" (click)="closeModals()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2><i class="fas fa-credit-card"></i> Make Payment</h2>
-        <button class="close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body" *ngIf="selectedInstalment && selectedPayment">
-        <div class="payment-summary">
-          <div class="summary-row">
-            <span>Plan:</span>
-            <strong>{{ selectedInstalment.plan_name }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Installment:</span>
-            <strong>Installment {{ selectedPayment.installment_number }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Due Date:</span>
-            <strong [class.urgent]="getDaysRemaining(selectedPayment.due_date) < 0">
-              {{ formatDate(selectedPayment.due_date) }}
-            </strong>
-          </div>
-          <div class="summary-row">
-            <span>Amount:</span>
-            <strong>{{ formatCurrency(selectedPayment.amount) }}</strong>
-          </div>
-        </div>
-
-        <form [formGroup]="paymentForm" (ngSubmit)="makePayment()">
-          <div class="form-group">
-            <label>Payment Method *</label>
-            <div class="payment-methods">
-              <button
-                *ngFor="let method of paymentMethods"
-                type="button"
-                class="method-btn"
-                [class.active]="paymentForm.get('payment_method')?.value === method.value"
-                (click)="paymentForm.patchValue({ payment_method: method.value })">
-                <span class="method-icon">{{ method.icon }}</span>
-                {{ method.label }}
-              </button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Payment Reference (Optional)</label>
-            <input type="text" formControlName="payment_reference" placeholder="Enter reference number if any">
-          </div>
-
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <textarea formControlName="notes" rows="2" placeholder="Any additional notes"></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isPaying">
-              <i class="fas fa-spinner fa-spin" *ngIf="isPaying"></i>
-              {{ isPaying ? 'Processing...' : 'Pay Now' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 </div>

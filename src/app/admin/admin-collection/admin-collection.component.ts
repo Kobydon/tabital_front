@@ -117,7 +117,6 @@ export class AdminCollectionComponent implements OnInit {
   loadCollectionStats(): void {
     this.adminService.getCollectionStats().subscribe({
       next: (response: any) => {
-        console.log('Collection stats:', response);
         this.collectionStats = response;
         this.updateStatsCards();
       },
@@ -151,7 +150,6 @@ export class AdminCollectionComponent implements OnInit {
     
     this.adminService.getOverduePayments(filters).subscribe({
       next: (response: any) => {
-        console.log('Overdue payments response:', response);
         if (Array.isArray(response)) {
           this.overduePayments = response;
           this.totalItems = response.length;
@@ -372,7 +370,7 @@ export class AdminCollectionComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

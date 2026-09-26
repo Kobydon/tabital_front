@@ -75,7 +75,7 @@ export class AdminOrdersComponent implements OnInit {
   // Status Options
   statusOptions = [
     { value: 'pending', label: 'Pending', icon: '⏳', color: '#ffc107' },
-    { value: 'approved', label: 'Approved', icon: '✅', color: '#28a745' },
+    { value: 'approved', label: 'Approved', icon: '✅', color: '#15803d' },
     { value: 'rejected', label: 'Rejected', icon: '❌', color: '#dc3545' },
     { value: 'completed', label: 'Completed', icon: '🎉', color: '#17a2b8' }
   ];
@@ -306,7 +306,7 @@ export class AdminOrdersComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

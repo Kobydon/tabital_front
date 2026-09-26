@@ -120,7 +120,7 @@ export class UnitEconomicsComponent implements OnInit {
   }
 
   money(v: number | null | undefined): string {
-    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(v || 0);
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', currencyDisplay: 'code' }).format(v || 0);
   }
 
   pct(v: number | null | undefined): string {

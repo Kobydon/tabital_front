@@ -57,14 +57,15 @@
   <!-- Search & Filters -->
   <div class="filter-section">
     <div class="search-box">
-      <i class="fas fa-search"></i>
+      <i class="fas fa-search" aria-hidden="true"></i>
       <input
-        type="text"
+        type="search"
+        aria-label="Search products"
         placeholder="Search products..."
         [(ngModel)]="searchTerm"
-        (ngModelChange)="applyFilters()"
+        (ngModelChange)="onSearchChange()"
       />
-      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
+      <button *ngIf="searchTerm" class="clear-btn" aria-label="Clear search" (click)="searchTerm = ''; applyFilters()">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -90,7 +91,7 @@
           *ngIf="product.main_image" 
           [src]="product.main_image" 
           [alt]="product.name"
-          onerror="this.src='assets/default-product.png'">
+          onerror="this.src='assets/default-product.svg'">
         <div *ngIf="!product.main_image" class="no-image">
           <i class="fas fa-image"></i>
         </div>
@@ -192,13 +193,13 @@
               {{ getStockStatus(selectedProduct.stock_quantity) }}
             </div>
 
-            <div class="quantity-selector">
-              <label>Quantity:</label>
+            <div class="quantity-selector" [formGroup]="purchaseForm">
+              <label for="shop-quantity">Quantity:</label>
               <div class="quantity-control">
                 <button type="button" (click)="updateQuantity('decrease')" [disabled]="purchaseForm.value.quantity <= 1">
                   <i class="fas fa-minus"></i>
                 </button>
-                <input type="number" formControlName="quantity" (change)="updateQuantity()" min="1" [max]="selectedProduct.stock_quantity">
+                <input id="shop-quantity" type="number" formControlName="quantity" (change)="updateQuantity()" min="1" [max]="selectedProduct.stock_quantity">
                 <button type="button" (click)="updateQuantity('increase')" [disabled]="purchaseForm.value.quantity >= selectedProduct.stock_quantity">
                   <i class="fas fa-plus"></i>
                 </button>
@@ -211,9 +212,9 @@
         <div class="installment-section">
           <h3><i class="fas fa-calendar-alt"></i> Choose Your Installment Plan</h3>
           
-          <div class="delivery-fee-note">
+          <div class="delivery-fee-note" *ngIf="calculation && calculation.fees.delivery_fee > 0">
             <i class="fas fa-truck"></i>
-            <span>Delivery Fee of <strong>GHS 50.00</strong> will be added to your first payment (Due Now) for ALL plans</span>
+            <span>A delivery fee of <strong>{{ formatCurrency(calculation.fees.delivery_fee) }}</strong> is added to your first payment (due now) on every plan. It isn't financed.</span>
           </div>
           
           <div class="installment-options">
@@ -225,8 +226,8 @@
               (click)="selectInstallment(option.months)"
               [disabled]="!option.is_active">
               <div class="plan-details">
-                <span class="months">{{ option.months }}</span>
-                <span class="period">{{ option.months === 1 ? 'Month (Full Payment)' : 'Months' }}</span>
+                <span class="months">{{ option.months === 1 ? 'Full' : option.months }}</span>
+                <span class="period">{{ option.months === 1 ? 'Pay in full' : 'payments (Pay in ' + option.months + ')' }}</span>
                 <!-- <span class="plan-type" *ngIf="option.months === 1">100% Down + Delivery</span>
                 <span class="plan-type" *ngIf="option.months === 2">50% Down + Delivery + 50% Later</span>
                 <span class="plan-type" *ngIf="option.months === 3">50% Down + Delivery + 25% + 25%</span>
@@ -342,10 +343,22 @@
               <span>Total Payable (Product + Fees):</span>
               <strong>{{ formatCurrency(calculation.totals.total_payable) }}</strong>
             </div>
-            <div class="breakdown-row" *ngIf="calculation.fees.late_fee_percentage > 0">
-              <span>Late payment fee:</span>
-              <span>{{ calculation.fees.late_fee_percentage }}% of a missed instalment, charged the day after its due date</span>
-            </div>
+          </div>
+
+          <!-- Key facts before the customer commits (§10); every figure comes from the server's settings -->
+          <div class="key-facts" *ngIf="calculation.key_facts as kf">
+            <h5>Key facts</h5>
+            <ul>
+              <li *ngIf="purchaseForm.value.selected_installments > 1">0% interest when you pay on time. Payments are due on the same day each month.</li>
+              <li *ngIf="kf.late_fee_percentage > 0">Late fee: {{ kf.late_fee_percentage }}% of a missed instalment, charged the day after it's due,
+                and another {{ kf.second_late_fee_percentage }}% if it's still unpaid after {{ kf.second_late_fee_after_days }} days.
+                Late fees never exceed {{ kf.late_fee_cap_percentage }}% of your total payable.</li>
+              <li *ngIf="kf.deferment_enabled && kf.deferment_max_per_plan > 0 && purchaseForm.value.selected_installments > 1">
+                Need more time? You can move a payment {{ kf.deferment_months }} month later for a {{ kf.deferment_fee_percentage }}% fee
+                ({{ kf.deferment_max_per_plan }} time{{ kf.deferment_max_per_plan === 1 ? '' : 's' }} per plan).</li>
+              <li>Problem with your item? Report it and your remaining payments pause while we look into it
+                (usually within {{ kf.dispute_resolution_days }} days).</li>
+            </ul>
           </div>
           
           <!-- Payment Schedule Summary in Checkout -->
@@ -375,7 +388,7 @@
           <div class="form-group checkbox">
             <label>
               <input type="checkbox" formControlName="agree_terms">
-              I agree to the <a href="#" target="_blank">Terms and Conditions</a>
+              I agree to the payment schedule above and the <a [href]="legal.terms" target="_blank" rel="noopener">Terms and Conditions</a>
             </label>
             <small *ngIf="purchaseForm.get('agree_terms')?.invalid && purchaseForm.get('agree_terms')?.touched" class="error">
               You must agree to the terms

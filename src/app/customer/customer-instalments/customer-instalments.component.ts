@@ -176,12 +176,9 @@ loadInstalmentPlans(): void {
   
   this.customerService.getMyPlans(filters).subscribe({
     next: (response: any) => {
-      console.log('API Response:', JSON.stringify(response, null, 2)); // DEBUG LOG
       
       if (response && response.plans) {
         response.plans.forEach((plan: any, index: number) => {
-          console.log(`Plan ${index} - ID: ${plan.id}, Name: ${plan.product_name}`);
-          console.log(`Payment Schedule:`, plan.payment_schedule);
         });
       }
       
@@ -200,7 +197,7 @@ loadInstalmentPlans(): void {
   private mapInstalmentPlan(plan: any): InstalmentPlan {
     const totalAmount = plan.total_amount || 0;
     const paidAmount = plan.amount_paid || 0;
-    const remainingAmount = plan.amount_outstanding || (totalAmount - paidAmount);
+    const remainingAmount = plan.amount_outstanding ?? (totalAmount - paidAmount);   // 0 is a real balance
     const paymentSchedule = (plan.payment_schedule || []).map((schedule: any) => ({
       id: schedule.id,
       installment_number: schedule.installment_number,
@@ -307,48 +304,8 @@ loadInstalmentPlans(): void {
     });
   }
 
-  makePayment(): void {
-    if (this.paymentForm.invalid || !this.selectedInstalment || !this.selectedPayment) return;
-    
-    this.isPaying = true;
-    
-    const paymentData = {
-      plan_id: this.selectedInstalment.id,
-      installment_number: this.selectedPayment.installment_number,
-      amount: this.paymentForm.value.amount,
-      payment_method: this.paymentForm.value.payment_method,
-      payment_reference: this.paymentForm.value.payment_reference,
-      notes: this.paymentForm.value.notes
-    };
-    
-    this.customerService.makeInstalmentPayment(paymentData).subscribe({
-      next: (response) => {
-        this.isPaying = false;
-        this.showPaymentModal = false;
-        // Update local data
-        if (this.selectedPayment && this.selectedInstalment) {
-          this.selectedPayment.status = 'paid';
-          this.selectedPayment.paid_date = new Date().toISOString();
-          this.selectedPayment.payment_reference = response.payment_reference;
-          this.selectedInstalment.paid_amount += this.selectedPayment.amount;
-          this.selectedInstalment.remaining_amount -= this.selectedPayment.amount;
-          this.selectedInstalment.paid_installments++;
-          
-          if (this.selectedInstalment.paid_installments === this.selectedInstalment.total_installments) {
-            this.selectedInstalment.status = 'completed';
-          }
-        }
-        
-        this.loadInstalmentPlans();
-        alert('Payment successful!');
-      },
-      error: (error) => {
-        console.error('Error making payment:', error);
-        this.isPaying = false;
-        alert('Payment failed. Please try again.');
-      }
-    });
-  }
+  // (The old in-page payment form was removed: it set an amount in the browser and marked the
+  // instalment paid before the server confirmed. Payments go through Make Payment / Paystack.)
 
   downloadReceipt(payment: PaymentSchedule, instalment: InstalmentPlan): void {
     this.customerService.downloadReceipt(instalment.id, payment.installment_number).subscribe({
@@ -388,7 +345,7 @@ loadInstalmentPlans(): void {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
@@ -469,7 +426,7 @@ loadInstalmentPlans(): void {
   }
 
   getProgressColor(percentage: number): string {
-    if (percentage >= 75) return '#28a745';
+    if (percentage >= 75) return '#15803d';
     if (percentage >= 50) return '#17a2b8';
     if (percentage >= 25) return '#ffc107';
     return '#dc3545';

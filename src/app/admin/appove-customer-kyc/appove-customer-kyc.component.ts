@@ -103,7 +103,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadPendingKYC(): void {
     this.adminService.getPendingCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Pending Customer KYC response:', response);
         this.pendingCustomers = response.pending_verifications || [];
         this.stats.pending = this.pendingCustomers.length;
         this.stats.totalDocuments = this.pendingCustomers.reduce(
@@ -121,7 +120,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadVerifiedKYC(): void {
     this.adminService.getVerifiedCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Verified Customer KYC response:', response);
         this.verifiedCustomers = response.verified_customers || [];
         this.stats.verified = this.verifiedCustomers.length;
       },
@@ -132,7 +130,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadRejectedKYC(): void {
     this.adminService.getRejectedCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Rejected Customer KYC response:', response);
         this.rejectedCustomers = response.rejected_customers || [];
         this.stats.rejected = this.rejectedCustomers.length;
       },
@@ -145,7 +142,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   // ============================================
 
   viewCustomerDetails(customer: CustomerKYC): void {
-    console.log('Viewing customer:', customer);
     this.selectedCustomer = customer;
     this.showCustomerModal = true;
   }
@@ -231,7 +227,6 @@ export class ApproveCustomerKycComponent implements OnInit {
 // In approve-customer-kyc.component.ts
 
 viewDocument(document: CustomerDocument): void {
-    console.log('Viewing document:', document);
     this.selectedDocument = document;
     this.pdfError = false;
     this.isPdfLoading = true;
@@ -246,7 +241,6 @@ viewDocument(document: CustomerDocument): void {
     
     // Check if file_data exists
     if (document.file_data) {
-        console.log('File data available, length:', document.file_data.length);
         // Process file data as before
         if (document.mime_type === 'application/pdf') {
             this.displayPdfPreview(document.file_data);

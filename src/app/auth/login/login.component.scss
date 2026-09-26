@@ -10,7 +10,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   position: relative;
   overflow: hidden;
   padding: 20px;
@@ -71,7 +71,7 @@
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -131,8 +131,8 @@ form {
 
 .input-group input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  border-color: #0a2d73;
+  box-shadow: 0 0 0 4px rgba(10, 45, 115, 0.1);
   background: white;
 }
 
@@ -174,7 +174,7 @@ form {
 
 .eye-icon:hover {
   background-color: rgba(0, 0, 0, 0.05);
-  color: #667eea;
+  color: #0a2d73;
 }
 
 .eye-icon:focus {
@@ -199,7 +199,7 @@ form {
 }
 
 .forgot-password a {
-  color: #667eea;
+  color: #0a2d73;
   text-decoration: none;
   font-size: 0.85rem;
   transition: all 0.3s;
@@ -207,13 +207,13 @@ form {
 }
 
 .forgot-password a:hover {
-  color: #764ba2;
+  color: #02163f;
   text-decoration: underline;
 }
 
 /* Button styling */
 .login-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   color: white;
   padding: 14px;
   border: none;
@@ -251,7 +251,7 @@ form {
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 25px rgba(10, 45, 115, 0.3);
 }
 
 .login-btn:active {
@@ -306,7 +306,7 @@ form {
 }
 
 .link a {
-  color: #667eea;
+  color: #0a2d73;
   text-decoration: none;
   font-weight: 600;
   margin-left: 5px;
@@ -321,7 +321,7 @@ form {
   height: 2px;
   bottom: -2px;
   left: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   transition: width 0.3s ease;
 }
 
@@ -330,7 +330,7 @@ form {
 }
 
 .link a:hover {
-  color: #764ba2;
+  color: #02163f;
 }
 
 /* Responsive design */

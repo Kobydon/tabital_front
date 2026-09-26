@@ -40,7 +40,7 @@
     background: #fff;
     font-weight: 600;
     cursor: pointer;
-    &.active { border-color: #4f46e5; background: #eef2ff; color: #3730a3; }
+    &.active { border-color: #0a2d73; background: #e8eefc; color: #02163f; }
   }
 }
 
@@ -86,8 +86,8 @@
   border: none;
   cursor: pointer;
   text-decoration: none;
-  &.primary { background: #4f46e5; color: #fff; &:disabled { opacity: 0.5; cursor: not-allowed; } }
-  &.secondary { background: #eef2ff; color: #3730a3; margin-top: 12px; }
+  &.primary { background: #0a2d73; color: #fff; &:disabled { opacity: 0.5; cursor: not-allowed; } }
+  &.secondary { background: #e8eefc; color: #02163f; margin-top: 12px; }
 }
 
 @media (max-width: 420px) {

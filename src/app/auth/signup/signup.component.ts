@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 // signup.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -12,6 +13,9 @@ import { Subject } from 'rxjs';
   styleUrls: ['./signup.component.scss']
 })
 export class SignupComponent implements OnInit, OnDestroy {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   activeTab: string = 'customer';
   readonly today = new Date().toISOString().slice(0, 10);
   isLoading = false;
@@ -471,7 +475,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.serverErrors = {};
     this.generalError = '';
     
-    console.log('Full error object:', error);
     
     let errorMessage = '';
     let errorDetail = '';
@@ -492,7 +495,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     
     const fullErrorText = (errorMessage + ' ' + errorDetail + ' ' + JSON.stringify(error)).toLowerCase();
     
-    console.log('Full error text:', fullErrorText);
     
     if (fullErrorText.includes('integrityerror') || 
         fullErrorText.includes('uniqueviolation') || 
@@ -593,7 +595,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.customerForm.markAllAsTouched();
     
     if (this.customerForm.invalid) {
-      console.log('Customer Form Errors:', this.getFormErrors());
       this.scrollToFirstError();
       return;
     }
@@ -611,7 +612,6 @@ export class SignupComponent implements OnInit, OnDestroy {
 
     this.auth.register(customerData).subscribe({
       next: (res: any) => {
-        console.log('Customer registered successfully', res);
         this.isLoading = false;
         alert('Registration successful! Please login to continue.');
         this.router.navigate(['/login']);
@@ -634,7 +634,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.merchantForm.markAllAsTouched();
     
     if (this.merchantForm.invalid) {
-      console.log('Merchant Form Errors:', this.getFormErrors());
       this.scrollToFirstError();
       return;
     }
@@ -652,7 +651,6 @@ export class SignupComponent implements OnInit, OnDestroy {
 
     this.auth.register(merchantData).subscribe({
       next: (res: any) => {
-        console.log('Merchant registered successfully', res);
         this.isLoading = false;
         alert('Registration successful! Please wait for admin approval.');
         this.router.navigate(['/login']);

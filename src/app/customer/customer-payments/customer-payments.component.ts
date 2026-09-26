@@ -128,7 +128,6 @@ export class CustomerPaymentsComponent implements OnInit {
     
     this.customerService.getMyPlans({ status: 'active' }).subscribe({
       next: (response: any) => {
-        console.log('Active Plans Response:', response);
         
         if (response && response.plans) {
           this.activePlans = response.plans.map((plan: any) => {
@@ -425,7 +424,7 @@ export class CustomerPaymentsComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

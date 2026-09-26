@@ -9,7 +9,7 @@
 /* ========== SIDEBAR ========== */
 .sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(180deg, #02163f 0%, #16213e 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -46,7 +46,7 @@
     top: 30px;
     width: 24px;
     height: 24px;
-    background: #667eea;
+    background: #0a2d73;
     border: none;
     border-radius: 50%;
     color: white;
@@ -60,7 +60,7 @@
 
     &:hover {
       transform: scale(1.1);
-      background: #764ba2;
+      background: #02163f;
     }
   }
 
@@ -84,7 +84,7 @@
         margin: 0;
         font-size: 20px;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #0a2d73, #02163f);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -125,7 +125,7 @@
         top: 0;
         height: 100%;
         width: 0;
-        background: rgba(102, 126, 234, 0.3);
+        background: rgba(10, 45, 115, 0.3);
         transition: width 0.3s ease;
       }
 
@@ -139,9 +139,9 @@
       }
 
       &.active {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #0a2d73, #02163f);
         color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 15px rgba(10, 45, 115, 0.3);
       }
 
       .icon {
@@ -172,7 +172,7 @@
         }
 
         &.active {
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #0a2d73, #02163f);
           color: white;
         }
 
@@ -221,7 +221,7 @@
           }
 
           &.active {
-            background: rgba(102, 126, 234, 0.3);
+            background: rgba(10, 45, 115, 0.3);
             color: white;
           }
 
@@ -365,7 +365,7 @@
       h1 {
         margin: 0;
         font-size: 24px;
-        color: #1a1a2e;
+        color: #02163f;
       }
       .subtitle {
         margin: 5px 0 0;
@@ -472,7 +472,7 @@
     .mark-all {
       background: none;
       border: none;
-      color: #667eea;
+      color: #0a2d73;
       cursor: pointer;
       font-size: 12px;
       
@@ -499,13 +499,13 @@
       }
 
       &.unread {
-        background: #eef2ff;
+        background: #e8eefc;
       }
 
       .notification-icon {
         i {
           font-size: 20px;
-          color: #667eea;
+          color: #0a2d73;
         }
       }
 
@@ -602,7 +602,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   padding: 8px 16px;
   border-radius: 12px;
   color: white;

@@ -318,7 +318,6 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
               payoutGrowth: data.payout_growth || 0
             };
           }
-          console.log('Payout Stats loaded:', this.payoutStats);
           resolve();
         },
         error: (error) => {
@@ -448,10 +447,10 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
           {
             label: 'Sales',
             data: salesValues,
-            borderColor: '#667eea',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 3,
-            pointBackgroundColor: '#667eea',
+            pointBackgroundColor: '#0a2d73',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointRadius: 4,
@@ -599,7 +598,7 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount || 0);

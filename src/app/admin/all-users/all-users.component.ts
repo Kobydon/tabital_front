@@ -113,7 +113,6 @@ export class AllUsersComponent implements OnInit {
   loadUserStats(): void {
     this.adminService.getUserStats().subscribe({
       next: (response: any) => {
-        console.log('User stats:', response);
         this.userStats = response;
         this.updateStatsCards();
       },
@@ -150,7 +149,6 @@ export class AllUsersComponent implements OnInit {
     
     this.adminService.getAllUsers(filters).subscribe({
       next: (response: any) => {
-        console.log('Users response:', response);
         if (Array.isArray(response)) {
           this.users = response;
           this.totalItems = response.length;
@@ -355,7 +353,7 @@ export class AllUsersComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

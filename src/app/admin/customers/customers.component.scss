@@ -18,7 +18,7 @@
 .title {
   font-size: 28px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #02163f;
   margin: 0;
   display: flex;
   align-items: center;
@@ -30,7 +30,7 @@
 }
 
 .stats-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
   color: white;
   padding: 8px 16px;
   border-radius: 20px;
@@ -69,8 +69,8 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #0a2d73;
+      box-shadow: 0 0 0 3px rgba(10, 45, 115, 0.1);
     }
   }
   
@@ -107,12 +107,12 @@
   font-size: 14px;
   
   &:hover {
-    border-color: #667eea;
+    border-color: #0a2d73;
     background: #f0f0ff;
   }
   
   &.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border-color: transparent;
   }
@@ -139,7 +139,7 @@
   th {
     background: #f8f9fa;
     font-weight: 600;
-    color: #1a1a2e;
+    color: #02163f;
     cursor: pointer;
     user-select: none;
     
@@ -163,7 +163,7 @@
     .avatar {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -211,7 +211,7 @@
   
   .amount {
     font-weight: 600;
-    color: #28a745;
+    color: #15803d;
   }
   
   .actions {
@@ -228,7 +228,7 @@
         transform: scale(1.1);
       }
       
-      &.view:hover { color: #667eea; }
+      &.view:hover { color: #0a2d73; }
       &.edit:hover { color: #ffc107; }
       &.delete:hover { color: #dc3545; }
     }
@@ -255,7 +255,7 @@
   
   &:hover:not(:disabled) {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &:disabled {
@@ -268,7 +268,7 @@
   padding: 8px 12px;
   
   &.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border-color: transparent;
   }
@@ -283,7 +283,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -313,7 +313,7 @@
   
   .reset-btn {
     padding: 10px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border: none;
     border-radius: 25px;
@@ -421,7 +421,7 @@
     .avatar-large {
       width: 50px;
       height: 50px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -474,7 +474,7 @@
       .stat-value {
         font-size: 18px;
         font-weight: 600;
-        color: #667eea;
+        color: #0a2d73;
       }
       
       .stat-label {
@@ -697,7 +697,7 @@
     margin: 0;
     font-size: 24px;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -792,7 +792,7 @@
     margin: 0 0 16px 0;
     font-size: 16px;
     font-weight: 600;
-    color: #667eea;
+    color: #0a2d73;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -878,12 +878,12 @@
   }
   
   .btn-edit {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 8px 20px rgba(10, 45, 115, 0.3);
     }
   }
   
@@ -954,8 +954,8 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      border-color: #0a2d73;
+      box-shadow: 0 0 0 4px rgba(10, 45, 115, 0.1);
     }
     
     &:active {
@@ -1044,7 +1044,7 @@
         margin: 0;
         font-size: 20px;
         font-weight: 600;
-        color: #1a1a2e;
+        color: #02163f;
       }
       
       .close-sheet {
@@ -1205,7 +1205,7 @@ body.modal-open {
     width: 40px;
     height: 40px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #667eea;
+    border-top: 3px solid #0a2d73;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -1282,7 +1282,7 @@ body.modal-open {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid #0a2d73;
   outline-offset: 2px;
 }
 

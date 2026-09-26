@@ -129,7 +129,6 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   loadCustomerStats(): void {
     this.adminService.getCustomerStats().subscribe({
       next: (response: any) => {
-        console.log('Customer stats:', response);
         this.customerStats = response;
         this.updateStatsCards();
       },
@@ -164,11 +163,9 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       sort_order: this.sortOrder
     };
     
-    console.log('Loading customers with filters:', filters);
     
     this.adminService.getAllCustomers(filters).subscribe({
       next: (response: any) => {
-        console.log('Customers response:', response);
         // Handle both array response and paginated response
         if (Array.isArray(response)) {
           this.customers = response;
@@ -500,7 +497,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

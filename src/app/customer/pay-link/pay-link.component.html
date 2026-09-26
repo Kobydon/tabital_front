@@ -45,11 +45,22 @@
             <tr><td colspan="2">Total payable</td><td class="num">{{ formatCurrency(calculation.totals.total_payable) }}</td></tr>
           </tfoot>
         </table>
-        <p class="fine" *ngIf="selected > 1">0% interest when you pay on time. Instalments are due on the same day each month.</p>
+        <div class="key-facts" *ngIf="calculation.key_facts as kf">
+          <h5>Key facts</h5>
+          <ul>
+            <li *ngIf="selected > 1">0% interest when you pay on time. Instalments are due on the same day each month.</li>
+            <li *ngIf="kf.late_fee_percentage > 0">Late fee: {{ kf.late_fee_percentage }}% of a missed instalment, charged the day after it's due,
+              and another {{ kf.second_late_fee_percentage }}% after {{ kf.second_late_fee_after_days }} days.
+              Late fees never exceed {{ kf.late_fee_cap_percentage }}% of your total payable.</li>
+            <li *ngIf="selected > 1 && kf.deferment_enabled && kf.deferment_max_per_plan > 0">Need more time? Move a payment
+              {{ kf.deferment_months }} month later for a {{ kf.deferment_fee_percentage }}% fee.</li>
+            <li>Problem with your item? Report it and your remaining payments pause.</li>
+          </ul>
+        </div>
 
         <label class="agree">
           <input type="checkbox" [(ngModel)]="agreed">
-          I agree to this payment schedule and the <a href="https://tabitalpay.com/" target="_blank" rel="noopener">Tabital Pay terms</a>.
+          I agree to this payment schedule and the <a [href]="legal.terms" target="_blank" rel="noopener">Terms and Conditions</a>.
         </label>
 
         <div class="error" *ngIf="orderError">

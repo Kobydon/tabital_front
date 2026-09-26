@@ -6,10 +6,12 @@
     <form [formGroup]="form" (ngSubmit)="login()">
       <!-- Phone Input with Icon -->
       <div class="input-group">
-        <span class="input-icon">
+        <label class="sr-only" for="login-phone">Phone number or email</label>
+        <span class="input-icon" aria-hidden="true">
           <i class="fas fa-user"></i>
         </span>
         <input 
+          id="login-phone"
           formControlName="phone" 
           placeholder="Phone Number / Email"
           type="text"
@@ -18,10 +20,12 @@
 
       <!-- Password Input with Icon and Eye Toggle -->
       <div class="input-group password-group">
-        <span class="input-icon">
+        <label class="sr-only" for="login-password">Password</label>
+        <span class="input-icon" aria-hidden="true">
           <i class="fas fa-lock"></i>
         </span>
         <input 
+          id="login-password"
           [type]="showPassword ? 'text' : 'password'" 
           formControlName="password" 
           placeholder="Password"

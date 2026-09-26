@@ -22,13 +22,11 @@ export class AuthGuard implements CanActivate {
     const toLogin = () => this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 
     if (!token) {
-      console.log('AuthGuard: No token, redirecting to login');
       return toLogin();
     }
 
     // Check if token is expired
     if (this.isTokenExpired(token)) {
-      console.log('AuthGuard: Token expired, redirecting to login');
       this.authService.logout();
       return toLogin();
     }

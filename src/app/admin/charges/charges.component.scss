@@ -21,7 +21,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      color: #1a1a2e;
+      color: #02163f;
       
       .icon {
         font-size: 32px;
@@ -62,7 +62,7 @@
   &.success {
     background: #d4edda;
     color: #155724;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #15803d;
   }
   
   &.error {
@@ -83,7 +83,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 16px;
@@ -124,11 +124,11 @@
     
     &:hover {
       background: #f8f9fa;
-      color: #667eea;
+      color: #0a2d73;
     }
     
     &.active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       color: white;
     }
   }
@@ -167,7 +167,7 @@
     gap: 10px;
     
     i {
-      color: #667eea;
+      color: #0a2d73;
     }
   }
 }
@@ -239,7 +239,7 @@
         
         &:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: #0a2d73;
         }
       }
       
@@ -252,7 +252,7 @@
     
     .preview-value {
       font-size: 11px;
-      color: #28a745;
+      color: #15803d;
       text-align: right;
     }
   }
@@ -260,7 +260,7 @@
 
 // Preview Card
 .preview-card {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border-radius: 12px;
   padding: 16px;
@@ -306,7 +306,7 @@
     gap: 10px;
     
     i {
-      color: #667eea;
+      color: #0a2d73;
     }
   }
   
@@ -389,7 +389,7 @@
       .months {
         font-size: 28px;
         font-weight: 700;
-        color: #1a1a2e;
+        color: #02163f;
         display: block;
       }
       
@@ -462,7 +462,7 @@
     height: 0;
     
     &:checked + .toggle-slider {
-      background: #28a745;
+      background: #15803d;
     }
     
     &:checked + .toggle-slider:before {
@@ -518,7 +518,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #15803d, #15803d);
   color: white;
   border: none;
   
@@ -578,7 +578,7 @@
       code {
         font-size: 13px;
         font-weight: 600;
-        color: #1a1a2e;
+        color: #02163f;
       }
     }
   }
@@ -601,7 +601,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: #667eea;
+        background: #0a2d73;
         z-index: 1;
       }
       
@@ -626,7 +626,7 @@
         
         .action {
           font-weight: 600;
-          color: #1a1a2e;
+          color: #02163f;
         }
         
         .date {
@@ -668,7 +668,7 @@
             }
             
             .new-value {
-              color: #28a745;
+              color: #15803d;
             }
           }
         }

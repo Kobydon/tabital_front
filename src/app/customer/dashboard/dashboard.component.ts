@@ -249,7 +249,6 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   private initPaymentChart(): void {
     if (!this.paymentOverview?.monthly_data?.length) {
-      console.log('No payment overview data available');
       return;
     }
 
@@ -485,7 +484,7 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-GH', { 
-      style: 'currency', currency: 'GHS', minimumFractionDigits: 2, maximumFractionDigits: 2
+      style: 'currency', currency: 'GHS', currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2
     }).format(amount || 0);
   }
 

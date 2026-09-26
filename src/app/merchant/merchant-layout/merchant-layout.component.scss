@@ -7,7 +7,7 @@
 // Sidebar Styles
 .sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(180deg, #02163f 0%, #16213e 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -126,7 +126,7 @@
   .merchant-avatar {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -186,7 +186,7 @@
     }
     
     &.active {
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(90deg, #0a2d73 0%, #02163f 100%);
       color: white;
       
       &::before {
@@ -322,8 +322,8 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #0a2d73;
+        box-shadow: 0 0 0 3px rgba(10, 45, 115, 0.1);
       }
       
       &::placeholder {
@@ -383,7 +383,7 @@
       .user-avatar {
         width: 36px;
         height: 36px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;

@@ -117,7 +117,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadPendingKYC(): void {
     this.adminService.getPendingKYC().subscribe({
       next: (response) => {
-        console.log('Pending KYC response:', response);
         this.pendingMerchants = response.pending_verifications || [];
         this.stats.pending = this.pendingMerchants.length;
         this.stats.totalDocuments = this.pendingMerchants.reduce(
@@ -135,7 +134,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadVerifiedKYC(): void {
     this.adminService.getVerifiedKYC().subscribe({
       next: (response) => {
-        console.log('Verified KYC response:', response);
         this.verifiedMerchants = response.verified_merchants || [];
         this.stats.verified = this.verifiedMerchants.length;
       },
@@ -146,7 +144,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadRejectedKYC(): void {
     this.adminService.getRejectedKYC().subscribe({
       next: (response) => {
-        console.log('Rejected KYC response:', response);
         this.rejectedMerchants = response.rejected_merchants || [];
         this.stats.rejected = this.rejectedMerchants.length;
       },
@@ -159,7 +156,6 @@ export class ApproveKybKycComponent implements OnInit {
   // ============================================
 
   viewMerchantDetails(merchant: MerchantKYC): void {
-    console.log('Viewing merchant:', merchant);
     this.selectedMerchant = merchant;
     this.showMerchantModal = true;
   }
@@ -244,7 +240,6 @@ export class ApproveKybKycComponent implements OnInit {
   // ============================================
 
   viewDocument(document: Document): void {
-    console.log('Viewing document:', document);
     this.selectedDocument = document;
     this.pdfError = false;
     this.isPdfLoading = true;

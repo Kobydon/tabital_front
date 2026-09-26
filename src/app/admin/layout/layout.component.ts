@@ -1,5 +1,6 @@
 import { Component, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from 'src/app/auth/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -81,7 +82,7 @@ export class LayoutComponent {
   }
 
   logout() {
-    localStorage.removeItem('token');
+    AuthService.clearSession();       // token and the cached admin profile
     this.router.navigate(['/login']);
   }
 

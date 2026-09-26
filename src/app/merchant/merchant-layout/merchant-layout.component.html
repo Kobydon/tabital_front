@@ -6,8 +6,8 @@
   <aside class="sidebar" [class.collapsed]="isSidebarCollapsed" [class.mobile-open]="showMobileSidebar">
     <div class="sidebar-header">
       <div class="logo">
-        <span class="logo-icon">🏪</span>
-        <span class="logo-text" *ngIf="!isSidebarCollapsed">Tabital Pay</span>
+        <span class="logo-icon tp-mark-box" aria-hidden="true">T</span>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed">Tabital Pay <small>Merchant</small></span>
       </div>
       <button class="toggle-btn" (click)="toggleSidebar()">
         {{ isSidebarCollapsed ? '→' : '←' }}

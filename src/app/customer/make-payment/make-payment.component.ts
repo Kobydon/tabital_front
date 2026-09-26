@@ -11,7 +11,9 @@ import { CustomerService } from 'src/app/customers.service';
 })
 export class MakePaymentComponent implements OnInit {
   planId: number | null = null;
-  amount: number | null = null;
+  amount: number | null = null;      // total due now, from the server
+  instalmentAmount = 0;
+  lateFee = 0;
   planName: string = '';
   instalmentPlan: any = null;
   isLoading = true;
@@ -84,7 +86,8 @@ export class MakePaymentComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       this.planId = params['planId'] ? parseInt(params['planId']) : null;
-      this.amount = params['amount'] ? parseFloat(params['amount']) : null;
+      // Never show an amount from the URL: it comes from the server with the plan below
+      this.amount = null;
       this.planName = params['planName'] || '';
 
       if (this.planId) {
@@ -102,7 +105,10 @@ export class MakePaymentComponent implements OnInit {
         this.planName = this.instalmentPlan.product_name;
         const next = (this.instalmentPlan.payment_schedule || [])
           .find((p: any) => ['pending', 'overdue', 'pending_verification'].includes(p.status));
-        this.amount = next ? next.amount : 0;
+        // What Paystack will charge: the instalment plus any unpaid late fee
+        this.amount = next ? (next.amount_due ?? next.amount) : 0;
+        this.instalmentAmount = next ? next.amount : 0;
+        this.lateFee = next ? (next.late_fee || 0) : 0;
         this.isLoading = false;
       },
       error: () => {
@@ -158,7 +164,7 @@ export class MakePaymentComponent implements OnInit {
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-GH', {
-      style: 'currency', currency: 'GHS'
+      style: 'currency', currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

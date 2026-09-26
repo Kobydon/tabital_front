@@ -140,7 +140,6 @@ export class AdminTransactionsComponent implements OnInit {
   loadTransactionStats(): void {
     this.adminService.getTransactionStats().subscribe({
       next: (response: any) => {
-        console.log('Transaction stats:', response);
         this.transactionStats = response;
         this.updateStatsCards();
       },
@@ -177,7 +176,6 @@ export class AdminTransactionsComponent implements OnInit {
     
     this.adminService.getAllTransactions(filters).subscribe({
       next: (response: any) => {
-        console.log('Transactions response:', response);
         if (Array.isArray(response)) {
           this.transactions = response;
           this.totalItems = response.length;
@@ -433,7 +431,7 @@ export class AdminTransactionsComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

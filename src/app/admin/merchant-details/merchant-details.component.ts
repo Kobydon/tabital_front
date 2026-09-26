@@ -227,7 +227,7 @@ export class MerchantDetailsComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 
@@ -387,7 +387,6 @@ export class MerchantDetailsComponent implements OnInit {
         send_sms: this.messageForm.value.sendSms,
         merchant_id: this.merchantId
       };
-      console.log('Sending message:', data);
       this.showMessageModal = false;
       this.showSuccessMessage('Message sent successfully');
       this.messageForm.reset();
