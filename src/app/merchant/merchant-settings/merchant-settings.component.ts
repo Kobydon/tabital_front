@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-merchant-settings',
   templateUrl: './merchant-settings.component.html',
@@ -157,12 +158,12 @@ export class MerchantSettingsComponent implements OnInit {
       this.isLoading = true;
       this.merchantService.updateProfile(this.profileForm.value).subscribe({
         next: () => {
-          alert('Profile updated successfully');
+          notify('Profile updated successfully');
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Error updating profile:', error);
-          alert('Failed to update profile');
+          notify('Failed to update profile', 'error');
           this.isLoading = false;
         }
       });
@@ -178,13 +179,13 @@ export class MerchantSettingsComponent implements OnInit {
       };
       this.merchantService.updatePassword(data).subscribe({
         next: () => {
-          alert('Password updated successfully');
+          notify('Password updated successfully');
           this.passwordForm.reset();
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Error updating password:', error);
-          alert(error.error?.error || 'Failed to update password');
+          notify(error.error?.error || 'Failed to update password', 'error');
           this.isLoading = false;
         }
       });
@@ -196,12 +197,12 @@ export class MerchantSettingsComponent implements OnInit {
       this.isLoading = true;
       this.merchantService.updatePaymentSettings(this.paymentForm.value).subscribe({
         next: () => {
-          alert('Payment settings updated successfully');
+          notify('Payment settings updated successfully');
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Error updating payment settings:', error);
-          alert('Failed to update payment settings');
+          notify('Failed to update payment settings', 'error');
           this.isLoading = false;
         }
       });
@@ -235,12 +236,12 @@ export class MerchantSettingsComponent implements OnInit {
     this.isSavingNotifications = true;
     this.merchantService.updateNotificationSettings(this.notificationSettings).subscribe({
       next: () => {
-        alert('Notification settings updated successfully');
+        notify('Notification settings updated successfully');
         this.isSavingNotifications = false;
       },
       error: (error) => {
         console.error('Error updating notification settings:', error);
-        alert('Failed to update notification settings');
+        notify('Failed to update notification settings', 'error');
         this.isSavingNotifications = false;
       }
     });
@@ -261,12 +262,12 @@ export class MerchantSettingsComponent implements OnInit {
     this.isLoading = true;
     this.merchantService.updatePreferences(this.preferences).subscribe({
       next: () => {
-        alert('Preferences updated successfully');
+        notify('Preferences updated successfully');
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error updating preferences:', error);
-        alert('Failed to update preferences');
+        notify('Failed to update preferences', 'error');
         this.isLoading = false;
       }
     });
@@ -276,12 +277,12 @@ export class MerchantSettingsComponent implements OnInit {
     this.isLoading = true;
     this.merchantService.updateKYC(this.kycForm.value).subscribe({
       next: () => {
-        alert('KYC information updated successfully');
+        notify('KYC information updated successfully');
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error updating KYC:', error);
-        alert('Failed to update KYC information');
+        notify('Failed to update KYC information', 'error');
         this.isLoading = false;
       }
     });

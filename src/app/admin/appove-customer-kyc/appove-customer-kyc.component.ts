@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
+import { notify } from 'src/app/shared/notify';
 export interface CustomerKYC {
   customer_id: number;
   customer_name: string;
@@ -153,14 +154,14 @@ export class ApproveCustomerKycComponent implements OnInit {
     this.adminService.approveCustomerKYC(this.selectedCustomer.customer_id).subscribe({
       next: (response: any) => {
         this.isProcessing = false;
-        alert('✅ Customer KYC approved successfully!');
+        notify('✅ Customer KYC approved successfully!');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error: any) => {
         console.error('Error approving customer:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve customer. Please try again.');
+        notify('❌ Failed to approve customer. Please try again.', 'error');
       }
     });
   }
@@ -194,28 +195,28 @@ export class ApproveCustomerKycComponent implements OnInit {
       this.adminService.rejectCustomerKYC(this.selectedCustomer.customer_id, reason).subscribe({
         next: (response: any) => {
           this.isProcessing = false;
-          alert('❌ Customer KYC rejected.');
+          notify('❌ Customer KYC rejected.');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error: any) => {
           console.error('Error rejecting customer:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject customer. Please try again.');
+          notify('❌ Failed to reject customer. Please try again.', 'error');
         }
       });
     } else if (this.rejectType === 'document' && this.selectedDocument) {
       this.adminService.rejectCustomerDocument(this.selectedDocument.id, reason).subscribe({
         next: (response: any) => {
           this.isProcessing = false;
-          alert('❌ Document rejected.');
+          notify('❌ Document rejected.');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error: any) => {
           console.error('Error rejecting document:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject document. Please try again.');
+          notify('❌ Failed to reject document. Please try again.', 'error');
         }
       });
     }
@@ -254,7 +255,7 @@ viewDocument(document: CustomerDocument): void {
         console.error('No file data available for document:', document.id, document.file_name);
         this.isPdfLoading = false;
         // Show a message to the user
-        alert(`Document file not found on server: ${document.file_name || 'Unknown file'}\n\nPlease check that the file was uploaded correctly.`);
+        notify(`Document file not found on server: ${document.file_name || 'Unknown file'}\n\nPlease check that the file was uploaded correctly.`);
     }
     
     this.showDocumentModal = true;
@@ -284,7 +285,7 @@ viewDocument(document: CustomerDocument): void {
 
   downloadDocument(): void {
     if (!this.selectedDocument || !this.selectedDocument.file_data) {
-      alert('No document data available for download');
+      notify('No document data available for download');
       return;
     }
     
@@ -309,7 +310,7 @@ viewDocument(document: CustomerDocument): void {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading document:', error);
-      alert('Failed to download document. Please try again.');
+      notify('Failed to download document. Please try again.', 'error');
     }
   }
 
@@ -326,14 +327,14 @@ viewDocument(document: CustomerDocument): void {
     this.adminService.approveCustomerDocument(this.selectedDocument.id).subscribe({
       next: (response: any) => {
         this.isProcessing = false;
-        alert('✅ Document approved successfully!');
+        notify('✅ Document approved successfully!');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error: any) => {
         console.error('Error approving document:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve document. Please try again.');
+        notify('❌ Failed to approve document. Please try again.', 'error');
       }
     });
   }

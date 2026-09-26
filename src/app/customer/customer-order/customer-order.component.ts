@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CustomerService } from '../../customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface CustomerOrder {
   id: number;
   order_id: string;
@@ -110,11 +111,11 @@ export class CustomerOrdersComponent implements OnInit {
       this.customerService.cancelOrder(order.id).subscribe({
         next: (response) => {
           this.loadOrders();
-          alert('Order cancelled successfully');
+          notify('Order cancelled successfully');
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
-          alert('Failed to cancel order. Please try again.');
+          notify('Failed to cancel order. Please try again.', 'error');
         }
       });
     }
@@ -129,12 +130,12 @@ export class CustomerOrdersComponent implements OnInit {
           window.location.href = res.authorization_url;
         } else {
           this.payingOrderId = null;
-          alert('Could not start the payment. Please try again.');
+          notify('Could not start the payment. Please try again.');
         }
       },
       error: (error) => {
         this.payingOrderId = null;
-        alert(error?.error?.error || 'Could not start the payment. Please try again.');
+        notify(error?.error?.error || 'Could not start the payment. Please try again.', 'error');
       }
     });
   }

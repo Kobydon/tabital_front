@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-make-payment',
   templateUrl: './make-payment.component.html',
@@ -56,10 +57,10 @@ export class MakePaymentComponent implements OnInit {
     if (enable && !confirm(`Charge card ending ${card.last4} automatically on each due date?`)) return;
     this.customerService.updateSavedCard(card.id, { autopay_enabled: enable }).subscribe({
       next: (res: any) => {
-        alert(res?.message || 'Saved');
+        notify(res?.message || 'Saved');
         this.loadSavedCards();
       },
-      error: (error) => alert(error?.error?.error || 'Could not update autopay')
+      error: (error) => notify(error?.error?.error || 'Could not update autopay', 'error')
     });
   }
 
@@ -67,7 +68,7 @@ export class MakePaymentComponent implements OnInit {
     if (!confirm(`Remove card ending ${card.last4}? Autopay will stop for this card.`)) return;
     this.customerService.removeSavedCard(card.id).subscribe({
       next: () => this.loadSavedCards(),
-      error: (error) => alert(error?.error?.error || 'Could not remove the card')
+      error: (error) => notify(error?.error?.error || 'Could not remove the card', 'error')
     });
   }
 
@@ -127,12 +128,12 @@ export class MakePaymentComponent implements OnInit {
           window.location.href = res.authorization_url;
         } else {
           this.isRedirecting = false;
-          alert('Could not start the payment. Please try again.');
+          notify('Could not start the payment. Please try again.');
         }
       },
       error: (error) => {
         this.isRedirecting = false;
-        alert(error?.error?.error || 'Could not start the payment. Please try again.');
+        notify(error?.error?.error || 'Could not start the payment. Please try again.', 'error');
       }
     });
   }
@@ -152,12 +153,12 @@ export class MakePaymentComponent implements OnInit {
     this.customerService.makeOnePayment(paymentData).subscribe({
       next: (response: any) => {
         this.isProcessing = false;
-        alert(response?.message || 'Payment submitted for verification.');
+        notify(response?.message || 'Payment submitted for verification.');
         this.router.navigate(['/customer/instalments']);
       },
       error: (error) => {
         this.isProcessing = false;
-        alert(error?.error?.error || 'Could not submit your payment. Please try again.');
+        notify(error?.error?.error || 'Could not submit your payment. Please try again.', 'error');
       }
     });
   }

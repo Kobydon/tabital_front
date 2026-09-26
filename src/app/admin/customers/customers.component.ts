@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { notify } from 'src/app/shared/notify';
 export interface Customer {
   id: number;
   customer_id: string;
@@ -490,7 +491,7 @@ export class CustomersComponent implements OnInit {
   }
 
   showSuccessMessage(message: string): void {
-    alert(message);
+    notify(message);
   }
 
   handleError(error: any): void {
@@ -503,6 +504,6 @@ export class CustomersComponent implements OnInit {
     } else if (error.error?.message) {
       message = error.error.message;
     }
-    alert(message);
+    notify(message);
   }
 }

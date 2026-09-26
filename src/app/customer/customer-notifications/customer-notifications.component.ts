@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface NotificationMessage {
   id: number;
   notification_id: string;
@@ -331,11 +332,11 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
   saveSettings(): void {
     this.customerService.updateNotificationSettings(this.settingsForm.value).subscribe({
       next: (response) => {
-        alert('Notification settings saved successfully!');
+        notify('Notification settings saved successfully!');
       },
       error: (error) => {
         console.error('Error saving notification settings:', error);
-        alert('Failed to save settings. Please try again.');
+        notify('Failed to save settings. Please try again.', 'error');
       }
     });
   }

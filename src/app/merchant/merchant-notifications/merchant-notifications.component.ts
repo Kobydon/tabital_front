@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 export type FilterStatus = 'all' | 'unread' | 'read';
 export type NotificationType = 'order' | 'payment' | 'kyc' | 'settlement' | 'warning' | 'success' | 'system';
 
@@ -319,11 +320,11 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   saveSettings(): void {
     this.merchantService.updateMerchantNotificationSettings(this.settingsForm.value).subscribe({
       next: (response) => {
-        alert('Notification settings saved successfully!');
+        notify('Notification settings saved successfully!');
       },
       error: (error) => {
         console.error('Error saving notification settings:', error);
-        alert('Failed to save settings. Please try again.');
+        notify('Failed to save settings. Please try again.', 'error');
       }
     });
   }

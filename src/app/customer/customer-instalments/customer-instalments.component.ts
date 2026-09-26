@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export type PlanStatus = 'all' | 'active' | 'completed' | 'overdue';
 
 export interface InstalmentPlan {
@@ -293,13 +294,13 @@ loadInstalmentPlans(): void {
         this.isSubmittingDispute = false;
         this.showDisputeForm = false;
         this.disputeForm.reset({ reason: 'product_not_received', description: '' });
-        alert(res?.message || 'Report sent. Your payments are paused while we review it.');
+        notify(res?.message || 'Report sent. Your payments are paused while we review it.');
         this.closeModals();
         this.loadInstalmentPlans();
       },
       error: (error) => {
         this.isSubmittingDispute = false;
-        alert(error?.error?.error || 'Could not send your report. Please try again.');
+        notify(error?.error?.error || 'Could not send your report. Please try again.', 'error');
       }
     });
   }
@@ -319,7 +320,7 @@ loadInstalmentPlans(): void {
       },
       error: (error) => {
         console.error('Error downloading receipt:', error);
-        alert('Failed to download receipt.');
+        notify('Failed to download receipt.', 'error');
       }
     });
   }

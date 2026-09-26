@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
 
+import { notify } from 'src/app/shared/notify';
 interface Customer {
   id: number;
   customer_id: string;
@@ -199,7 +200,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading customer details:', error);
-        alert('Failed to load customer details');
+        notify('Failed to load customer details', 'error');
       }
     });
   }
@@ -223,7 +224,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     this.adminService.updateCustomerStatus(this.selectedCustomer.customer.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Customer status updated successfully');
+        notify('Customer status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadCustomers();
         this.loadCustomerStats();
@@ -231,7 +232,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify('Failed to update status', 'error');
       }
     });
   }
@@ -261,14 +262,14 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response: any) => {
         this.isSubmitting = false;
-        alert(response?.message || 'Credit limit updated');
+        notify(response?.message || 'Credit limit updated');
         this.showUpdateLimitModal = false;
         this.loadCustomers();
         this.loadUnderwriting(customerId);
       },
       error: (error) => {
         this.isSubmitting = false;
-        alert(error?.error?.error || 'Failed to update credit limit');
+        notify(error?.error?.error || 'Failed to update credit limit', 'error');
       }
     });
   }
@@ -301,7 +302,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isSubmitting = false;
-        alert(error?.error?.error || 'Failed to save employment verification');
+        notify(error?.error?.error || 'Failed to save employment verification', 'error');
       }
     });
   }
@@ -321,7 +322,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isSubmitting = false;
-        alert(error?.error?.error || 'Failed to verify salary');
+        notify(error?.error?.error || 'Failed to verify salary', 'error');
       }
     });
   }
@@ -338,7 +339,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isSubmitting = false;
-        alert(error?.error?.error || 'Failed to re-run the assessment');
+        notify(error?.error?.error || 'Failed to re-run the assessment', 'error');
       }
     });
   }
@@ -358,13 +359,13 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     this.adminService.addCustomerNote(this.selectedCustomer.customer.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Note added successfully');
+        notify('Note added successfully');
         this.showAddNoteModal = false;
       },
       error: (error) => {
         console.error('Error adding note:', error);
         this.isSubmitting = false;
-        alert('Failed to add note');
+        notify('Failed to add note', 'error');
       }
     });
   }
@@ -388,11 +389,11 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Customers exported successfully!');
+        notify('Customers exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting customers:', error);
-        alert('Failed to export customers');
+        notify('Failed to export customers', 'error');
       }
     });
   }

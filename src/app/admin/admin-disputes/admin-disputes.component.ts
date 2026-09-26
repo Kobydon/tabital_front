@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 
+import { notify } from 'src/app/shared/notify';
 /**
  * Buyer-protection disputes (Phase 4). Opening a dispute pauses the plan; resolving it
  * either resumes payments (merchant won, due dates moved forward by the pause) or writes off
@@ -66,13 +67,13 @@ export class AdminDisputesComponent implements OnInit {
     this.adminService.resolveDispute(this.selected.id, { outcome: this.outcome, notes: this.notes.trim() }).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
-        alert(res?.message || 'Dispute resolved');
+        notify(res?.message || 'Dispute resolved');
         this.selected = null;
         this.load();
       },
       error: (error) => {
         this.isSubmitting = false;
-        alert(error?.error?.error || 'Could not resolve the dispute');
+        notify(error?.error?.error || 'Could not resolve the dispute', 'error');
       }
     });
   }
@@ -87,7 +88,7 @@ export class AdminDisputesComponent implements OnInit {
       },
       error: (error) => {
         this.isRunningServicing = false;
-        alert(error?.error?.error || 'Servicing run failed');
+        notify(error?.error?.error || 'Servicing run failed', 'error');
       }
     });
   }

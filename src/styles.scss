@@ -105,6 +105,29 @@ a {
   }
 }
 
+/* Toasts (shared/notify.ts) in brand colours; all pass AA with white text */
+#toast-container {
+  > div {
+    opacity: 1;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(2, 22, 63, 0.18);
+    font-family: var(--tp-font-body);
+    width: min(360px, calc(100vw - 32px));
+  }
+  > div:hover { box-shadow: 0 8px 24px rgba(2, 22, 63, 0.25); }
+  .toast-title { font-family: var(--tp-font-heading); font-weight: 600; }
+  .toast-message { white-space: pre-line; line-height: 1.4; }
+  .toast-success { background-color: var(--tp-success); }
+  .toast-error { background-color: var(--tp-error); }
+  .toast-warning { background-color: var(--tp-warn); }
+  .toast-info { background-color: var(--tp-navy-2); }
+  .toast-progress { background-color: var(--tp-gold); opacity: 0.9; }
+}
+
+@media (max-width: 480px) {
+  #toast-container.toast-top-right { top: 12px; right: 16px; left: 16px; }
+}
+
 /* Key facts block on checkout screens (§10 disclosures) */
 .key-facts {
   background: var(--tp-surface);

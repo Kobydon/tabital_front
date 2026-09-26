@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+import { notify } from 'src/app/shared/notify';
 interface OverduePayment {
   id: number;
   payment_id: string;
@@ -180,7 +181,7 @@ export class AdminCollectionComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading payment details:', error);
-        alert('Failed to load payment details');
+        notify('Failed to load payment details', 'error');
       }
     });
   }
@@ -204,13 +205,13 @@ export class AdminCollectionComponent implements OnInit {
     this.adminService.sendPaymentReminder(this.selectedPayment.payment.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert(`Reminder sent via ${data.reminder_type}`);
+        notify(`Reminder sent via ${data.reminder_type}`);
         this.showReminderModal = false;
       },
       error: (error) => {
         console.error('Error sending reminder:', error);
         this.isSubmitting = false;
-        alert('Failed to send reminder');
+        notify('Failed to send reminder', 'error');
       }
     });
   }
@@ -234,7 +235,7 @@ export class AdminCollectionComponent implements OnInit {
     this.adminService.markPaymentReceived(this.selectedPayment.payment.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Payment marked as received');
+        notify('Payment marked as received');
         this.showMarkReceivedModal = false;
         this.loadOverduePayments();
         this.loadCollectionStats();
@@ -242,7 +243,7 @@ export class AdminCollectionComponent implements OnInit {
       error: (error) => {
         console.error('Error marking payment:', error);
         this.isSubmitting = false;
-        alert('Failed to mark payment');
+        notify('Failed to mark payment', 'error');
       }
     });
   }
@@ -262,13 +263,13 @@ export class AdminCollectionComponent implements OnInit {
     this.adminService.setPaymentPlan(this.selectedPayment.payment.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Payment plan arranged successfully');
+        notify('Payment plan arranged successfully');
         this.showPaymentPlanModal = false;
       },
       error: (error) => {
         console.error('Error setting payment plan:', error);
         this.isSubmitting = false;
-        alert('Failed to set payment plan');
+        notify('Failed to set payment plan', 'error');
       }
     });
   }
@@ -288,11 +289,11 @@ export class AdminCollectionComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Overdue payments exported successfully!');
+        notify('Overdue payments exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting overdue payments:', error);
-        alert('Failed to export overdue payments');
+        notify('Failed to export overdue payments', 'error');
       }
     });
   }

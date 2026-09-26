@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface PaymentTransaction {
   id: number;
   payment_id: string;
@@ -211,7 +212,7 @@ downloadReceipt(transaction: PaymentTransaction): void {
     },
     error: (error) => {
       console.error('Error downloading receipt:', error);
-      alert('Failed to download receipt.');
+      notify('Failed to download receipt.', 'error');
     }
   });
 }
@@ -235,7 +236,7 @@ downloadReceipt(transaction: PaymentTransaction): void {
       },
       error: (error) => {
         console.error('Error exporting transactions:', error);
-        alert('Failed to export.');
+        notify('Failed to export.', 'error');
       }
     });
   }

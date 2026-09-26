@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { notify } from 'src/app/shared/notify';
 interface Merchant {
   id: number;
   merchant_id: string;
@@ -207,7 +208,7 @@ formatDate(dateString: string): string {
       },
       error: (error) => {
         console.error('Error loading merchant details:', error);
-        alert('Failed to load merchant details');
+        notify('Failed to load merchant details', 'error');
       }
     });
   }
@@ -231,7 +232,7 @@ formatDate(dateString: string): string {
     this.adminService.updateMerchantStatus(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Merchant status updated successfully');
+        notify('Merchant status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadMerchants();
         this.loadMerchantStats();
@@ -239,7 +240,7 @@ formatDate(dateString: string): string {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify('Failed to update status', 'error');
       }
     });
   }
@@ -262,14 +263,14 @@ formatDate(dateString: string): string {
     this.adminService.updateMerchantCommission(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Commission rate updated successfully');
+        notify('Commission rate updated successfully');
         this.showUpdateCommissionModal = false;
         this.loadMerchants();
       },
       error: (error) => {
         console.error('Error updating commission:', error);
         this.isSubmitting = false;
-        alert('Failed to update commission rate');
+        notify('Failed to update commission rate', 'error');
       }
     });
   }
@@ -289,13 +290,13 @@ formatDate(dateString: string): string {
     this.adminService.adjustMerchantReserve(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Reserve amount adjusted successfully');
+        notify('Reserve amount adjusted successfully');
         this.showAdjustReserveModal = false;
       },
       error: (error) => {
         console.error('Error adjusting reserve:', error);
         this.isSubmitting = false;
-        alert('Failed to adjust reserve');
+        notify('Failed to adjust reserve', 'error');
       }
     });
   }
@@ -325,11 +326,11 @@ formatDate(dateString: string): string {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Merchants exported successfully!');
+        notify('Merchants exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting merchants:', error);
-        alert('Failed to export merchants');
+        notify('Failed to export merchants', 'error');
       }
     });
   }

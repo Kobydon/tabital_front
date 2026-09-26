@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 interface Dispute {
   id: number;
   dispute_id: string;
@@ -209,7 +210,7 @@ export class MerchantDisputesComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading dispute details:', error);
-        alert('Failed to load dispute details');
+        notify('Failed to load dispute details', 'error');
       }
     });
   }
@@ -227,11 +228,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showResponseModal = false;
-          alert('Response submitted successfully');
+          notify('Response submitted successfully');
         },
         error: (error: any) => {
           console.error('Error submitting response:', error);
-          alert('Failed to submit response');
+          notify('Failed to submit response', 'error');
         }
       });
     }
@@ -253,11 +254,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showAcceptModal = false;
-          alert('Dispute accepted and refund processed');
+          notify('Dispute accepted and refund processed');
         },
         error: (error: any) => {
           console.error('Error accepting dispute:', error);
-          alert('Failed to accept dispute');
+          notify('Failed to accept dispute', 'error');
         }
       });
     }
@@ -276,11 +277,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showRejectModal = false;
-          alert('Dispute rejected');
+          notify('Dispute rejected');
         },
         error: (error: any) => {
           console.error('Error rejecting dispute:', error);
-          alert('Failed to reject dispute');
+          notify('Failed to reject dispute', 'error');
         }
       });
     }
@@ -299,11 +300,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showEscalateModal = false;
-          alert('Dispute escalated to admin');
+          notify('Dispute escalated to admin');
         },
         error: (error: any) => {
           console.error('Error escalating dispute:', error);
-          alert('Failed to escalate dispute');
+          notify('Failed to escalate dispute', 'error');
         }
       });
     }

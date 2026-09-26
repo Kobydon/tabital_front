@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
+import { notify } from 'src/app/shared/notify';
 // import { AdminService } from '../../admin.service';
 
 export interface AdminOrder {
@@ -202,13 +203,13 @@ export class AdminOrdersComponent implements OnInit {
         this.isProcessing = false;
         this.showApproveModal = false;
         this.loadOrders();
-        alert(response?.down_payment_status === 'paid'
+        notify(response?.down_payment_status === 'paid'
           ? 'Order approved. Down payment recorded as received.'
           : 'Order approved. The down payment is awaiting verification in Instalments.');
       },
       error: (error) => {
         this.isProcessing = false;
-        alert(error?.error?.error || error?.message || 'Failed to approve order. Please try again.');
+        notify(error?.error?.error || error?.message || 'Failed to approve order. Please try again.', 'error');
       }
     });
   }
@@ -228,12 +229,12 @@ export class AdminOrdersComponent implements OnInit {
         this.showRejectModal = false;
         this.loadOrders();
         // The message says whether the down payment was refunded automatically
-        alert(response?.message || 'Order rejected successfully!');
+        notify(response?.message || 'Order rejected successfully!');
       },
       error: (error) => {
         console.error('Error rejecting order:', error);
         this.isProcessing = false;
-        alert('Failed to reject order. Please try again.');
+        notify('Failed to reject order. Please try again.', 'error');
       }
     });
   }
@@ -267,7 +268,7 @@ export class AdminOrdersComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error exporting orders:', error);
-        alert('Failed to export orders.');
+        notify('Failed to export orders.', 'error');
       }
     });
   }

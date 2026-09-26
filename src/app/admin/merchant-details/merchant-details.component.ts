@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AdminService, Merchant, Transaction } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+import { notify } from 'src/app/shared/notify';
 export interface Document {
   id: number;
   document_id: string;
@@ -530,14 +531,14 @@ export class MerchantDetailsComponent implements OnInit {
   }
 
   showSuccessMessage(message: string): void {
-    alert(message);
+    notify(message);
   }
 
   showErrorMessage(message: string): void {
-    alert(message);
+    notify(message);
   }
 
   showInfoMessage(message: string): void {
-    alert(message);
+    notify(message);
   }
 }

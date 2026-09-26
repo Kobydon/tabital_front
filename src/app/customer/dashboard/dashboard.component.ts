@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface DashboardStats {
   total_outstanding: number;
   total_outstanding_plans_count: number;
@@ -407,10 +408,10 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   requestPaymentReminder(): void {
     this.customerService.requestPaymentReminder().subscribe({
-      next: () => alert('Payment reminder has been sent to your email and phone.'),
+      next: () => notify('Payment reminder has been sent to your email and phone.'),
       error: (error) => {
         console.error('Error requesting payment reminder:', error);
-        alert('Failed to send payment reminder. Please try again.');
+        notify('Failed to send payment reminder. Please try again.', 'error');
       }
     });
   }
@@ -421,7 +422,7 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   copyToClipboard(text: string): void {
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+    navigator.clipboard.writeText(text).then(() => notify('Copied to clipboard!'));
   }
 
   upgradeKYC(): void {

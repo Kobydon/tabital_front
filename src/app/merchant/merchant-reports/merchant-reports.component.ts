@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-merchant-reports',
   templateUrl: './merchant-reports.component.html',
@@ -429,11 +430,11 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
         a.download = `${type}_report_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('Export started');
+        notify('Export started');
       },
       error: (error) => {
         console.error('Error exporting report:', error);
-        alert('Failed to export report');
+        notify('Failed to export report', 'error');
       }
     });
   }

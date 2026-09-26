@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
@@ -613,7 +614,7 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.auth.register(customerData).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        alert('Registration successful! Please login to continue.');
+        notify('Registration successful! Please login to continue.');
         this.router.navigate(['/login']);
       },
       error: (err) => {
@@ -652,7 +653,7 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.auth.register(merchantData).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        alert('Registration successful! Please wait for admin approval.');
+        notify('Registration successful! Please wait for admin approval.');
         this.router.navigate(['/login']);
       },
       error: (err) => {

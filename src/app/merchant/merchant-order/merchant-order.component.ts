@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface MerchantOrder {
   id: number;
   order_id: string;
@@ -189,12 +190,12 @@ export class MerchantOrdersComponent implements OnInit {
         this.isUpdating = false;
         this.showDeliveryModal = false;
         this.loadOrders();
-        alert('Delivery status updated successfully!');
+        notify('Delivery status updated successfully!');
       },
       error: (error) => {
         console.error('Error updating delivery:', error);
         this.isUpdating = false;
-        alert('Failed to update delivery status.');
+        notify('Failed to update delivery status.', 'error');
       }
     });
   }

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-merchant-instalments',
   templateUrl: './merchant-instalments.component.html',
@@ -110,11 +111,11 @@ export class MerchantInstalmentsComponent implements OnInit {
           this.loadInstalments();
           this.showCreateModal = false;
           this.createForm.reset();
-          alert('Instalment plan created successfully');
+          notify('Instalment plan created successfully');
         },
         error: (error) => {
           console.error('Error creating instalment:', error);
-          alert('Failed to create instalment plan');
+          notify('Failed to create instalment plan', 'error');
         }
       });
     }
@@ -126,11 +127,11 @@ export class MerchantInstalmentsComponent implements OnInit {
         next: () => {
           this.loadInstalments();
           this.showEditModal = false;
-          alert('Instalment plan updated successfully');
+          notify('Instalment plan updated successfully');
         },
         error: (error) => {
           console.error('Error updating instalment:', error);
-          alert('Failed to update instalment plan');
+          notify('Failed to update instalment plan', 'error');
         }
       });
     }
@@ -142,11 +143,11 @@ export class MerchantInstalmentsComponent implements OnInit {
         next: () => {
           this.loadInstalments();
           this.showDeleteModal = false;
-          alert('Instalment plan deleted successfully');
+          notify('Instalment plan deleted successfully');
         },
         error: (error) => {
           console.error('Error deleting instalment:', error);
-          alert('Failed to delete instalment plan');
+          notify('Failed to delete instalment plan', 'error');
         }
       });
     }
@@ -164,11 +165,11 @@ export class MerchantInstalmentsComponent implements OnInit {
           this.loadInstalments();
           this.showPaymentModal = false;
           this.paymentForm.reset();
-          alert('Payment recorded successfully');
+          notify('Payment recorded successfully');
         },
         error: (error) => {
           console.error('Error recording payment:', error);
-          alert('Failed to record payment');
+          notify('Failed to record payment', 'error');
         }
       });
     }
@@ -183,7 +184,7 @@ export class MerchantInstalmentsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading details:', error);
-        alert('Failed to load instalment details');
+        notify('Failed to load instalment details', 'error');
       }
     });
   }

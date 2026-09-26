@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService, CustomerProfile } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface KYCStatus {
   status: 'pending' | 'verified' | 'rejected' | 'not_submitted';
   level: 'basic' | 'standard' | 'verified';
@@ -136,11 +137,11 @@ export class CustomerProfileComponent implements OnInit {
       next: (res: any) => {
         this.isSavingCredit = false;
         this.credit = res;
-        alert(res?.message || 'Details saved');
+        notify(res?.message || 'Details saved');
       },
       error: (error) => {
         this.isSavingCredit = false;
-        alert(error?.error?.error || 'Could not save your details');
+        notify(error?.error?.error || 'Could not save your details', 'error');
       }
     });
   }

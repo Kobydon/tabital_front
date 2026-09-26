@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService } from 'src/app/auth/auth.service';
 import { AdminService } from 'src/app/admin/admin.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface Product {
   id: number;
   product_id: string;
@@ -412,11 +413,11 @@ export class ProductComponent implements OnInit {
   }
 
   showSuccess(message: string): void {
-    alert(message);
+    notify(message);
   }
 
   showError(message: string): void {
-    alert(message);
+    notify(message);
   }
 
   closeModals(): void {

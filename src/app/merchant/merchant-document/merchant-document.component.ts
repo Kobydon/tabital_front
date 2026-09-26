@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface MerchantDocument {
   id: number;
   document_id: string;
@@ -271,7 +272,7 @@ export class MerchantDocumentComponent implements OnInit {
   onFileSelected(event: Event, type: string): void {
     // Check if upload is allowed
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -286,7 +287,7 @@ export class MerchantDocumentComponent implements OnInit {
       const validation = this.validateFile(file);
       if (!validation.valid) {
         this.validationErrors.push({ field: type, message: validation.error! });
-        alert(validation.error);
+        notify(validation.error);
         input.value = '';
         return;
       }
@@ -367,7 +368,7 @@ export class MerchantDocumentComponent implements OnInit {
 
   uploadDocuments(): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -377,7 +378,7 @@ export class MerchantDocumentComponent implements OnInit {
     if (!this.isFormComplete()) {
       const missing = this.getMissingDocuments();
       this.uploadError = `Missing required documents:\n• ${missing.join('\n• ')}`;
-      alert(this.uploadError);
+      notify(this.uploadError);
       return;
     }
     
@@ -397,7 +398,7 @@ export class MerchantDocumentComponent implements OnInit {
     this.merchantService.uploadMerchantDocuments(formData).subscribe({
       next: (response) => {
         this.isUploading = false;
-        alert('✅ Documents uploaded successfully! Your verification is pending review.');
+        notify('✅ Documents uploaded successfully! Your verification is pending review.');
         this.resetForm();
         this.loadDocuments();
         this.loadKYCStatus();
@@ -414,7 +415,7 @@ export class MerchantDocumentComponent implements OnInit {
         }
         
         this.uploadError = errorMessage;
-        alert(`❌ Upload failed: ${errorMessage}`);
+        notify(`❌ Upload failed: ${errorMessage}`, 'error');
       }
     });
   }
@@ -426,13 +427,13 @@ export class MerchantDocumentComponent implements OnInit {
     this.merchantService.updateBankDetails(bankData).subscribe({
       next: (response) => {
         this.isSavingBankDetails = false;
-        alert('Bank details saved successfully!');
+        notify('Bank details saved successfully!');
         this.showBankDetailsForm = true;
       },
       error: (error) => {
         console.error('Error saving bank details:', error);
         this.isSavingBankDetails = false;
-        alert('Failed to save bank details. Please try again.');
+        notify('Failed to save bank details. Please try again.', 'error');
       }
     });
   }

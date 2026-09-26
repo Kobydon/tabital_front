@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
+import { notify } from 'src/app/shared/notify';
 export interface MerchantKYC {
   merchant_id: number;
   merchant_name: string;
@@ -167,14 +168,14 @@ export class ApproveKybKycComponent implements OnInit {
     this.adminService.approveMerchantKYC(this.selectedMerchant.merchant_id).subscribe({
       next: (response) => {
         this.isProcessing = false;
-        alert('✅ Merchant KYC approved successfully!');
+        notify('✅ Merchant KYC approved successfully!');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error) => {
         console.error('Error approving merchant:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve merchant. Please try again.');
+        notify('❌ Failed to approve merchant. Please try again.', 'error');
       }
     });
   }
@@ -208,28 +209,28 @@ export class ApproveKybKycComponent implements OnInit {
       this.adminService.rejectMerchantKYC(this.selectedMerchant.merchant_id, reason).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          alert('❌ Merchant KYC rejected.');
+          notify('❌ Merchant KYC rejected.');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error) => {
           console.error('Error rejecting merchant:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject merchant. Please try again.');
+          notify('❌ Failed to reject merchant. Please try again.', 'error');
         }
       });
     } else if (this.rejectType === 'document' && this.selectedDocument) {
       this.adminService.rejectDocument(this.selectedDocument.id, reason).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          alert('❌ Document rejected.');
+          notify('❌ Document rejected.');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error) => {
           console.error('Error rejecting document:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject document. Please try again.');
+          notify('❌ Failed to reject document. Please try again.', 'error');
         }
       });
     }
@@ -291,7 +292,7 @@ export class ApproveKybKycComponent implements OnInit {
 
   downloadDocument(): void {
     if (!this.selectedDocument || !this.selectedDocument.file_data) {
-      alert('No document data available for download');
+      notify('No document data available for download');
       return;
     }
     
@@ -314,7 +315,7 @@ export class ApproveKybKycComponent implements OnInit {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading document:', error);
-      alert('Failed to download document. Please try again.');
+      notify('Failed to download document. Please try again.', 'error');
     }
   }
 
@@ -331,14 +332,14 @@ export class ApproveKybKycComponent implements OnInit {
     this.adminService.approveDocument(this.selectedDocument.id).subscribe({
       next: (response) => {
         this.isProcessing = false;
-        alert('✅ Document approved successfully!');
+        notify('✅ Document approved successfully!');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error) => {
         console.error('Error approving document:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve document. Please try again.');
+        notify('❌ Failed to approve document. Please try again.', 'error');
       }
     });
   }

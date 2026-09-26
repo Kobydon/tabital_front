@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+import { notify } from 'src/app/shared/notify';
 interface User {
   id: number;
   user_id: string;
@@ -179,7 +180,7 @@ export class AllUsersComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading user details:', error);
-        alert('Failed to load user details');
+        notify('Failed to load user details', 'error');
       }
     });
   }
@@ -203,7 +204,7 @@ export class AllUsersComponent implements OnInit {
     this.adminService.updateUserStatus(this.selectedUser.user.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('User status updated successfully');
+        notify('User status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadUsers();
         this.loadUserStats();
@@ -211,7 +212,7 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update user status');
+        notify('Failed to update user status', 'error');
       }
     });
   }
@@ -227,7 +228,7 @@ export class AllUsersComponent implements OnInit {
     this.adminService.deleteUser(this.selectedUser.user.id).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('User deactivated successfully');
+        notify('User deactivated successfully');
         this.showDeleteConfirmModal = false;
         this.loadUsers();
         this.loadUserStats();
@@ -235,7 +236,7 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error deleting user:', error);
         this.isSubmitting = false;
-        alert('Failed to deactivate user');
+        notify('Failed to deactivate user', 'error');
       }
     });
   }
@@ -256,11 +257,11 @@ export class AllUsersComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Users exported successfully!');
+        notify('Users exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting users:', error);
-        alert('Failed to export users');
+        notify('Failed to export users', 'error');
       }
     });
   }

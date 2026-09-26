@@ -5,6 +5,7 @@ import { CustomerService } from '../../customers.service';
 import { Router } from '@angular/router';
 import { AdminService } from 'src/app/admin/admin.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface Product {
   id: number;
   product_id: string;
@@ -276,7 +277,7 @@ export class CustomerShopComponent implements OnInit {
       },
       error: () => {
         this.isCalculating = false;
-        alert('We could not calculate this payment plan right now. Please try again.');
+        notify('We could not calculate this payment plan right now. Please try again.', 'error');
       }
     });
   }
@@ -295,7 +296,7 @@ export class CustomerShopComponent implements OnInit {
   selectInstallment(months: number): void {
     const option = this.installmentOptions.find(opt => opt.months === months);
     if (option && !option.is_active) {
-      alert(`${option.label} is coming soon! Please select another payment plan.`);
+      notify(`${option.label} is coming soon! Please select another payment plan.`);
       return;
     }
     
@@ -346,7 +347,7 @@ export class CustomerShopComponent implements OnInit {
     }
     const blocked = this.creditBlockReason();
     if (blocked) {
-      alert(blocked);
+      notify(blocked);
       return;
     }
     
@@ -378,13 +379,13 @@ export class CustomerShopComponent implements OnInit {
         this.isPurchasing = false;
         this.showCheckoutModal = false;
         this.showProductModal = false;
-        alert(response?.message || 'Order placed successfully! Waiting for admin approval.');
+        notify(response?.message || 'Order placed successfully! Waiting for admin approval.');
         this.router.navigate(['/customer/orders']);
       },
       error: (error) => {
         this.isPurchasing = false;
         const reasons: string[] = error?.error?.reasons || [];
-        alert([error?.error?.error || 'Failed to place order. Please try again.', ...reasons].join('\n• '));
+        notify([error?.error?.error || 'Failed to place order. Please try again.', ...reasons].join('\n• '), 'error');
       }
     });
   }

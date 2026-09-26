@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import Chart from 'chart.js/auto';
 import { saveAs } from 'file-saver';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-reports-analytics',
   templateUrl: './reports-analytics.component.html',
@@ -508,7 +509,7 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
       },
       error: (error) => {
         console.error('Error downloading report:', error);
-        alert('Failed to download report');
+        notify('Failed to download report', 'error');
       }
     });
   }
