@@ -821,6 +821,24 @@ getSettlementStats(): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// Phase 5: settlement batches (reviewed and approved here, paid by Paystack transfer)
+getSettlementBatches(status?: string): Observable<any> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+  return this.http.get(`${this.API}/admin/settlement-batches${qs}`, { headers: this.getAuthHeaders() });
+}
+
+getSettlementBatch(id: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/settlement-batches/${id}`, { headers: this.getAuthHeaders() });
+}
+
+generateSettlementBatches(): Observable<any> {
+  return this.http.post(`${this.API}/admin/settlement-batches/generate`, {}, { headers: this.getAuthHeaders() });
+}
+
+approveSettlementBatch(id: number): Observable<any> {
+  return this.http.post(`${this.API}/admin/settlement-batches/${id}/approve`, {}, { headers: this.getAuthHeaders() });
+}
+
 getAllSettlements(filters?: any): Observable<any> {
   let url = `${this.API}/admin/settlements`;
   if (filters) {

@@ -548,3 +548,79 @@
     background: #e9ecef;
   }
 }
+/* ---- Phase 5 additions ---- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 20px;
+  button {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    &.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+  }
+}
+
+.notice {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  &.warn { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+  &.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  &.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+a.action-btn { text-decoration: none; display: inline-flex; align-items: center; }
+.summary-value.small { font-size: 16px; }
+.sub-note { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.status-badge.status-failed { background: #f8d7da; color: #721c24; }
+
+.type-pill {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: capitalize;
+  background: #eef2ff;
+  color: #3730a3;
+  &.type-clawback { background: #fef2f2; color: #991b1b; }
+  &.type-payout { background: #f0fdf4; color: #166534; }
+}
+
+.account-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 560px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  select, input[type="text"], input[type="tel"] { width: 100%; }
+}
+
+.radio-row {
+  display: flex;
+  gap: 24px;
+  label { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+}
+
+.hint.error { color: #b91c1c; }
+
+@media (max-width: 640px) {
+  .settlements-container { padding: 16px; }
+  .tabs { overflow-x: auto; }
+}

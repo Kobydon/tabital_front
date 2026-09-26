@@ -1,0 +1,83 @@
+<div class="settlements-container">
+  <div class="header">
+    <div class="header-left"><h1 class="title"><span class="icon">🔗</span> Payment links</h1></div>
+  </div>
+
+  <div class="info-box">
+    <p>Make a link or QR code for one product. The customer scans it in your shop (or opens it on WhatsApp), signs in,
+      pays the down payment and picks up the item. Each link works once.</p>
+  </div>
+
+  <div class="links-layout">
+    <!-- Create -->
+    <div class="account-card">
+      <h3>New link</h3>
+      <div class="form-group">
+        <label>Product</label>
+        <select [(ngModel)]="form.product_id">
+          <option [ngValue]="null">Choose a product…</option>
+          <option *ngFor="let p of products" [ngValue]="p.id">{{ p.name }} · {{ formatCurrency(p.price) }}</option>
+        </select>
+        <small class="hint" *ngIf="products.length === 0">No active products in stock. Add one under Products.</small>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" min="1" [max]="selectedProduct?.stock_quantity || 1" [(ngModel)]="form.quantity">
+        </div>
+        <div class="form-group">
+          <label>Expires after</label>
+          <select [(ngModel)]="form.expires_in_hours">
+            <option *ngFor="let o of expiryOptions" [ngValue]="o.h">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <input type="text" maxlength="200" placeholder="e.g. Counter 2, colour black" [(ngModel)]="form.note">
+      </div>
+      <div class="notice error" *ngIf="error">{{ error }}</div>
+      <button class="btn-primary" [disabled]="!form.product_id || creating" (click)="create()">
+        {{ creating ? 'Creating…' : 'Create link & QR code' }}
+      </button>
+    </div>
+
+    <!-- Show QR -->
+    <div class="account-card qr-card" *ngIf="shown">
+      <h3>{{ shown.product_name }} <span *ngIf="shown.quantity > 1">× {{ shown.quantity }}</span></h3>
+      <div class="price">{{ formatCurrency(shown.price * shown.quantity) }}</div>
+      <img *ngIf="qrUrl" [src]="qrUrl" alt="QR code for this payment link" class="qr">
+      <div class="link-url">{{ shown.url }}</div>
+      <div class="sub-note">Expires {{ formatDateTime(shown.expires_at) }}</div>
+      <div class="qr-actions">
+        <button class="action-btn secondary" (click)="copy(shown)">{{ copied ? '✅ Copied' : '📋 Copy link' }}</button>
+        <a class="action-btn secondary" [href]="whatsappUrl(shown)" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <button class="action-btn secondary" (click)="downloadQr(shown)">⬇️ QR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- List -->
+  <h3 class="section-title">Recent links</h3>
+  <div *ngIf="isLoading" class="loading-container"><div class="spinner"></div></div>
+  <div class="table-wrapper" *ngIf="!isLoading && links.length > 0">
+    <table class="settlements-table">
+      <thead><tr><th>Product</th><th>Qty</th><th>Amount</th><th>Note</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of links">
+          <td>{{ l.product_name }}</td>
+          <td>{{ l.quantity }}</td>
+          <td class="amount">{{ formatCurrency(l.price * l.quantity) }}</td>
+          <td>{{ l.note || '—' }}</td>
+          <td>{{ formatDateTime(l.expires_at) }}</td>
+          <td><span class="status-badge" [ngClass]="l.usable ? 'status-paid' : 'status-default'">{{ statusLabel(l) }}</span></td>
+          <td class="actions">
+            <button class="action-icon view" *ngIf="l.usable" (click)="open(l)" title="Show QR">🔍</button>
+            <button class="action-icon" *ngIf="l.usable" (click)="cancel(l)" title="Cancel link">✕</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="empty-state" *ngIf="!isLoading && links.length === 0"><p>No links yet.</p></div>
+</div>

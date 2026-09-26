@@ -713,9 +713,14 @@ getTicketDetails(ticketId: number): Observable<any> {
 // customers.service.ts - Add these methods
 
 // Create purchase order
+// Errors pass through untouched: callers show the server's reason (not eligible, over limit, KYC...)
 createPurchaseOrder(orderData: any): Observable<any> {
-  return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() })
-    .pipe(catchError(this.handleError.bind(this)));
+  return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() });
+}
+
+// Merchant payment link / QR code (in-store sale)
+getPaymentLink(token: string): Observable<any> {
+  return this.http.get(`${this.API}/customer/payment-links/${encodeURIComponent(token)}`, { headers: this.getAuthHeaders() });
 }
 
 // Get customer orders

@@ -18,6 +18,7 @@ import { CustomerShopComponent } from './shop/shop.component';
 import { MakePaymentComponent } from './make-payment/make-payment.component';
 import { CustomerDocumentComponent } from './customer-document/customer-document.component';
 import { PaymentCallbackComponent } from './payment-callback/payment-callback.component';
+import { PayLinkComponent } from './pay-link/pay-link.component';
 // import { CustomerSetingsComponent } from './customer-setings/customer-setings.component';
 
 
@@ -42,7 +43,8 @@ const routes: Routes = [
         { path: 'shop', component: CustomerShopComponent, data: { title: 'Shop' } },
          { path: 'make-payment', component: MakePaymentComponent, data: { title: 'make-payment' } },
          { path: 'documents', component: CustomerDocumentComponent, data: { title: 'Document Verification' } },
-         { path: 'payment-callback', component: PaymentCallbackComponent, data: { title: 'Payment' } }
+         { path: 'payment-callback', component: PaymentCallbackComponent, data: { title: 'Payment' } },
+         { path: 'pay-link/:token', component: PayLinkComponent, data: { title: 'Checkout' } }
       
     ]
   }

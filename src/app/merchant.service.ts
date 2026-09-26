@@ -204,6 +204,53 @@ getSettlementDetails(settlementId: string): Observable<any> {
   return this.http.get(`${this.API}/merchant/settlements/${settlementId}`, { headers: this.getAuthHeaders() });
 }
 
+// Phase 5: payout account, settlement batches, statement, payment links
+
+getPayoutAccount(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/payout-account`, { headers: this.getAuthHeaders() });
+}
+
+updatePayoutAccount(body: any): Observable<any> {
+  return this.http.put(`${this.API}/merchant/payout-account`, body, { headers: this.getAuthHeaders() });
+}
+
+getPayoutBanks(method: 'bank' | 'mobile_money'): Observable<any> {
+  return this.http.get(`${this.API}/merchant/payout-banks?method=${method}`, { headers: this.getAuthHeaders() });
+}
+
+getSettlementBatches(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/settlement-batches`, { headers: this.getAuthHeaders() });
+}
+
+getSettlementBatch(id: number): Observable<any> {
+  return this.http.get(`${this.API}/merchant/settlement-batches/${id}`, { headers: this.getAuthHeaders() });
+}
+
+getStatement(from: string, to: string): Observable<any> {
+  return this.http.get(`${this.API}/merchant/statement?from=${from}&to=${to}`, { headers: this.getAuthHeaders() });
+}
+
+downloadStatementCsv(from: string, to: string): Observable<Blob> {
+  return this.http.get(`${this.API}/merchant/statement?from=${from}&to=${to}&format=csv`,
+    { headers: this.getAuthHeaders(), responseType: 'blob' });
+}
+
+getPaymentLinks(): Observable<any> {
+  return this.http.get(`${this.API}/merchant/payment-links`, { headers: this.getAuthHeaders() });
+}
+
+getPaymentLink(id: number): Observable<any> {
+  return this.http.get(`${this.API}/merchant/payment-links/${id}`, { headers: this.getAuthHeaders() });
+}
+
+createPaymentLink(body: { product_id: number; quantity?: number; note?: string; expires_in_hours?: number }): Observable<any> {
+  return this.http.post(`${this.API}/merchant/payment-links`, body, { headers: this.getAuthHeaders() });
+}
+
+cancelPaymentLink(id: number): Observable<any> {
+  return this.http.delete(`${this.API}/merchant/payment-links/${id}`, { headers: this.getAuthHeaders() });
+}
+
 
 // Add to MerchantService class
 

@@ -20,6 +20,7 @@ import { MerchantSupportComponent } from './merchant-support/merchant-support.co
 import { ProductComponent } from './product/product.component';
 import { MerchantOrdersComponent } from './merchant-order/merchant-order.component';
 import { MerchantDocumentComponent } from './merchant-document/merchant-document.component';
+import { PaymentLinksComponent } from './payment-links/payment-links.component';
 // import { MerchantOrderComponent } from './merchant-order/merchant-order.component';
 
 
@@ -38,7 +39,8 @@ import { MerchantDocumentComponent } from './merchant-document/merchant-document
     MerchantSupportComponent,
     ProductComponent,
     MerchantOrdersComponent,
-    MerchantDocumentComponent
+    MerchantDocumentComponent,
+    PaymentLinksComponent
   ],
   imports: [
     CommonModule,

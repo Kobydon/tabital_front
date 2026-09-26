@@ -1,279 +1,215 @@
 <div class="settlements-container">
-  <!-- Header -->
   <div class="header">
     <div class="header-left">
-      <h1 class="title">
-        <span class="icon">💰</span>
-        Settlements
-      </h1>
-      <div class="stats-badge">
-        <span class="stat-count">{{ totalItems }}</span>
-        <span class="stat-label">Total Settlements</span>
-      </div>
+      <h1 class="title"><span class="icon">💰</span> Settlements</h1>
     </div>
     <div class="header-right">
-      <button class="action-btn primary" (click)="showPayoutModal = true">
-        💸 Request Payout
-      </button>
-      <button class="action-btn secondary" (click)="showSettingsModal = true">
-        ⚙️ Settings
-      </button>
+      <a class="action-btn secondary" routerLink="/merchant/payment-links">🔗 Payment links</a>
     </div>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="summary-header">
-        <span class="summary-icon purple">💰</span>
-        <span class="summary-label">Pending Amount</span>
-      </div>
-      <div class="summary-value">{{ formatCurrency(summary.pending_amount) }}</div>
-      <div class="summary-sub">{{ summary.pending_transactions }} transactions</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-header">
-        <span class="summary-icon blue">📊</span>
-        <span class="summary-label">Commission</span>
-      </div>
-      <div class="summary-value">{{ formatCurrency(summary.pending_commission) }}</div>
-      <div class="summary-sub">Rate: {{ summary.commission_rate }}%</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-header">
-        <span class="summary-icon green">💵</span>
-        <span class="summary-label">Net Amount</span>
-      </div>
-      <div class="summary-value">{{ formatCurrency(summary.pending_net) }}</div>
-      <div class="summary-sub">After commission</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-header">
-        <span class="summary-icon orange">📅</span>
-        <span class="summary-label">Next Settlement</span>
-      </div>
-      <div class="summary-value">{{ summary.next_settlement_estimate }}</div>
-      <div class="summary-sub">Estimated date</div>
-    </div>
+  <!-- Payout blocked banner -->
+  <div class="notice warn" *ngIf="account && !account.payouts_ready">
+    ⚠️ Payouts are paused: {{ account.payouts_blocked_reason }}
+    <button class="link-btn" *ngIf="tab !== 'account'" (click)="openTab('account')">Update payout account</button>
   </div>
 
-  <!-- Monthly Breakdown Chart -->
-  <div class="chart-card" *ngIf="monthlyChartData.length > 0">
-    <h3>📊 Monthly Settlement Breakdown</h3>
-    <div class="chart-container">
-      <canvas id="settlementChart"></canvas>
-    </div>
+  <div class="tabs">
+    <button [class.active]="tab === 'settlements'" (click)="openTab('settlements')">Settlements</button>
+    <button [class.active]="tab === 'statement'" (click)="openTab('statement')">Statement</button>
+    <button [class.active]="tab === 'account'" (click)="openTab('account')">Payout account</button>
   </div>
 
-  <!-- Filter Section -->
-  <div class="filter-section">
-    <div class="date-range">
-      <div class="date-input">
-        <span class="date-icon">📅</span>
-        <input type="date" [(ngModel)]="startDate" (change)="applyFilters()" placeholder="Start Date">
+  <!-- ============================================================ SETTLEMENTS -->
+  <ng-container *ngIf="tab === 'settlements'">
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header"><span class="summary-icon green">💵</span><span class="summary-label">Next settlement</span></div>
+        <div class="summary-value">{{ formatCurrency(next.net) }}</div>
+        <div class="summary-sub">{{ next.lines }} delivered sale(s) and adjustments waiting</div>
       </div>
-      <span class="date-separator">to</span>
-      <div class="date-input">
-        <span class="date-icon">📅</span>
-        <input type="date" [(ngModel)]="endDate" (change)="applyFilters()" placeholder="End Date">
+      <div class="summary-card">
+        <div class="summary-header"><span class="summary-icon orange">📅</span><span class="summary-label">Billing cycle</span></div>
+        <div class="summary-value">Every {{ next.period_days }} days</div>
+        <div class="summary-sub">Change it under Payout account</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header"><span class="summary-icon blue">🏦</span><span class="summary-label">Paid to</span></div>
+        <div class="summary-value small" *ngIf="account?.payout_method === 'bank'">{{ account?.bank_name || 'Bank' }} · {{ account?.account_number || '—' }}</div>
+        <div class="summary-value small" *ngIf="account?.payout_method !== 'bank'">Mobile Money · {{ account?.momo_number || 'not set' }}</div>
+        <div class="summary-sub">{{ account?.payouts_ready ? 'Ready for payouts' : 'Payouts paused' }}</div>
       </div>
     </div>
-    <button *ngIf="startDate || endDate" class="reset-btn" (click)="resetFilters()">
-      Reset Filters
-    </button>
-  </div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading settlements...</p>
-  </div>
+    <div class="info-box">
+      <p>You're owed the product price minus the merchant fee once you confirm delivery. Sales are grouped at the end of
+        each billing cycle, checked by Tabital, then sent to your payout account.</p>
+      <p>If a customer wins a dispute, the sale is removed, or taken off your next settlement if it was already paid.</p>
+    </div>
 
-  <!-- Settlements Table -->
-  <div class="table-wrapper" *ngIf="!isLoading && settlements.length > 0">
-    <table class="settlements-table">
-      <thead>
-        <tr>
-          <th>Settlement Period</th>
-          <th>Date Range</th>
-          <th>Total Amount</th>
-          <th>Commission</th>
-          <th>Net Amount</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let settlement of settlements">
-          <td class="period">{{ settlement.period }}</td>
-          <td class="date-range">
-            {{ formatDate(settlement.start_date) }} - {{ formatDate(settlement.end_date) }}
-          </td>
-          <td class="amount">{{ formatCurrency(settlement.total_amount) }}</td>
-          <td class="commission">{{ formatCurrency(settlement.commission) }}</td>
-          <td class="net">{{ formatCurrency(settlement.net_amount) }}</td>
-          <td>
-            <span class="status-badge" [class]="getStatusClass(settlement.status)">
-              {{ getStatusIcon(settlement.status) }} {{ settlement.status }}
-            </span>
-          </td>
-          <td class="actions">
-            <button class="action-icon view" (click)="viewSettlementDetails(settlement)" title="View Details">👁️</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="isLoading" class="loading-container"><div class="spinner"></div><p>Loading settlements…</p></div>
 
-    <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
-      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-        ← Previous
-      </button>
-      <div class="page-numbers">
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="page-number"
-          [class.active]="currentPage === page"
-          (click)="changePage(page)"
-        >
-          {{ page }}
+    <div class="table-wrapper" *ngIf="!isLoading && batches.length > 0">
+      <table class="settlements-table">
+        <thead>
+          <tr><th>Settlement</th><th>Period</th><th>Sales</th><th>Fees</th><th>Adjustments</th><th>Net</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of batches">
+            <td class="period">{{ b.settlement_id }}</td>
+            <td class="date-range">{{ formatDate(b.period_start) }} – {{ formatDate(b.period_end) }}</td>
+            <td class="amount">{{ formatCurrency(b.gross) }}</td>
+            <td class="commission">{{ formatCurrency(b.fees) }}</td>
+            <td class="commission">{{ formatCurrency(b.clawbacks) }}</td>
+            <td class="net">{{ formatCurrency(b.net) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="statusClass(b.status)">{{ statusLabel(b.status) }}</span>
+              <div class="sub-note" *ngIf="b.status === 'paid'">{{ formatDate(b.paid_at) }}</div>
+              <div class="sub-note" *ngIf="b.hold_reason && b.status === 'on_hold'">{{ b.hold_reason }}</div>
+            </td>
+            <td class="actions"><button class="action-icon view" (click)="viewBatch(b)" title="View details">👁️</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!isLoading && batches.length === 0" class="empty-state">
+      <div class="empty-icon">💰</div>
+      <p>No settlements yet. They appear at the end of your billing cycle after you confirm deliveries.</p>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ STATEMENT -->
+  <ng-container *ngIf="tab === 'statement'">
+    <div class="filter-section">
+      <div class="date-range">
+        <div class="date-input"><span class="date-icon">📅</span><input type="date" [(ngModel)]="from"></div>
+        <span class="date-separator">to</span>
+        <div class="date-input"><span class="date-icon">📅</span><input type="date" [(ngModel)]="to"></div>
+      </div>
+      <button class="action-btn primary" (click)="loadStatement()">Show</button>
+      <button class="action-btn secondary" (click)="downloadCsv()">⬇️ Download CSV</button>
+    </div>
+
+    <div class="notice error" *ngIf="statementError">{{ statementError }}</div>
+    <div *ngIf="statementLoading" class="loading-container"><div class="spinner"></div></div>
+
+    <ng-container *ngIf="statement && !statementLoading">
+      <div class="summary-grid">
+        <div class="summary-card"><div class="summary-label">Sales</div><div class="summary-value">{{ formatCurrency(statement.totals.sales) }}</div></div>
+        <div class="summary-card"><div class="summary-label">Merchant fees</div><div class="summary-value">{{ formatCurrency(statement.totals.fees) }}</div></div>
+        <div class="summary-card"><div class="summary-label">Adjustments</div><div class="summary-value">{{ formatCurrency(statement.totals.clawbacks) }}</div></div>
+        <div class="summary-card"><div class="summary-label">Paid out</div><div class="summary-value">{{ formatCurrency(statement.totals.paid_out) }}</div></div>
+      </div>
+
+      <div class="table-wrapper" *ngIf="statement.rows.length > 0">
+        <table class="settlements-table">
+          <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th>Gross</th><th>Fee</th><th>Net</th><th>Settlement</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of statement.rows">
+              <td>{{ formatDate(r.date) }}</td>
+              <td><span class="type-pill" [ngClass]="'type-' + r.type">{{ r.type }}</span></td>
+              <td class="tx-id">{{ r.reference }}</td>
+              <td>{{ r.description }}</td>
+              <td class="amount">{{ formatCurrency(r.gross) }}</td>
+              <td class="commission">{{ formatCurrency(r.fee) }}</td>
+              <td class="net">{{ formatCurrency(r.net) }}</td>
+              <td>{{ r.settlement }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" *ngIf="statement.rows.length === 0"><p>Nothing in this period.</p></div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ============================================================ PAYOUT ACCOUNT -->
+  <ng-container *ngIf="tab === 'account'">
+    <div class="account-card">
+      <div class="notice warn">
+        🔒 For your security, changing your payout account pauses payouts for 48 hours, and we'll notify you.
+        If you didn't make a change, contact Tabital support straight away.
+      </div>
+
+      <div class="form-group">
+        <label>Pay me by</label>
+        <div class="radio-row">
+          <label><input type="radio" name="method" value="mobile_money" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Mobile Money</label>
+          <label><input type="radio" name="method" value="bank" [(ngModel)]="form.payout_method" (change)="methodChanged()"> Bank account</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ form.payout_method === 'bank' ? 'Bank' : 'Network' }}</label>
+        <select [(ngModel)]="form.payout_bank_code" (change)="bankChosen()">
+          <option value="">Choose…</option>
+          <option *ngFor="let b of banks" [value]="b.code">{{ b.name }}</option>
+        </select>
+        <small class="hint error" *ngIf="banksError">{{ banksError }}</small>
+      </div>
+
+      <ng-container *ngIf="form.payout_method === 'bank'">
+        <div class="form-group"><label>Account name</label><input type="text" [(ngModel)]="form.account_name"></div>
+        <div class="form-group"><label>Account number</label><input type="text" inputmode="numeric" [(ngModel)]="form.account_number"></div>
+      </ng-container>
+      <ng-container *ngIf="form.payout_method !== 'bank'">
+        <div class="form-group"><label>Name on the wallet</label><input type="text" [(ngModel)]="form.momo_name"></div>
+        <div class="form-group"><label>Mobile Money number</label><input type="tel" placeholder="0241234567" [(ngModel)]="form.momo_number"></div>
+      </ng-container>
+
+      <div class="form-group">
+        <label>Billing cycle</label>
+        <select [(ngModel)]="form.settlement_period_days">
+          <option *ngFor="let p of periods" [ngValue]="p">Every {{ p }} days</option>
+        </select>
+        <small class="hint">Delivered sales are grouped and paid at the end of each cycle.</small>
+      </div>
+
+      <div class="notice success" *ngIf="saveMessage">{{ saveMessage }}</div>
+      <div class="notice error" *ngIf="saveError">{{ saveError }}</div>
+
+      <div class="modal-actions">
+        <button class="btn-primary" [disabled]="saving || !form.payout_bank_code" (click)="saveAccount()">
+          {{ saving ? 'Saving…' : 'Save payout account' }}
         </button>
       </div>
-      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-        Next →
-      </button>
     </div>
-  </div>
+  </ng-container>
 
-  <!-- Empty State -->
-  <div *ngIf="!isLoading && settlements.length === 0" class="empty-state">
-    <div class="empty-icon">💰</div>
-    <p>No settlements found</p>
-    <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
-  </div>
-
-  <!-- Settlement Details Modal -->
-  <div class="modal" *ngIf="showDetailsModal" (click)="closeModals()">
+  <!-- ============================================================ DETAILS MODAL -->
+  <div class="modal" *ngIf="selected" (click)="selected = null">
     <div class="modal-content large" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Settlement Details</h2>
-        <button class="close" (click)="closeModals()">✕</button>
-      </div>
-      <div *ngIf="selectedSettlement" class="modal-body">
-        <div class="detail-section">
-          <div class="detail-group">
-            <h3>📋 Settlement Information</h3>
-            <div class="detail-row"><strong>Period:</strong> <span>{{ selectedSettlement.period }}</span></div>
-            <div class="detail-row"><strong>Date Range:</strong> <span>{{ formatDate(selectedSettlement.start_date) }} - {{ formatDate(selectedSettlement.end_date) }}</span></div>
-            <div class="detail-row"><strong>Status:</strong> <span class="status-badge" [class]="getStatusClass(selectedSettlement.status)">{{ selectedSettlement.status }}</span></div>
-          </div>
-
-          <div class="detail-group">
-            <h3>💰 Financial Summary</h3>
-            <div class="detail-row"><strong>Total Amount:</strong> <span class="amount">{{ formatCurrency(selectedSettlement.total_amount) }}</span></div>
-            <div class="detail-row"><strong>Commission ({{ summary.commission_rate }}%):</strong> <span>{{ formatCurrency(selectedSettlement.commission) }}</span></div>
-            <div class="detail-row"><strong>Net Amount:</strong> <span class="net">{{ formatCurrency(selectedSettlement.net_amount) }}</span></div>
-          </div>
-
-          <div class="detail-group" *ngIf="selectedSettlement.transactions?.length > 0">
-            <h3>📋 Transactions in this Settlement</h3>
-            <div class="table-wrapper">
-              <table class="transactions-table">
-                <thead>
-                  <tr>
-                    <th>Transaction ID</th>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let tx of selectedSettlement.transactions">
-                    <td class="tx-id">{{ tx.transaction_id }}</td>
-                    <td>{{ tx.customer_name }}</td>
-                    <td>{{ tx.product_name }}</td>
-                    <td class="amount">{{ formatCurrency(tx.amount) }}</td>
-                    <td>{{ formatDate(tx.date) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Request Payout Modal -->
-  <div class="modal" *ngIf="showPayoutModal" (click)="closeModals()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Request Payout</h2>
-        <button class="close" (click)="closeModals()">✕</button>
+        <h2>Settlement {{ selected.settlement_id }}</h2>
+        <button class="close" (click)="selected = null">✕</button>
       </div>
       <div class="modal-body">
-        <div class="payout-info">
-          <div class="info-row">
-            <strong>Available for Payout:</strong>
-            <span class="amount">{{ formatCurrency(summary.pending_net) }}</span>
-          </div>
-          <div class="info-row">
-            <strong>Bank Account:</strong>
-            <span>{{ summary.bank_name }} - {{ summary.account_number }}</span>
-          </div>
+        <div class="detail-group">
+          <div class="detail-row"><strong>Period</strong><span>{{ formatDate(selected.period_start) }} – {{ formatDate(selected.period_end) }}</span></div>
+          <div class="detail-row"><strong>Status</strong><span class="status-badge" [ngClass]="statusClass(selected.status)">{{ statusLabel(selected.status) }}</span></div>
+          <div class="detail-row" *ngIf="selected.failure_reason"><strong>Reason</strong><span>{{ selected.failure_reason }}</span></div>
+          <div class="detail-row"><strong>Sales</strong><span>{{ formatCurrency(selected.gross) }}</span></div>
+          <div class="detail-row"><strong>Merchant fees</strong><span>− {{ formatCurrency(selected.fees) }}</span></div>
+          <div class="detail-row" *ngIf="selected.clawbacks"><strong>Adjustments</strong><span>{{ formatCurrency(selected.clawbacks) }}</span></div>
+          <div class="detail-row"><strong>Net paid</strong><span class="net">{{ formatCurrency(selected.net) }}</span></div>
         </div>
-        <form [formGroup]="payoutForm" (ngSubmit)="requestPayout()">
-          <div class="form-group">
-            <label>Amount to Withdraw (GHS) *</label>
-            <input type="number" step="0.01" formControlName="amount" placeholder="Enter amount">
-            <small class="hint">Maximum: {{ formatCurrency(summary.pending_net) }}</small>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="payoutForm.invalid || payoutForm.value.amount > summary.pending_net">
-              Request Payout
-            </button>
-          </div>
-        </form>
+        <div class="table-wrapper" *ngIf="selected.lines?.length">
+          <table class="transactions-table">
+            <thead><tr><th>Plan</th><th>Product</th><th>Type</th><th>Gross</th><th>Fee</th><th>Net</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let l of selected.lines">
+                <td class="tx-id">{{ l.plan_ref }}</td>
+                <td>{{ l.product_name }}</td>
+                <td><span class="type-pill" [ngClass]="'type-' + l.type">{{ l.type }}</span></td>
+                <td>{{ formatCurrency(l.gross) }}</td>
+                <td>{{ formatCurrency(l.fee) }}</td>
+                <td class="net">{{ formatCurrency(l.net) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Settlement Settings Modal -->
-  <div class="modal" *ngIf="showSettingsModal" (click)="closeModals()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Settlement Settings</h2>
-        <button class="close" (click)="closeModals()">✕</button>
-      </div>
-      <div class="modal-body">
-        <form [formGroup]="settingsForm" (ngSubmit)="updateSettings()">
-          <div class="form-group">
-            <label>Bank Name *</label>
-            <input type="text" formControlName="bank_name" placeholder="Enter bank name">
-          </div>
-          <div class="form-group">
-            <label>Account Name *</label>
-            <input type="text" formControlName="account_name" placeholder="Enter account name">
-          </div>
-          <div class="form-group">
-            <label>Account Number *</label>
-            <input type="text" formControlName="account_number" placeholder="Enter account number">
-          </div>
-          <div class="info-box">
-            <p>💡 Your current commission rate is <strong>{{ summary.commission_rate }}%</strong></p>
-            <p>📅 Settlements are processed weekly on Mondays</p>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="settingsForm.invalid">Save Settings</button>
-          </div>
-        </form>
-      </div>
+      <div class="modal-footer"><button class="btn-secondary" (click)="selected = null">Close</button></div>
     </div>
   </div>
 </div>

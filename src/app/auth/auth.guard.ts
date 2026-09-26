@@ -3,7 +3,7 @@
 // ============================================
 
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -16,19 +16,21 @@ export class AuthGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(): boolean | UrlTree {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     const token = this.authService.getToken();
-    
+    // Come back here after signing in (e.g. a scanned payment-link QR code)
+    const toLogin = () => this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+
     if (!token) {
       console.log('AuthGuard: No token, redirecting to login');
-      return this.router.parseUrl('/login');
+      return toLogin();
     }
 
     // Check if token is expired
     if (this.isTokenExpired(token)) {
       console.log('AuthGuard: Token expired, redirecting to login');
       this.authService.logout();
-      return this.router.parseUrl('/login');
+      return toLogin();
     }
 
     return true;

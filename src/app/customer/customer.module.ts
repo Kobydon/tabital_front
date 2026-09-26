@@ -19,6 +19,7 @@ import { CustomerShopComponent } from './shop/shop.component';
 import { MakePaymentComponent } from './make-payment/make-payment.component';
 import { CustomerDocumentComponent } from './customer-document/customer-document.component';
 import { PaymentCallbackComponent } from './payment-callback/payment-callback.component';
+import { PayLinkComponent } from './pay-link/pay-link.component';
 // import { ShopComponent } from './shop/shop.component';
 // import { CustomerOrderComponent } from './customer-order/customer-order.component';
 
@@ -44,7 +45,8 @@ import { PaymentCallbackComponent } from './payment-callback/payment-callback.co
   CustomerShopComponent,
   MakePaymentComponent,
   CustomerDocumentComponent,
-  PaymentCallbackComponent
+  PaymentCallbackComponent,
+  PayLinkComponent
   ],
   imports: [
     CommonModule,

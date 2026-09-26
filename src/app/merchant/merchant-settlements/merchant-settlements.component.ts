@@ -1,31 +1,34 @@
 import { Component, OnInit } from '@angular/core';
-// import { MerchantService } from '../services/merchant.service';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
-interface Settlement {
-  period: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
-  commission: number;
-  net_amount: number;
+interface SettlementBatch {
+  id: number;
+  settlement_id: string;
+  period_start: string | null;
+  period_end: string;
+  gross: number;
+  fees: number;
+  clawbacks: number;
+  net: number;
   status: string;
-  transactions?: any[];
+  hold_reason: string | null;
+  failure_reason: string | null;
+  paid_at: string | null;
+  lines?: any[];
 }
 
-interface SettlementSummary {
-  pending_amount: number;
-  pending_commission: number;
-  pending_net: number;
-  pending_transactions: number;
-  commission_rate: number;
-  last_settlement: string;
-  next_settlement_estimate: string;
-  monthly_breakdown: any[];
-  bank_name: string;
-  account_name: string;
-  account_number: string;
+interface PayoutAccount {
+  payout_method: string | null;
+  payout_bank_code: string | null;
+  bank_name: string | null;
+  account_name: string | null;
+  account_number: string | null;
+  momo_name: string | null;
+  momo_number: string | null;
+  settlement_period_days: number;
+  payout_hold_until: string | null;
+  payouts_ready: boolean;
+  payouts_blocked_reason: string | null;
 }
 
 @Component({
@@ -34,227 +37,193 @@ interface SettlementSummary {
   styleUrls: ['./merchant-settlements.component.scss']
 })
 export class MerchantSettlementsComponent implements OnInit {
-  isLoading = false;
-  settlements: Settlement[] = [];
-  selectedSettlement: any = null;
-  
-  // Filters
-  startDate = '';
-  endDate = '';
-  currentPage = 1;
-  itemsPerPage = 10;
-  totalItems = 0;
-  totalPages = 0;
-  
-  // Summary
-  summary: SettlementSummary = {
-    pending_amount: 0,
-    pending_commission: 0,
-    pending_net: 0,
-    pending_transactions: 0,
-    commission_rate: 2.5,
-    last_settlement: '',
-    next_settlement_estimate: '',
-    monthly_breakdown: [],
-    bank_name: '',
-    account_name: '',
-    account_number: ''
-  };
-  
-  // Modal states
-  showDetailsModal = false;
-  showPayoutModal = false;
-  showSettingsModal = false;
-  
-  // Forms
-  payoutForm: FormGroup;
-  settingsForm: FormGroup;
-  
-  // Chart data
-  monthlyChartData: any[] = [];
+  tab: 'settlements' | 'statement' | 'account' = 'settlements';
+  readonly periods = [3, 7, 30];
 
-  constructor(
-    private merchantService: MerchantService,
-    private fb: FormBuilder
-  ) {
-    this.payoutForm = this.fb.group({
-      amount: ['', [Validators.required, Validators.min(1)]]
-    });
-    
-    this.settingsForm = this.fb.group({
-      bank_name: ['', Validators.required],
-      account_name: ['', Validators.required],
-      account_number: ['', Validators.required]
-    });
-  }
+  // Settlements
+  isLoading = false;
+  batches: SettlementBatch[] = [];
+  next = { lines: 0, net: 0, period_days: 7 };
+  account: PayoutAccount | null = null;
+  selected: SettlementBatch | null = null;
+
+  // Statement
+  from = this.isoDate(-30);
+  to = this.isoDate(0);
+  statement: any = null;
+  statementLoading = false;
+  statementError = '';
+
+  // Payout account form
+  form: any = {};
+  banks: { name: string; code: string }[] = [];
+  banksError = '';
+  saving = false;
+  saveMessage = '';
+  saveError = '';
+
+  constructor(private merchantService: MerchantService) {}
 
   ngOnInit(): void {
-    this.loadSettlements();
-    this.loadSummary();
+    this.loadBatches();
   }
 
-  loadSettlements() {
+  // ------------------------------------------------------------ settlements
+
+  loadBatches() {
     this.isLoading = true;
-    const filters: any = {
-      page: this.currentPage,
-      limit: this.itemsPerPage
+    this.merchantService.getSettlementBatches().subscribe({
+      next: (res: any) => {
+        this.batches = res.settlements || [];
+        this.next = res.next_settlement || this.next;
+        this.setAccount(res.payout_account);
+        this.isLoading = false;
+      },
+      error: () => { this.isLoading = false; }
+    });
+  }
+
+  viewBatch(batch: SettlementBatch) {
+    this.merchantService.getSettlementBatch(batch.id).subscribe({
+      next: (res: any) => { this.selected = res; },
+      error: () => { this.selected = batch; }
+    });
+  }
+
+  statusLabel(status: string): string {
+    return ({
+      pending_approval: 'Awaiting approval',
+      on_hold: 'On hold',
+      processing: 'Sending',
+      paid: 'Paid',
+      failed: 'Failed'
+    } as any)[status] || status;
+  }
+
+  statusClass(status: string): string {
+    return ({
+      paid: 'status-paid',
+      processing: 'status-processing',
+      pending_approval: 'status-pending',
+      on_hold: 'status-pending',
+      failed: 'status-failed'
+    } as any)[status] || 'status-default';
+  }
+
+  // ------------------------------------------------------------ statement
+
+  loadStatement() {
+    this.statementLoading = true;
+    this.statementError = '';
+    this.merchantService.getStatement(this.from, this.to).subscribe({
+      next: (res: any) => { this.statement = res; this.statementLoading = false; },
+      error: (err: any) => {
+        this.statementError = err.error?.error || 'Could not load the statement';
+        this.statementLoading = false;
+      }
+    });
+  }
+
+  downloadCsv() {
+    this.merchantService.downloadStatementCsv(this.from, this.to).subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tabital_statement_${this.from}_${this.to}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => { this.statementError = 'Could not download the CSV'; }
+    });
+  }
+
+  // ------------------------------------------------------------ payout account
+
+  openTab(tab: 'settlements' | 'statement' | 'account') {
+    this.tab = tab;
+    if (tab === 'statement' && !this.statement) this.loadStatement();
+    if (tab === 'account') this.loadBanks();
+  }
+
+  setAccount(account: PayoutAccount | null) {
+    if (!account) return;
+    this.account = account;
+    this.form = {
+      payout_method: account.payout_method || 'mobile_money',
+      payout_bank_code: account.payout_bank_code || '',
+      bank_name: account.bank_name || '',
+      account_name: account.account_name || '',
+      account_number: account.account_number || '',
+      momo_name: account.momo_name || '',
+      momo_number: account.momo_number || '',
+      settlement_period_days: account.settlement_period_days || 7
     };
-    
-    if (this.startDate) filters.start_date = this.startDate;
-    if (this.endDate) filters.end_date = this.endDate;
-    
-    this.merchantService.getMerchantSettlements(filters).subscribe({
-      next: (response: any) => {
-        this.settlements = response.settlements || [];
-        this.totalItems = response.total || 0;
-        this.totalPages = response.total_pages || 0;
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        console.error('Error loading settlements:', error);
-        this.isLoading = false;
+  }
+
+  loadBanks() {
+    this.banksError = '';
+    this.merchantService.getPayoutBanks(this.form.payout_method || 'mobile_money').subscribe({
+      next: (res: any) => { this.banks = res.banks || []; },
+      error: (err: any) => {
+        this.banks = [];
+        this.banksError = err.error?.error || 'Could not load the provider list';
       }
     });
   }
 
-  loadSummary() {
-    this.merchantService.getSettlementSummary().subscribe({
-      next: (data: SettlementSummary) => {
-        this.summary = data;
-        this.prepareChartData();
-        this.settingsForm.patchValue({
-          bank_name: data.bank_name,
-          account_name: data.account_name,
-          account_number: data.account_number
-        });
+  methodChanged() {
+    this.form.payout_bank_code = '';
+    this.loadBanks();
+  }
+
+  bankChosen() {
+    const bank = this.banks.find(b => b.code === this.form.payout_bank_code);
+    if (bank && this.form.payout_method === 'bank') this.form.bank_name = bank.name;
+  }
+
+  saveAccount() {
+    this.saving = true;
+    this.saveMessage = '';
+    this.saveError = '';
+    const f = this.form;
+    const body: any = {
+      payout_method: f.payout_method,
+      payout_bank_code: f.payout_bank_code,
+      settlement_period_days: Number(f.settlement_period_days)
+    };
+    if (f.payout_method === 'bank') {
+      Object.assign(body, { bank_name: f.bank_name, account_name: f.account_name, account_number: f.account_number });
+    } else {
+      Object.assign(body, { momo_name: f.momo_name, momo_number: f.momo_number });
+    }
+    this.merchantService.updatePayoutAccount(body).subscribe({
+      next: (res: any) => {
+        this.setAccount(res);
+        this.saveMessage = res.message || 'Saved';
+        this.saving = false;
       },
-      error: (error: any) => {
-        console.error('Error loading summary:', error);
+      error: (err: any) => {
+        this.saveError = err.error?.error || 'Could not save your payout account';
+        this.saving = false;
       }
     });
   }
 
-  prepareChartData() {
-    if (this.summary.monthly_breakdown) {
-      this.monthlyChartData = this.summary.monthly_breakdown.map(item => ({
-        name: item.month,
-        value: item.net,
-        commission: item.commission,
-        total: item.total
-      }));
-    }
-  }
-
-  applyFilters() {
-    this.currentPage = 1;
-    this.loadSettlements();
-  }
-
-  resetFilters() {
-    this.startDate = '';
-    this.endDate = '';
-    this.currentPage = 1;
-    this.loadSettlements();
-  }
-
-  changePage(page: number) {
-    this.currentPage = page;
-    this.loadSettlements();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
-    
-    if (endPage - startPage + 1 < maxVisible) {
-      startPage = Math.max(1, endPage - maxVisible + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
-  viewSettlementDetails(settlement: any) {
-    // For now, just show the settlement details
-    this.selectedSettlement = settlement;
-    this.showDetailsModal = true;
-  }
-
-  requestPayout() {
-    if (this.payoutForm.valid) {
-      this.merchantService.requestPayout(this.payoutForm.value.amount).subscribe({
-        next: (response: any) => {
-          this.showPayoutModal = false;
-          this.payoutForm.reset();
-          alert(`Payout request submitted successfully. Estimated date: ${response.estimated_date}`);
-          this.loadSummary();
-        },
-        error: (error: any) => {
-          console.error('Error requesting payout:', error);
-          alert(error.error?.error || 'Failed to request payout');
-        }
-      });
-    }
-  }
-
-  updateSettings() {
-    if (this.settingsForm.valid) {
-      this.merchantService.updateSettlementSettings(this.settingsForm.value).subscribe({
-        next: () => {
-          this.showSettingsModal = false;
-          alert('Settlement settings updated successfully');
-          this.loadSummary();
-        },
-        error: (error: any) => {
-          console.error('Error updating settings:', error);
-          alert('Failed to update settlement settings');
-        }
-      });
-    }
-  }
+  // ------------------------------------------------------------ helpers
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'GHS'
-    }).format(amount || 0);
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount || 0);
   }
 
-  formatDate(date: string): string {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  formatDate(date: string | null): string {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  getStatusClass(status: string): string {
-    switch(status) {
-      case 'paid': return 'status-paid';
-      case 'processing': return 'status-processing';
-      case 'pending': return 'status-pending';
-      default: return 'status-default';
-    }
-  }
-
-  getStatusIcon(status: string): string {
-    switch(status) {
-      case 'paid': return '✅';
-      case 'processing': return '🔄';
-      case 'pending': return '⏳';
-      default: return '📌';
-    }
-  }
-
-  closeModals() {
-    this.showDetailsModal = false;
-    this.showPayoutModal = false;
-    this.showSettingsModal = false;
-    this.payoutForm.reset();
+  private isoDate(offsetDays: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0, 10);
   }
 }

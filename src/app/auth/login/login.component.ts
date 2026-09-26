@@ -4,7 +4,7 @@
 
 import { Component, OnDestroy } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AuthService } from '../auth.service';
@@ -32,7 +32,8 @@ export class LoginComponent implements OnDestroy {
     private fb: FormBuilder,
     private auth: AuthService,
     private adminService: AdminService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnDestroy() {
@@ -160,7 +161,14 @@ export class LoginComponent implements OnDestroy {
     console.log('➡️ Starting navigation for role:', role);
     
     let navigationPromise: Promise<boolean>;
-    
+
+    // Return to the page that sent us here, but only inside this role's own area (no open redirects)
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    if (['admin', 'merchant', 'customer'].includes(role) && returnUrl.startsWith(`/${role}/`) && !returnUrl.includes('//')) {
+      this.router.navigateByUrl(returnUrl).finally(() => { this.isNavigating = false; });
+      return;
+    }
+
     switch (role) {
       case 'admin':
         navigationPromise = this.router.navigate(['/admin/dashboard']);

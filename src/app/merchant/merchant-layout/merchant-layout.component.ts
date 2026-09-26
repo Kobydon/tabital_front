@@ -65,11 +65,16 @@ export class MerchantLayoutComponent implements OnInit {
       icon: '👥',
       label: 'Customers'
     },
-    // {
-    //   path: '/merchant/settlements',
-    //   icon: '💰',
-    //   label: 'Settlements'
-    // },
+    {
+      path: '/merchant/settlements',
+      icon: '💰',
+      label: 'Settlements'
+    },
+    {
+      path: '/merchant/payment-links',
+      icon: '🔗',
+      label: 'Payment Links'
+    },
     {
       path: '/merchant/disputes',
       icon: '⚠️',
