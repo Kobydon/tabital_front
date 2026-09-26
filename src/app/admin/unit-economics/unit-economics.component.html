@@ -1,0 +1,173 @@
+<div class="settlements-page">
+  <div class="page-header">
+    <div>
+      <h1>Unit Economics</h1>
+      <p class="subtitle">Is repayment quality beating our loss assumptions? Margin per the full model in the business plan,
+        portfolio health, liquidity and cohorts. Figures come from the ledger; the cost rates are settings.</p>
+    </div>
+  </div>
+
+  <div class="filter-tabs">
+    <button [class.active]="tab === 'margin'" (click)="open('margin')">Margin</button>
+    <button [class.active]="tab === 'portfolio'" (click)="open('portfolio')">Portfolio &amp; liquidity</button>
+    <button [class.active]="tab === 'cohorts'" (click)="open('cohorts')">Cohorts</button>
+    <button [class.active]="tab === 'scenario'" (click)="open('scenario')">What-if</button>
+  </div>
+
+  <div class="notice error" *ngIf="error">{{ error }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- ======================================================== MARGIN -->
+  <ng-container *ngIf="tab === 'margin'">
+    <div class="range">
+      <label>From <input type="date" [(ngModel)]="from"></label>
+      <label>To <input type="date" [(ngModel)]="to"></label>
+      <button class="btn-primary" (click)="loadSummary()">Show</button>
+      <button class="btn-secondary" (click)="downloadCsv()">Download CSV</button>
+    </div>
+
+    <ng-container *ngIf="summary && !loading">
+      <div class="notice warn" *ngFor="let w of summary.warnings">⚠️ {{ w }}</div>
+
+      <div class="kpis">
+        <div class="kpi"><span>Plans opened</span><strong>{{ summary.totals.plans }}</strong></div>
+        <div class="kpi"><span>GMV</span><strong>{{ money(summary.totals.gmv) }}</strong></div>
+        <div class="kpi"><span>Average ticket</span><strong>{{ money(summary.totals.average_ticket) }}</strong></div>
+        <div class="kpi"><span>Financed</span><strong>{{ money(summary.totals.financed) }}</strong></div>
+        <div class="kpi" [class.bad]="summary.totals.modelled_net < 0">
+          <span>Modelled net margin</span><strong>{{ money(summary.totals.modelled_net) }}</strong>
+          <em>{{ pct(summary.totals.modelled_margin_pct_of_gmv) }} of GMV</em></div>
+      </div>
+
+      <div class="grid2">
+        <div class="table-card pad">
+          <h4>Margin model (plans opened in the period)</h4>
+          <div class="row"><span>Merchant fee revenue (MDR)</span><span class="pos">{{ money(summary.totals.merchant_fee_revenue) }}</span></div>
+          <div class="row" *ngFor="let k of costKeys">
+            <span>{{ costLabels[k] }} <small>({{ summary.rates[k] }}%)</small></span>
+            <span class="neg">− {{ money(summary.totals.costs[k]) }}</span>
+          </div>
+          <div class="row strong"><span>Modelled net</span><span>{{ money(summary.totals.modelled_net) }}</span></div>
+        </div>
+        <div class="table-card pad">
+          <h4>Actuals in the period</h4>
+          <div class="row"><span>Late fee revenue</span><span class="pos">{{ money(summary.totals.late_fee_revenue) }}</span></div>
+          <div class="row"><span>Deferment fee revenue</span><span class="pos">{{ money(summary.totals.deferment_fee_revenue) }}</span></div>
+          <div class="row"><span>Credit losses booked ({{ summary.totals.plans_charged_off }} plan(s) charged off)</span>
+            <span class="neg">− {{ money(summary.totals.actual_credit_losses) }}</span></div>
+          <div class="row strong"><span>Net with actuals</span><span>{{ money(summary.totals.net_with_actuals) }}</span></div>
+          <p class="sub">Net with actuals replaces the expected-loss line with losses actually booked, and adds late and deferment fees.</p>
+        </div>
+      </div>
+
+      <h4>By month</h4>
+      <div class="table-card" *ngIf="summary.by_month.length; else noMonths">
+        <table>
+          <thead><tr><th>Month</th><th class="num">Plans</th><th class="num">GMV</th><th class="num">Financed</th>
+            <th class="num">MDR revenue</th><th class="num">Costs</th><th class="num">Net</th><th class="num">% of GMV</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let m of summary.by_month">
+              <td>{{ m.month }}</td><td class="num">{{ m.plans }}</td><td class="num">{{ money(m.gmv) }}</td>
+              <td class="num">{{ money(m.financed) }}</td><td class="num">{{ money(m.merchant_fee_revenue) }}</td>
+              <td class="num">{{ money(costTotal(m.costs)) }}</td><td class="num strong">{{ money(m.modelled_net) }}</td>
+              <td class="num">{{ pct(m.modelled_margin_pct_of_gmv) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noMonths><div class="empty">No plans opened in this period.</div></ng-template>
+    </ng-container>
+  </ng-container>
+
+  <!-- ======================================================== PORTFOLIO -->
+  <ng-container *ngIf="tab === 'portfolio' && portfolio && !loading">
+    <div class="kpis">
+      <div class="kpi"><span>Outstanding</span><strong>{{ money(portfolio.outstanding) }}</strong><em>{{ portfolio.plans }} plan(s)</em></div>
+      <div class="kpi" [class.bad]="portfolio.par_30.pct > 5"><span>PAR 30</span><strong>{{ pct(portfolio.par_30.pct) }}</strong><em>{{ money(portfolio.par_30.outstanding) }}</em></div>
+      <div class="kpi"><span>PAR 60</span><strong>{{ pct(portfolio.par_60.pct) }}</strong><em>{{ money(portfolio.par_60.outstanding) }}</em></div>
+      <div class="kpi"><span>PAR 90</span><strong>{{ pct(portfolio.par_90.pct) }}</strong><em>{{ money(portfolio.par_90.outstanding) }}</em></div>
+    </div>
+
+    <div class="grid2">
+      <div class="table-card pad">
+        <h4>Delinquency buckets</h4>
+        <div class="row" *ngFor="let b of bucketOrder">
+          <span>{{ bucketLabels[b] }} <small>({{ portfolio.buckets[b]?.plans || 0 }})</small></span>
+          <span>{{ money(portfolio.buckets[b]?.outstanding) }}</span>
+        </div>
+        <p class="sub">PAR 30 = share of the outstanding book on plans more than 30 days late.</p>
+      </div>
+      <div class="table-card pad">
+        <h4>Liquidity, next 30 days</h4>
+        <div class="row"><span>Owed to merchants (not yet paid out)</span><span class="neg">{{ money(portfolio.liquidity.owed_to_merchants) }}</span></div>
+        <div class="row"><span>Customer payments due</span><span class="pos">{{ money(portfolio.liquidity.customer_payments_due_next_30_days) }}</span></div>
+        <div class="row"><span>Customer payments overdue</span><span>{{ money(portfolio.liquidity.customer_payments_overdue) }}</span></div>
+        <div class="row strong" [class.badrow]="portfolio.liquidity.funding_gap_next_30_days > 0">
+          <span>Cash to fund from reserves</span><span>{{ money(portfolio.liquidity.funding_gap_next_30_days) }}</span></div>
+        <p class="sub">Liquidity is the biggest risk: merchants are paid within days, customers repay over months.</p>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ======================================================== COHORTS -->
+  <ng-container *ngIf="tab === 'cohorts' && cohorts && !loading">
+    <p class="sub">Plans grouped by the month they were opened. Year-1 goal: prove the loss rate stays under the
+      <strong>{{ cohorts.assumed_loss_rate }}%</strong> assumed in the margin model.</p>
+    <div class="table-card" *ngIf="cohorts.cohorts.length; else noCohorts">
+      <table>
+        <thead><tr><th>Opened</th><th class="num">Plans</th><th class="num">Financed</th><th class="num">Completed</th>
+          <th class="num">Instalments due</th><th class="num">Paid on time</th><th class="num">Ever 30+ late</th>
+          <th class="num">Defaulted</th><th class="num">Loss rate</th><th>vs assumption</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let c of cohorts.cohorts">
+            <td>{{ c.month }}</td><td class="num">{{ c.plans }}</td><td class="num">{{ money(c.financed) }}</td>
+            <td class="num">{{ c.completed }}</td><td class="num">{{ c.instalments_due }}</td>
+            <td class="num">{{ pct(c.on_time_rate) }}</td><td class="num">{{ pct(c.ever_30_plus_rate) }}</td>
+            <td class="num">{{ c.defaulted }}</td><td class="num strong">{{ pct(c.loss_rate) }}</td>
+            <td><span class="badge" [ngClass]="c.beats_assumption ? 'status-paid' : 'status-failed'">
+              {{ c.beats_assumption ? 'Better' : 'Worse' }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noCohorts><div class="empty">No plans yet.</div></ng-template>
+  </ng-container>
+
+  <!-- ======================================================== WHAT-IF -->
+  <ng-container *ngIf="tab === 'scenario'">
+    <p class="sub">Try a product, plan and rates. Leave a rate blank to use the current setting. Nothing is saved.</p>
+    <div class="whatif">
+      <label>Price (GHS) <input type="number" min="1" [(ngModel)]="what['price']"></label>
+      <label>Plan
+        <select [(ngModel)]="what['n']">
+          <option [ngValue]="4">Pay in 4</option><option [ngValue]="3">Pay in 3</option><option [ngValue]="2">Pay in 2</option>
+        </select>
+      </label>
+      <label>Down payment % <input type="number" [(ngModel)]="what['dp_percentage']" placeholder="setting"></label>
+      <label>MDR % <input type="number" [(ngModel)]="what['mdr_percentage']" placeholder="setting"></label>
+      <label *ngFor="let k of costKeys">{{ costLabels[k] }} % <input type="number" [(ngModel)]="what[k]" placeholder="setting"></label>
+    </div>
+    <button class="btn-primary" (click)="runScenario()">Calculate</button>
+
+    <div class="grid2" *ngIf="scenario" style="margin-top:16px">
+      <div class="table-card pad">
+        <h4>Customer plan</h4>
+        <div class="row"><span>Price</span><span>{{ money(scenario.price) }}</span></div>
+        <div class="row"><span>Down payment ({{ scenario.dp_percentage }}%)</span><span>{{ money(scenario.down_payment) }}</span></div>
+        <div class="row"><span>Financed</span><span>{{ money(scenario.financed_balance) }}</span></div>
+        <div class="row" *ngFor="let a of scenario.installments; let i = index"><span>Instalment {{ i + 1 }}</span><span>{{ money(a) }}</span></div>
+        <div class="row"><span>Merchant payout</span><span>{{ money(scenario.merchant_settlement) }}</span></div>
+      </div>
+      <div class="table-card pad">
+        <h4>Tabital margin</h4>
+        <div class="row"><span>Merchant fee ({{ scenario.mdr_percentage }}%)</span><span class="pos">{{ money(scenario.revenue) }}</span></div>
+        <div class="row" *ngFor="let k of costKeys">
+          <span>{{ costLabels[k] }} <small>{{ lineBasis(k) }}</small></span><span class="neg">− {{ money(lineAmount(k)) }}</span>
+        </div>
+        <div class="row strong" [class.badrow]="scenario.net < 0"><span>Net</span>
+          <span>{{ money(scenario.net) }} ({{ pct(scenario.margin_pct_of_price) }})</span></div>
+        <div class="notice warn" *ngFor="let w of scenario.warnings">⚠️ {{ w }}</div>
+      </div>
+    </div>
+  </ng-container>
+</div>

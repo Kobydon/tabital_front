@@ -1,0 +1,38 @@
+.range, .whatif {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  label { display: flex; flex-direction: column; font-size: 13px; color: #4b5563; gap: 4px; }
+  input, select { padding: 7px 9px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; }
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpi {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  span { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.02em; }
+  strong { font-size: 20px; }
+  em { font-style: normal; font-size: 12px; color: #6b7280; }
+  &.bad strong { color: #b91c1c; }
+}
+
+.table-card.pad { padding: 16px 18px; h4 { margin-top: 0; } }
+.grid2 { margin-bottom: 16px; }
+.pos { color: #166534; }
+.neg { color: #991b1b; }
+.row small { color: #6b7280; margin-left: 4px; }
+.badrow { color: #b91c1c; }
+.notice.warn { background: #fff7ed; color: #9a3412; }

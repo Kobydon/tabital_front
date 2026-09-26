@@ -19,6 +19,7 @@ import { AdminCollectionComponent } from './admin-collection/admin-collection.co
 import { AdminDisputesComponent } from './admin-disputes/admin-disputes.component';
 import { IdentityReviewComponent } from './identity-review/identity-review.component';
 import { FraudReviewComponent } from './fraud-review/fraud-review.component';
+import { UnitEconomicsComponent } from './unit-economics/unit-economics.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -55,6 +56,7 @@ const routes: Routes = [
         { path: 'disputes', component: AdminDisputesComponent },
       { path: 'identity-review', component: IdentityReviewComponent },
       { path: 'fraud-review', component: FraudReviewComponent },
+      { path: 'unit-economics', component: UnitEconomicsComponent },
          { path: 'settlements', component: SettlementsComponent   },
           { path: 'all-reports', component: ReportsAnalyticsComponent   },
             { path: 'product-plans', component: ProductPlansComponent   },

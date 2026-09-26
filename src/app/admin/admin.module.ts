@@ -23,6 +23,7 @@ import { AdminCollectionComponent } from './admin-collection/admin-collection.co
 import { AdminDisputesComponent } from './admin-disputes/admin-disputes.component';
 import { IdentityReviewComponent } from './identity-review/identity-review.component';
 import { FraudReviewComponent } from './fraud-review/fraud-review.component';
+import { UnitEconomicsComponent } from './unit-economics/unit-economics.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -54,6 +55,7 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
     AdminDisputesComponent,
     IdentityReviewComponent,
     FraudReviewComponent,
+    UnitEconomicsComponent,
     SettlementsComponent,
     ReportsAnalyticsComponent,
     ProductPlansComponent,

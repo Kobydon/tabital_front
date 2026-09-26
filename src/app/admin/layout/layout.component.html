@@ -160,6 +160,11 @@
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Fraud Review</span>
       </a>
 
+      <a routerLink="unit-economics" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+        <span class="icon">📈</span>
+        <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Unit Economics</span>
+      </a>
+
       <a routerLink="settlements" routerLinkActive="active" (click)="isMobile && closeSidebar()">
         <span class="icon">💸</span>
         <span class="label" *ngIf="!isMobile || (isMobile && isMobileOpen)">Settlements</span>

@@ -821,6 +821,30 @@ getSettlementStats(): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// Phase 7: unit economics and portfolio reporting
+getEconomicsSummary(from: string, to: string): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/summary?from=${from}&to=${to}`, { headers: this.getAuthHeaders() });
+}
+
+downloadEconomicsCsv(from: string, to: string): Observable<Blob> {
+  return this.http.get(`${this.API}/admin/economics/export?from=${from}&to=${to}`,
+    { headers: this.getAuthHeaders(), responseType: 'blob' });
+}
+
+getEconomicsPortfolio(): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/portfolio`, { headers: this.getAuthHeaders() });
+}
+
+getEconomicsCohorts(): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/cohorts`, { headers: this.getAuthHeaders() });
+}
+
+getEconomicsScenario(params: Record<string, string | number>): Observable<any> {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== '' && v !== null && v !== undefined) qs.append(k, String(v)); });
+  return this.http.get(`${this.API}/admin/economics/scenario?${qs.toString()}`, { headers: this.getAuthHeaders() });
+}
+
 // Phase 6: identity checks (Smile ID), fraud signals, employment verification
 getIdentityChecks(status = 'review'): Observable<any> {
   return this.http.get(`${this.API}/admin/identity-checks?status=${encodeURIComponent(status)}`, { headers: this.getAuthHeaders() });
