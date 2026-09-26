@@ -42,8 +42,10 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     let headers = req.headers;
+    // Always set the session token here. The services build their own header from a key
+    // ('access_token') that login never writes, so theirs is "Bearer null" and must be replaced.
     const token = localStorage.getItem('token');
-    if (token && !headers.has('Authorization')) {
+    if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
     const id = deviceId();
