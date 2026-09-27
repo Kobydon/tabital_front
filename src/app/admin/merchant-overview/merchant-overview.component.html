@@ -39,7 +39,7 @@
           <th scope="col">Type</th>
           <th scope="col">Fee tier</th>
           <th scope="col">Volume</th>
-          <th scope="col" class="num">Sales, all time</th>
+          <th scope="col" class="num">Sales, completed plans</th>
           <th scope="col">Account</th>
           <th scope="col"><span class="tp-sr-only">Actions</span></th>
         </tr>
@@ -92,7 +92,7 @@
 
     <h3 class="tp-section-title">Money</h3>
     <div class="tp-kpis">
-      <div class="tp-kpi"><span>Sales through Tabital (all time, incl. delivery)</span><strong>{{ selectedMerchant.financial?.total_gmv | money }}</strong></div>
+      <div class="tp-kpi"><span>Completed plans, all time (incl. delivery)</span><strong>{{ selectedMerchant.financial?.total_gmv | money }}</strong></div>
       <div class="tp-kpi"><span>Merchant fees</span><strong>{{ selectedMerchant.financial?.total_commission | money }}</strong></div>
       <div class="tp-kpi"><span>Customers still owe</span><strong>{{ selectedMerchant.financial?.total_outstanding | money }}</strong></div>
       <div class="tp-kpi"><span>Active plans</span><strong>{{ selectedMerchant.financial?.active_plans || 0 }}</strong></div>
