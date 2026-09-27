@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #fac400 0%, #764ba2 100%);
+background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   padding: 2rem;
   position: relative;
   overflow-y: auto;
@@ -24,7 +24,18 @@
   0% { transform: translate(0, 0); }
   100% { transform: translate(50px, 50px); }
 }
+.logo-container {
+  text-align: center;
+  margin-bottom: 1rem;
+}
 
+
+.login-logo {
+  max-width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
 .signup-card {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
