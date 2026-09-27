@@ -96,6 +96,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     { value: 'approved', label: 'Approved' },
     { value: 'active', label: 'Active' },
     { value: 'pending', label: 'Pending' },
+    { value: 'restricted', label: 'Restricted' },
     { value: 'suspended', label: 'Suspended' }
   ];
 
@@ -215,7 +216,8 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
 
   openUpdateStatusModal(customer: Customer): void {
     this.selectedCustomer = { customer };
-    this.updateStatusForm.patchValue({ status: customer.status, reason: '' });
+    // Start on a value the dialog offers (active / restricted / suspended)
+    this.updateStatusForm.patchValue({ status: ['restricted', 'suspended'].includes(customer.status) ? customer.status : 'active', reason: '' });
     this.showUpdateStatusModal = true;
   }
 
