@@ -47,7 +47,7 @@
       <tbody>
         <tr *ngFor="let customer of customers">
           <td><strong>{{ customer.full_name }}</strong><div class="tp-sub">{{ customer.customer_id }} · {{ customer.phone }}</div>
-            <div class="tp-sub" *ngIf="$any(customer).email">{{ $any(customer).email }}</div></td>
+            <div class="tp-sub" *ngIf="$any(customer).email && $any(customer).email !== 'N/A'">{{ $any(customer).email }}</div></td>
           <td><tp-chip [status]="customer.kyc_status"></tp-chip></td>
           <td><tp-chip [tone]="riskTone(customer.risk_level)" [label]="customer.risk_level || '—'"></tp-chip></td>
           <td class="num">{{ customer.credit_limit | money }}</td>
@@ -83,7 +83,7 @@
 
     <dl class="tp-dl">
       <dt>Phone</dt><dd><tp-reveal [userId]="selectedCustomer.customer?.id" field="phone" [value]="selectedCustomer.customer?.phone" label="phone"></tp-reveal></dd>
-      <dt>Email</dt><dd>{{ selectedCustomer.customer?.email || selectedCustomer.customer?.business_email || '—' }}</dd>
+      <dt>Email</dt><dd>{{ (selectedCustomer.customer?.email !== 'N/A' && selectedCustomer.customer?.email) || selectedCustomer.customer?.business_email || '—' }}</dd>
       <dt>Address</dt><dd>{{ selectedCustomer.customer?.address || '—' }}<ng-container *ngIf="selectedCustomer.customer?.city">, {{ selectedCustomer.customer?.city }}</ng-container></dd>
       <dt>KYC</dt><dd><tp-chip [status]="selectedCustomer.customer?.kyc_status"></tp-chip></dd>
     </dl>

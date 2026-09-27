@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
 import {
-  HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
+  HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { notify } from '../shared/notify';
+import { AuthService } from './auth.service';
 
 const DEVICE_KEY = 'tabital_device_id';
 
@@ -34,6 +37,9 @@ export function deviceFlags(): string {
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  private signingOut = false;
+
+  constructor(private router: Router) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Only our own API gets our token and device headers; never third parties (Paystack, Smile ID)
@@ -53,6 +59,26 @@ export class AuthInterceptor implements HttpInterceptor {
     const flags = deviceFlags();
     if (flags) headers = headers.set('X-Device-Flags', flags);
 
-    return next.handle(req.clone({ headers }));
+    return next.handle(req.clone({ headers })).pipe(
+      catchError((err: unknown) => {
+        // A signed-in request refused because the session expired or the account was suspended:
+        // sign out cleanly instead of showing a raw error. (A wrong password at /login is a 401 too,
+        // but it's sent without a session.)
+        if (err instanceof HttpErrorResponse && err.status === 401 && token && !req.url.endsWith('/login')) {
+          this.signOut(err.error?.code === 'account_inactive'
+            ? 'Your account isn\'t active any more. Please contact Tabital.'
+            : 'Your session has ended. Please sign in again.');
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+
+  private signOut(message: string): void {
+    if (this.signingOut) return;             // several requests can fail at once: one message
+    this.signingOut = true;
+    AuthService.clearSession();
+    notify(message, 'warning');
+    this.router.navigate(['/login']).finally(() => { this.signingOut = false; });
   }
 }
