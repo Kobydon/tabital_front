@@ -17,7 +17,8 @@ interface OverduePayment {
   installment_number: number;
   amount: number;
   late_fee: number;
-  total_due: number;
+  total_due: number;          // still owed, after part payments
+  part_paid?: number;
   due_date: string;
   days_overdue: number;
   overdue_range: string;
@@ -85,6 +86,51 @@ export class AdminCollectionComponent implements OnInit {
   ngOnInit(): void {
     this.loadCollectionStats();
     this.loadOverduePayments();
+    this.loadClaims();
+  }
+
+  // Customers saying they paid outside the app (payment claims)
+  claims: any[] = [];
+  claim: any = null;
+  claimAction: 'confirm' | 'reject' = 'confirm';
+  claimAmount = 0;
+  claimReason = '';
+
+  loadClaims(): void {
+    this.adminService.getPaymentClaims('pending').subscribe({
+      next: (res: any) => { this.claims = res.claims || []; },
+      error: () => { this.claims = []; }
+    });
+  }
+
+  openClaim(claim: any, action: 'confirm' | 'reject'): void {
+    this.claim = claim;
+    this.claimAction = action;
+    this.claimAmount = claim.still_owed;
+    this.claimReason = '';
+  }
+
+  submitClaim(): void {
+    if (!this.claim) return;
+    this.isSubmitting = true;
+    const call = this.claimAction === 'confirm'
+      ? this.adminService.confirmPaymentClaim(this.claim.id, { amount_received: this.claimAmount })
+      : this.adminService.rejectPaymentClaim(this.claim.id, this.claimReason.trim());
+    call.subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.claim = null;
+        notify(res?.message || 'Saved', 'success');
+        this.loadClaims();
+        this.loadOverduePayments();
+        this.loadCollectionStats();
+      },
+      error: (err: any) => { this.isSubmitting = false; notify(err?.message || 'Could not save', 'error'); }
+    });
+  }
+
+  methodLabel(method: string): string {
+    return ({ mobile_money: 'Mobile Money', bank_transfer: 'Bank transfer', cash: 'Cash', card: 'Card', manual: 'Manual' } as Record<string, string>)[method] || method;
   }
 
   loadCollectionStats(): void {
@@ -168,10 +214,10 @@ export class AdminCollectionComponent implements OnInit {
     this.isSubmitting = true;
     const data = { ...this.markReceivedForm.value, payment_reference: (this.markReceivedForm.value.payment_reference || '').trim() };
     this.adminService.markPaymentReceived(this.selectedPayment.payment.id, data).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.isSubmitting = false;
         this.showMarkReceivedModal = false;
-        notify('Payment recorded', 'success');
+        notify(response?.message || 'Payment recorded', 'success');
         this.loadOverduePayments();
         this.loadCollectionStats();
       },

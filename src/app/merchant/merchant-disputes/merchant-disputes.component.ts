@@ -110,12 +110,11 @@ export class MerchantDisputesComponent implements OnInit {
     });
     
     this.acceptForm = this.fb.group({
-      refund_amount: ['', [Validators.required, Validators.min(0.01)]],
       notes: ['']
     });
     
     this.rejectForm = this.fb.group({
-      reason: ['', Validators.required]
+      reason: ['', [Validators.required, Validators.minLength(5)]]
     });
     
     this.escalateForm = this.fb.group({
@@ -241,7 +240,6 @@ export class MerchantDisputesComponent implements OnInit {
   openAcceptModal(dispute: Dispute) {
     this.selectedDispute = dispute as DisputeDetails;
     this.acceptForm.patchValue({
-      refund_amount: dispute.amount,
       notes: ''
     });
     this.showAcceptModal = true;
@@ -254,11 +252,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showAcceptModal = false;
-          notify('Dispute accepted and refund processed');
+          notify('Sent. Tabital will close the dispute in the customer\'s favour.', 'success');
         },
         error: (error: any) => {
           console.error('Error accepting dispute:', error);
-          notify('Failed to accept dispute', 'error');
+          notify(error?.error?.error || 'Failed to send your response', 'error');
         }
       });
     }
@@ -277,11 +275,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showRejectModal = false;
-          notify('Dispute rejected');
+          notify('Sent. Tabital will review both sides and decide.', 'success');
         },
         error: (error: any) => {
           console.error('Error rejecting dispute:', error);
-          notify('Failed to reject dispute', 'error');
+          notify(error?.error?.error || 'Failed to send your response', 'error');
         }
       });
     }

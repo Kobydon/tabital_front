@@ -75,7 +75,6 @@ export class MerchantTransactionsComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.updateForm = this.fb.group({
-      delivery_status: [''],
       tracking_number: [''],
       notes: ['']
     });
@@ -175,7 +174,6 @@ export class MerchantTransactionsComponent implements OnInit {
   openUpdateModal(transaction: any) {
     this.selectedTransaction = transaction;
     this.updateForm.patchValue({
-      delivery_status: transaction.delivery_status,
       tracking_number: transaction.tracking_number,
       notes: transaction.notes
     });

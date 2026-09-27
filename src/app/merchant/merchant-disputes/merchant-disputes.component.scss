@@ -615,3 +615,7 @@
     box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
   }
 }
+.action-text { background: none; border: 0; padding: 4px 6px; color: var(--tp-navy-2); font-weight: 600; font-size: var(--tp-text-sm); cursor: pointer; }
+.action-text:hover, .action-text:focus-visible { text-decoration: underline; }
+.form-note { font-size: var(--tp-text-sm); color: var(--tp-text); background: var(--tp-info-bg); border-radius: var(--tp-radius-sm); padding: 10px 12px; margin: 0 0 14px; }
+

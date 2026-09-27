@@ -27,6 +27,30 @@
   </div>
 </div>
 
+<!-- Customers saying they've paid outside the app: nothing changes until the money is confirmed -->
+<tp-card *ngIf="claims.length" [title]="'Payments customers say they made (' + claims.length + ')'"
+         subtitle="Check the MoMo or bank statement. The instalment stays due, with late fees, until you confirm the money arrived.">
+  <div class="tp-table-wrap">
+    <table class="tp-table">
+      <thead><tr><th scope="col">Customer</th><th scope="col">Instalment</th><th scope="col">Reference</th>
+        <th scope="col" class="num">Still owed</th><th scope="col">Told us</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let c of claims">
+          <td><strong>{{ c.customer_name }}</strong><div class="tp-sub">{{ c.customer_phone }}</div></td>
+          <td>#{{ c.installment_number }}<div class="tp-sub">was due {{ c.due_date | tpDate }}</div></td>
+          <td><span class="tp-reveal__value">{{ c.reference }}</span><div class="tp-sub">{{ methodLabel(c.method) }}</div></td>
+          <td class="num">{{ c.still_owed | money }}</td>
+          <td>{{ c.created_at | tpDate }}</td>
+          <td><div class="tp-row-actions" *tpManagement>
+            <button tpButton="ghost" size="sm" type="button" (click)="openClaim(c, 'reject')">Not found</button>
+            <button tpButton="navy" size="sm" type="button" (click)="openClaim(c, 'confirm')">Money arrived</button>
+          </div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</tp-card>
+
 <div *ngIf="isLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading overdue accounts…</div>
 
 <tp-card *ngIf="!isLoading && overduePayments.length" [title]="'Overdue accounts (' + totalItems + ')'">
@@ -41,7 +65,8 @@
           <td>{{ payment.merchant_name }}</td>
           <td>{{ payment.plan_id }}<div class="tp-sub">Instalment {{ payment.installment_number }}</div></td>
           <td class="num"><strong>{{ payment.total_due | money }}</strong>
-            <div class="tp-sub" *ngIf="payment.late_fee > 0">incl. {{ payment.late_fee | money }} late fee</div></td>
+            <div class="tp-sub" *ngIf="payment.late_fee > 0">incl. {{ payment.late_fee | money }} late fee</div>
+            <div class="tp-sub" *ngIf="(payment.part_paid || 0) > 0">{{ payment.part_paid | money }} already paid</div></td>
           <td><tp-chip [tone]="dpdTone(payment.days_overdue)" [label]="payment.days_overdue + ' days'"></tp-chip>
             <div class="tp-sub">{{ dpdLabel(payment.days_overdue) }}</div></td>
           <td>{{ payment.due_date | tpDate }}</td>
@@ -89,20 +114,35 @@
       <dt>Plan</dt><dd>{{ selectedPayment.plan?.plan_id }} · instalment {{ selectedPayment.payment?.installment_number }}</dd>
       <dt>Instalment</dt><dd>{{ selectedPayment.payment?.amount | money }}</dd>
       <dt>Late fee</dt><dd>{{ selectedPayment.payment?.late_fee | money }}</dd>
-      <dt>Amount due</dt><dd><strong>{{ selectedPayment.payment?.total_due | money }}</strong></dd>
+      <ng-container *ngIf="selectedPayment.payment?.part_paid > 0">
+        <dt>Paid so far</dt><dd>{{ selectedPayment.payment?.part_paid | money }}</dd>
+      </ng-container>
+      <dt>Still owed</dt><dd><strong>{{ selectedPayment.payment?.total_due | money }}</strong></dd>
       <dt>Was due</dt><dd>{{ selectedPayment.payment?.due_date | tpDate }}</dd>
     </dl>
+
+    <ng-container *ngIf="selectedPayment.payment?.part_payments?.length">
+      <h3 class="tp-section-title">Part payments received</h3>
+      <dl class="tp-dl">
+        <ng-container *ngFor="let r of selectedPayment.payment?.part_payments">
+          <dt>{{ r.at | tpDate }}</dt>
+          <dd>{{ r.amount | money }} · {{ methodLabel(r.method) }} · <span class="tp-reveal__value">{{ r.reference }}</span>
+            <span class="tp-sub" *ngIf="r.recorded_by"> (recorded by {{ r.recorded_by }})</span></dd>
+        </ng-container>
+      </dl>
+    </ng-container>
 
     <h3 class="tp-section-title">Schedule</h3>
     <div class="tp-table-wrap tp-table-wrap--flush">
       <table class="tp-table">
-        <thead><tr><th scope="col">#</th><th scope="col">Due</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Late fee</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col">Due</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Late fee</th><th scope="col" class="num">Paid</th><th scope="col">Status</th></tr></thead>
         <tbody>
           <tr *ngFor="let p of selectedPayment.payment_schedule">
             <td>{{ p.installment_number }}</td>
             <td>{{ p.due_date | tpDate }}</td>
             <td class="num">{{ p.amount | money }}</td>
             <td class="num">{{ p.late_fee > 0 ? (p.late_fee | money) : '—' }}</td>
+            <td class="num">{{ p.part_paid > 0 ? (p.part_paid | money) : '—' }}</td>
             <td><tp-chip [status]="p.status"></tp-chip></td>
           </tr>
         </tbody>
@@ -155,8 +195,13 @@
         (ngSubmit)="markAsReceived()" (click)="$event.stopPropagation()">
     <h2 id="co-rec-title">Record a payment</h2>
     <p>For money {{ selectedPayment.payment?.customer_name }} paid outside Paystack. Payments through the app are recorded automatically.</p>
+    <div class="tp-note">
+      <lucide-icon name="info" [size]="16"></lucide-icon>
+      <span>{{ (selectedPayment.payment?.total_due || 0) | money }} is still owed. Less than that is recorded as a part payment:
+        it goes to the instalment first, then late fees, and the instalment stays overdue until the rest arrives.</span>
+    </div>
     <tp-field label="Amount received" for="co-amount" [required]="true"
-              [hint]="'The full ' + ((selectedPayment.payment?.total_due || 0) | money) + ' due. Part payments can\'t be recorded yet.'">
+              [hint]="'Up to ' + ((selectedPayment.payment?.total_due || 0) | money) + '. More than that can\'t be recorded.'">
       <input id="co-amount" type="number" inputmode="decimal" step="0.01" formControlName="amount_received">
     </tp-field>
     <tp-field label="Paid by" for="co-method" [required]="true">
@@ -174,6 +219,33 @@
       <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
       <button tpButton="navy" type="submit" [disabled]="markReceivedForm.invalid || isSubmitting" [loading]="isSubmitting">
         {{ isSubmitting ? 'Recording…' : 'Record payment' }}</button>
+    </div>
+  </form>
+</div>
+
+<!-- Confirm or reject a payment claim -->
+<div class="tp-dialog-backdrop" *ngIf="claim" (click)="claim = null">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-claim-title" (ngSubmit)="submitClaim()" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="claimAction === 'confirm'; else rejectClaim">
+      <h2 id="co-claim-title">Money arrived</h2>
+      <p>{{ claim.customer_name }}, instalment #{{ claim.installment_number }}, reference {{ claim.reference }}.
+        {{ claim.still_owed | money }} is still owed; less is recorded as a part payment.</p>
+      <tp-field label="Amount received" for="co-claim-amount" [required]="true">
+        <input id="co-claim-amount" type="number" inputmode="decimal" step="0.01" [(ngModel)]="claimAmount" name="claimAmount">
+      </tp-field>
+    </ng-container>
+    <ng-template #rejectClaim>
+      <h2 id="co-claim-title">Payment not found</h2>
+      <p>{{ claim.customer_name }} is told why, and that the instalment is still due.</p>
+      <tp-field label="Reason" for="co-claim-reason" [required]="true" hint="At least 5 characters. The customer sees this.">
+        <input id="co-claim-reason" type="text" [(ngModel)]="claimReason" name="claimReason" maxlength="300">
+      </tp-field>
+    </ng-template>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="claim = null">Cancel</button>
+      <button [tpButton]="claimAction === 'confirm' ? 'navy' : 'danger'" type="submit" [loading]="isSubmitting"
+              [disabled]="isSubmitting || (claimAction === 'confirm' ? !(claimAmount > 0) : claimReason.trim().length < 5)">
+        {{ claimAction === 'confirm' ? 'Record payment' : 'Tell the customer' }}</button>
     </div>
   </form>
 </div>

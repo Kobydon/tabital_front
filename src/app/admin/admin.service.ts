@@ -382,6 +382,22 @@ markPaymentReceived(paymentId: number, data: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+/** Customers saying they paid outside the app; the instalment stays due until a claim is confirmed. */
+getPaymentClaims(status = 'pending'): Observable<any> {
+  return this.http.get(`${this.API}/admin/payment-claims?status=${encodeURIComponent(status)}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+confirmPaymentClaim(claimId: number, body: { amount_received?: number; payment_reference?: string }): Observable<any> {
+  return this.http.post(`${this.API}/admin/payment-claims/${claimId}/confirm`, body, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+rejectPaymentClaim(claimId: number, reason: string): Observable<any> {
+  return this.http.post(`${this.API}/admin/payment-claims/${claimId}/reject`, { reason }, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
 setPaymentPlan(paymentId: number, data: any): Observable<any> {
   return this.http.post(`${this.API}/admin/collection/${paymentId}/payment-plan`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
