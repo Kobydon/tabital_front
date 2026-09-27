@@ -27,7 +27,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #1a1a2e;
+    color: #02163f;
 
     .icon {
       font-size: 32px;
@@ -35,7 +35,7 @@
   }
 
   .stats-badge {
-    background: linear-gradient(135deg, #28a745, #20c997);
+    background: linear-gradient(135deg, #15803d, #15803d);
     padding: 8px 20px;
     border-radius: 30px;
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
@@ -54,7 +54,7 @@
   }
 
   .export-btn {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0a2d73, #02163f);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -69,7 +69,7 @@
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 6px 20px rgba(10, 45, 115, 0.4);
     }
   }
 }
@@ -103,10 +103,10 @@
     .stat-icon {
       font-size: 28px;
       
-      &.purple { color: #667eea; }
+      &.purple { color: #0a2d73; }
       &.orange { color: #f39c12; }
       &.red { color: #e74c3c; }
-      &.green { color: #28a745; }
+      &.green { color: #15803d; }
     }
     
     .stat-label {
@@ -121,7 +121,7 @@
   .stat-value {
     font-size: 28px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #02163f;
     margin-bottom: 8px;
   }
   
@@ -156,12 +156,12 @@
     }
     
     &:hover {
-      color: #667eea;
+      color: #0a2d73;
     }
     
     &.active {
-      color: #667eea;
-      border-bottom: 3px solid #667eea;
+      color: #0a2d73;
+      border-bottom: 3px solid #0a2d73;
       margin-bottom: -2px;
     }
   }
@@ -192,7 +192,7 @@
       gap: 10px;
       
       i {
-        color: #667eea;
+        color: #0a2d73;
       }
     }
     
@@ -235,7 +235,7 @@
         margin: 0 0 4px 0;
         font-size: 16px;
         font-weight: 600;
-        color: #1a1a2e;
+        color: #02163f;
       }
       
       .merchant {
@@ -277,7 +277,7 @@
       
       .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea, #764ba2);
+        background: linear-gradient(90deg, #0a2d73, #02163f);
         border-radius: 4px;
         transition: width 0.3s ease;
       }
@@ -306,10 +306,10 @@
       
       .value {
         font-weight: 500;
-        color: #1a1a2e;
+        color: #02163f;
         
         &.highlight {
-          color: #28a745;
+          color: #15803d;
           font-weight: 700;
         }
         
@@ -344,7 +344,7 @@
       gap: 6px;
       
       &.btn-pay {
-        background: linear-gradient(135deg, #28a745, #20c997);
+        background: linear-gradient(135deg, #15803d, #15803d);
         color: white;
         border: none;
         
@@ -360,8 +360,8 @@
         color: #6c757d;
         
         &:hover {
-          border-color: #667eea;
-          color: #667eea;
+          border-color: #0a2d73;
+          color: #0a2d73;
         }
       }
       
@@ -405,7 +405,7 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #0a2d73;
       }
     }
     
@@ -459,7 +459,7 @@
     gap: 4px;
     
     &.active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       color: white;
       border-color: transparent;
     }
@@ -534,7 +534,7 @@
     font-family: monospace;
     font-size: 12px;
     font-weight: 600;
-    color: #667eea;
+    color: #0a2d73;
   }
   
   .plan-name {
@@ -549,7 +549,7 @@
   
   .amount {
     font-weight: 700;
-    color: #28a745;
+    color: #15803d;
   }
   
   .method-badge {
@@ -586,8 +586,8 @@
         transform: scale(1.1);
       }
       
-      &.view:hover { background: #667eea20; color: #667eea; }
-      &.download:hover { background: #28a74520; color: #28a745; }
+      &.view:hover { background: #0a2d7320; color: #0a2d73; }
+      &.download:hover { background: #15803d20; color: #15803d; }
     }
   }
 }
@@ -611,7 +611,7 @@
   
   &:hover:not(:disabled) {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &:disabled {
@@ -621,7 +621,7 @@
 }
 
 .page-number.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border-color: transparent;
 }
@@ -731,7 +731,7 @@
     transition: all 0.2s;
     
     &.active {
-      border-color: #28a745;
+      border-color: #15803d;
       background: #d4edda;
       color: #155724;
     }
@@ -760,7 +760,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
   
@@ -787,7 +787,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border: none;
   
@@ -831,7 +831,7 @@
       }
       
       .amount {
-        color: #28a745;
+        color: #15803d;
         font-size: 18px;
       }
     }
@@ -848,7 +848,7 @@
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #0a2d73;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -858,7 +858,7 @@
   width: 30px;
   height: 30px;
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #667eea;
+  border-top: 3px solid #0a2d73;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 12px;

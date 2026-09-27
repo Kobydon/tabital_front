@@ -1,0 +1,78 @@
+<div class="pay-link">
+  <div *ngIf="loading" class="state">Opening your checkout…</div>
+
+  <div *ngIf="!loading && linkError" class="card state">
+    <div class="big">🔗</div>
+    <h2>This link can't be used</h2>
+    <p>{{ linkError }}</p>
+    <a routerLink="/customer/shop" class="btn secondary">Browse the shop</a>
+  </div>
+
+  <ng-container *ngIf="link">
+    <div class="card product">
+      <img *ngIf="link.product.image" [src]="link.product.image" [alt]="link.product.name">
+      <div>
+        <div class="merchant">Sold by {{ link.merchant_name }}</div>
+        <h2>{{ link.product.name }} <span *ngIf="link.quantity > 1">× {{ link.quantity }}</span></h2>
+        <div class="price">{{ formatCurrency(link.product.price * link.quantity) }}</div>
+        <div class="note" *ngIf="link.note">{{ link.note }}</div>
+        <div class="pickup">🏬 Collect from the merchant, no delivery fee</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>How would you like to pay?</h3>
+      <div class="plans">
+        <button *ngFor="let p of plans" [class.active]="selected === p.n" (click)="choose(p.n)">{{ p.label }}</button>
+      </div>
+
+      <div *ngIf="calculating" class="state small">Working out your plan…</div>
+
+      <ng-container *ngIf="calculation && !calculating">
+        <div class="blocked" *ngIf="blockReason() as reason">⚠️ {{ reason }}</div>
+
+        <!-- Full schedule and total payable, shown before the customer confirms -->
+        <table class="schedule">
+          <thead><tr><th>Payment</th><th>Due</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let s of calculation.payment_schedule; let i = index" [class.now]="i === 0">
+              <td>{{ i === 0 ? (selected === 1 ? 'Full payment' : 'Payment 1 · down payment') : 'Payment ' + s.installment_number }}</td>
+              <td>{{ i === 0 ? 'Today' : formatDate(s.due_date) }}</td>
+              <td class="num">{{ formatCurrency(s.amount) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="2">Total payable</td><td class="num">{{ formatCurrency(calculation.totals.total_payable) }}</td></tr>
+          </tfoot>
+        </table>
+        <div class="key-facts" *ngIf="calculation.key_facts as kf">
+          <h5>Key facts</h5>
+          <ul>
+            <li *ngIf="selected > 1">0% interest when you pay on time. Instalments are due on the same day each month.</li>
+            <li *ngIf="kf.late_fee_percentage > 0">Late fee: {{ kf.late_fee_percentage }}% of a missed instalment, charged the day after it's due,
+              and another {{ kf.second_late_fee_percentage }}% after {{ kf.second_late_fee_after_days }} days.
+              Late fees never exceed {{ kf.late_fee_cap_percentage }}% of your total payable.</li>
+            <li *ngIf="selected > 1 && kf.deferment_enabled && kf.deferment_max_per_plan > 0">Need more time? Move a payment
+              {{ kf.deferment_months }} month later for a {{ kf.deferment_fee_percentage }}% fee.</li>
+            <li>Problem with your item? Report it and your remaining payments pause.</li>
+          </ul>
+        </div>
+
+        <label class="agree">
+          <input type="checkbox" [(ngModel)]="agreed">
+          I agree to this payment schedule and the <a [href]="legal.terms" target="_blank" rel="noopener">Terms and Conditions</a>.
+        </label>
+
+        <div class="error" *ngIf="orderError">
+          {{ orderError }}
+          <ul *ngIf="orderReasons.length"><li *ngFor="let r of orderReasons">{{ r }}</li></ul>
+          <a *ngIf="orderError.includes('KYC')" routerLink="/customer/verify-identity">Verify my identity</a>
+        </div>
+
+        <button class="btn primary" [disabled]="!agreed || placing || !!blockReason()" (click)="confirm()">
+          {{ placing ? 'Taking you to payment…' : 'Pay ' + formatCurrency(calculation.due_now) + ' now' }}
+        </button>
+      </ng-container>
+    </div>
+  </ng-container>
+</div>

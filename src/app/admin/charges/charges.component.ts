@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
+import { ask } from 'src/app/ui/confirm';
 // import { AdminService } from '../../admin.service';
 
 export interface ChargeSettings {
@@ -188,8 +189,8 @@ export class ChargesComponent implements OnInit {
     });
   }
 
-  resetToDefault(): void {
-    if (confirm('Are you sure you want to reset all settings to default values?')) {
+  async resetToDefault(): Promise<void> {
+    if (await ask('Are you sure you want to reset all settings to default values?')) {
       this.populateForms(this.DEFAULT_SETTINGS);
       this.showSuccess('Settings reset to default. Click Save to apply changes.');
     }

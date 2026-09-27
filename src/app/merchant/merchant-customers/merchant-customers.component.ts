@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 // Define interfaces for type safety
 interface Customer {
   id: number;
@@ -199,7 +200,7 @@ export class MerchantCustomersComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading customer details:', error);
-        alert('Failed to load customer details');
+        notify('Failed to load customer details', 'error');
       }
     });
   }
@@ -228,11 +229,11 @@ export class MerchantCustomersComponent implements OnInit {
           this.loadCustomers();
           this.loadStats();
           this.showEditModal = false;
-          alert('Customer updated successfully');
+          notify('Customer updated successfully');
         },
         error: (error: any) => {
           console.error('Error updating customer:', error);
-          alert('Failed to update customer');
+          notify('Failed to update customer', 'error');
         }
       });
     }
@@ -247,11 +248,11 @@ export class MerchantCustomersComponent implements OnInit {
         a.download = `customers_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('Export started');
+        notify('Export started');
       },
       error: (error: any) => {
         console.error('Error exporting customers:', error);
-        alert('Failed to export customers');
+        notify('Failed to export customers', 'error');
       }
     });
   }
@@ -264,7 +265,7 @@ export class MerchantCustomersComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

@@ -2,6 +2,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CustomerService } from '../../customers.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface CustomerOrder {
   id: number;
   order_id: string;
@@ -15,7 +17,10 @@ export interface CustomerOrder {
   installment_amount: number;
   number_of_installments: number;
   remaining_balance: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  down_payment_status: 'unpaid' | 'paid';
+  due_now: number;
+  refund_status: string | null;
   payment_schedule: any[];
   delivery_address: string;
   delivery_status: string;
@@ -37,6 +42,7 @@ export class CustomerOrdersComponent implements OnInit {
   isLoading = true;
   activeTab: 'all' | 'pending' | 'approved' | 'completed' = 'all';
   showOrderModal = false;
+  payingOrderId: number | null = null;
 
   constructor(private customerService: CustomerService) {}
 
@@ -101,19 +107,38 @@ export class CustomerOrdersComponent implements OnInit {
     window.open(`https://www.google.com/maps/search/${address}`, '_blank');
   }
 
-  cancelOrder(order: CustomerOrder): void {
-    if (confirm(`Are you sure you want to cancel order ${order.order_id}?`)) {
+  async cancelOrder(order: CustomerOrder): Promise<void> {
+    if (await ask(`Are you sure you want to cancel order ${order.order_id}?`)) {
       this.customerService.cancelOrder(order.id).subscribe({
         next: (response) => {
           this.loadOrders();
-          alert('Order cancelled successfully');
+          notify('Order cancelled successfully');
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
-          alert('Failed to cancel order. Please try again.');
+          notify('Failed to cancel order. Please try again.', 'error');
         }
       });
     }
+  }
+
+  // Retry the checkout down payment for an order that's still awaiting payment
+  payDownPayment(order: CustomerOrder): void {
+    this.payingOrderId = order.id;
+    this.customerService.payOrderDownPayment(order.id).subscribe({
+      next: (res: any) => {
+        if (res?.authorization_url) {
+          window.location.href = res.authorization_url;
+        } else {
+          this.payingOrderId = null;
+          notify('Could not start the payment. Please try again.');
+        }
+      },
+      error: (error) => {
+        this.payingOrderId = null;
+        notify(error?.error?.error || 'Could not start the payment. Please try again.', 'error');
+      }
+    });
   }
 
   closeModal(): void {
@@ -129,7 +154,7 @@ export class CustomerOrdersComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
@@ -157,8 +182,27 @@ export class CustomerOrdersComponent implements OnInit {
     });
   }
 
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'awaiting_payment': return 'Awaiting down payment';
+      case 'pending': return 'Awaiting approval';
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+    }
+  }
+
+  getRefundLabel(refundStatus: string): string {
+    switch (refundStatus) {
+      case 'refunded': return 'Your down payment is being refunded';
+      case 'refund_required':
+      case 'refund_failed':
+      case 'manual_refund_required': return 'Your down payment will be refunded by our team';
+      default: return '';
+    }
+  }
+
   getStatusClass(status: string): string {
     switch (status) {
+      case 'awaiting_payment': return 'status-pending';
       case 'pending': return 'status-pending';
       case 'approved': return 'status-approved';
       case 'rejected': return 'status-rejected';
@@ -170,6 +214,7 @@ export class CustomerOrdersComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     switch (status) {
+      case 'awaiting_payment': return '💳';
       case 'pending': return '⏳';
       case 'approved': return '✅';
       case 'rejected': return '❌';

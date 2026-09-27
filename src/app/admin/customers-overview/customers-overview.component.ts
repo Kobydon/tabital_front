@@ -3,6 +3,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 interface Customer {
   id: number;
   customer_id: string;
@@ -22,12 +24,16 @@ interface Customer {
 @Component({
   selector: 'app-customers-overview',
   templateUrl: './customers-overview.component.html',
-  styleUrls: ['./customers-overview.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+    .tp-row-actions--start { justify-content: flex-start; margin: 0 0 12px; }
+    .co-employment { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+    @media (max-width: 640px) { .co-employment { grid-template-columns: 1fr; } }`]
 })
 export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // Data
   customers: Customer[] = [];
   selectedCustomer: any = null;
+  underwriting: any = null;
   customerStats: any = {};
   
   // UI State
@@ -80,7 +86,8 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     { value: '', label: 'All' },
     { value: 'Low', label: 'Low' },
     { value: 'Medium', label: 'Medium' },
-    { value: 'High', label: 'High' }
+    { value: 'High', label: 'High' },
+    { value: 'Not Assessed', label: 'Not assessed' }
   ];
 
   // Customer Status Options
@@ -89,6 +96,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     { value: 'approved', label: 'Approved' },
     { value: 'active', label: 'Active' },
     { value: 'pending', label: 'Pending' },
+    { value: 'restricted', label: 'Restricted' },
     { value: 'suspended', label: 'Suspended' }
   ];
 
@@ -98,12 +106,12 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
     
     this.updateLimitForm = this.fb.group({
       credit_limit: ['', [Validators.required, Validators.min(100)]],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]
     });
     
     this.addNoteForm = this.fb.group({
@@ -127,7 +135,6 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   loadCustomerStats(): void {
     this.adminService.getCustomerStats().subscribe({
       next: (response: any) => {
-        console.log('Customer stats:', response);
         this.customerStats = response;
         this.updateStatsCards();
       },
@@ -162,11 +169,9 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       sort_order: this.sortOrder
     };
     
-    console.log('Loading customers with filters:', filters);
     
     this.adminService.getAllCustomers(filters).subscribe({
       next: (response: any) => {
-        console.log('Customers response:', response);
         // Handle both array response and paginated response
         if (Array.isArray(response)) {
           this.customers = response;
@@ -191,14 +196,16 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // ============================================
 
   viewCustomerDetails(customer: Customer): void {
+    this.underwriting = null;
     this.adminService.getCustomerDetail(customer.id).subscribe({
       next: (response: any) => {
         this.selectedCustomer = response;
         this.showCustomerModal = true;
+        this.loadUnderwriting(customer.id);
       },
       error: (error) => {
         console.error('Error loading customer details:', error);
-        alert('Failed to load customer details');
+        notify('Failed to load customer details', 'error');
       }
     });
   }
@@ -209,7 +216,8 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
 
   openUpdateStatusModal(customer: Customer): void {
     this.selectedCustomer = { customer };
-    this.updateStatusForm.patchValue({ status: customer.status, reason: '' });
+    // Start on a value the dialog offers (active / restricted / suspended)
+    this.updateStatusForm.patchValue({ status: ['restricted', 'suspended'].includes(customer.status) ? customer.status : 'active', reason: '' });
     this.showUpdateStatusModal = true;
   }
 
@@ -222,7 +230,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     this.adminService.updateCustomerStatus(this.selectedCustomer.customer.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Customer status updated successfully');
+        notify('Customer status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadCustomers();
         this.loadCustomerStats();
@@ -230,7 +238,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify(error?.message || 'Failed to update status', 'error');
       }
     });
   }
@@ -243,21 +251,101 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
 
   updateCreditLimit(): void {
     if (this.updateLimitForm.invalid) return;
-    
+    this.saveCreditLimit(this.updateLimitForm.value.credit_limit);
+  }
+
+  clearCreditLimitOverride(): void {
+    if (!this.updateLimitForm.value.reason) return;
+    this.saveCreditLimit(null);
+  }
+
+  private saveCreditLimit(creditLimit: number | null): void {
+    const customerId = this.selectedCustomer.customer.id;
     this.isSubmitting = true;
-    const data = this.updateLimitForm.value;
-    
-    this.adminService.updateCustomerCreditLimit(this.selectedCustomer.customer.id, data).subscribe({
-      next: (response) => {
+    this.adminService.setCustomerCreditLimit(customerId, {
+      credit_limit: creditLimit,
+      reason: this.updateLimitForm.value.reason
+    }).subscribe({
+      next: (response: any) => {
         this.isSubmitting = false;
-        alert('Credit limit updated successfully');
+        notify(response?.message || 'Credit limit updated');
         this.showUpdateLimitModal = false;
+        this.loadCustomers();
+        this.loadUnderwriting(customerId);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        notify(error?.error?.error || 'Failed to update credit limit', 'error');
+      }
+    });
+  }
+
+  // ============================================
+  // UNDERWRITING (Phase 3)
+  // ============================================
+
+  loadUnderwriting(customerId: number): void {
+    this.adminService.getCustomerUnderwriting(customerId).subscribe({
+      next: (res: any) => this.underwriting = res,
+      error: () => this.underwriting = null
+    });
+  }
+
+  employmentMethod = 'employer_call';
+  employmentNote = '';
+
+  verifyEmployment(verified: boolean): void {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    const note = verified ? this.employmentNote.trim() : (prompt('Why remove the employment verification?') || '').trim();
+    if (!verified && note.length < 5) return;
+    this.isSubmitting = true;
+    this.adminService.setEmploymentVerification(customerId, { verified, method: this.employmentMethod, note }).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.employmentNote = '';
+        this.loadUnderwriting(customerId);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        notify(error?.error?.error || 'Failed to save employment verification', 'error');
+      }
+    });
+  }
+
+  async verifySalary(): Promise<void> {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    if (!(await ask('Confirm the salary matches the salary certificate / bank statement?'))) return;
+    this.isSubmitting = true;
+    this.adminService.updateCustomerUnderwriting(customerId, {
+      salary_verified: true, note: 'Salary verified against documents'
+    }).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.loadUnderwriting(customerId);
         this.loadCustomers();
       },
       error: (error) => {
-        console.error('Error updating credit limit:', error);
         this.isSubmitting = false;
-        alert('Failed to update credit limit');
+        notify(error?.error?.error || 'Failed to verify salary', 'error');
+      }
+    });
+  }
+
+  rerunUnderwriting(): void {
+    const customerId = this.selectedCustomer?.customer?.id;
+    if (!customerId) return;
+    this.isSubmitting = true;
+    this.adminService.rerunCustomerUnderwriting(customerId).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.loadUnderwriting(customerId);
+        this.loadCustomers();
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        notify(error?.error?.error || 'Failed to re-run the assessment', 'error');
       }
     });
   }
@@ -277,13 +365,13 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     this.adminService.addCustomerNote(this.selectedCustomer.customer.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Note added successfully');
+        notify('Note added successfully');
         this.showAddNoteModal = false;
       },
       error: (error) => {
         console.error('Error adding note:', error);
         this.isSubmitting = false;
-        alert('Failed to add note');
+        notify('Failed to add note', 'error');
       }
     });
   }
@@ -307,11 +395,11 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Customers exported successfully!');
+        notify('Customers exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting customers:', error);
-        alert('Failed to export customers');
+        notify('Failed to export customers', 'error');
       }
     });
   }
@@ -319,6 +407,28 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // ============================================
   // FILTERS & SORTING
   // ============================================
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** The detail payload has the current limit under financial, not on the customer. */
+  openLimitFromDetail(): void {
+    const c = { ...this.selectedCustomer.customer, credit_limit: this.selectedCustomer.financial?.credit_limit ?? 0 };
+    this.openUpdateLimitModal(c);
+  }
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
+
+  riskTone(level: string | null | undefined): 'success' | 'warn' | 'error' | 'neutral' {
+    const l = (level || '').toLowerCase();
+    return l === 'low' ? 'success' : l === 'medium' ? 'warn' : l === 'high' ? 'error' : 'neutral';
+  }
 
   applyFilters(): void {
     this.currentPage = 1;
@@ -416,7 +526,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

@@ -18,25 +18,48 @@
       <div class="plan-summary">
         <h3>{{ planName || 'Instalment Plan' }}</h3>
         <div class="summary-details">
+          <ng-container *ngIf="lateFee > 0">
+            <div class="detail-row"><span>Instalment:</span><span>{{ formatCurrency(instalmentAmount) }}</span></div>
+            <div class="detail-row"><span>Late fee:</span><span class="late-fee-line">{{ formatCurrency(lateFee) }}</span></div>
+          </ng-container>
           <div class="detail-row">
             <span>Amount Due:</span>
-            <strong>{{ formatCurrency(amount || 0) }}</strong>
+            <strong>{{ amount === null ? '—' : formatCurrency(amount) }}</strong>
           </div>
         </div>
       </div>
 
-      <!-- Payment Form -->
-      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
-        <div class="form-group">
-          <label>Payment Amount (GHS) *</label>
-          <div class="amount-input">
-            <span class="currency">₵</span>
-            <input type="number" step="0.01" formControlName="amount" placeholder="0.00">
-          </div>
-          <small *ngIf="paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched" class="error">
-            Please enter a valid amount
-          </small>
+      <!-- Pay online through Paystack (card or MoMo). Marked paid once Paystack confirms. -->
+      <div class="paystack-box" *ngIf="paystackEnabled">
+        <button type="button" class="btn-paystack" (click)="payWithPaystack()" [disabled]="isRedirecting || !planId || !amount">
+          <i class="fas fa-spinner fa-spin" *ngIf="isRedirecting"></i>
+          <i class="fas fa-lock" *ngIf="!isRedirecting"></i>
+          {{ isRedirecting ? 'Opening secure checkout...' : 'Pay ' + formatCurrency(amount || 0) + ' with Card or MoMo' }}
+        </button>
+        <small>Secured by Paystack. You'll return here once the payment is complete.</small>
+        <button type="button" class="link-btn" (click)="showManualForm = !showManualForm">
+          {{ showManualForm ? 'Hide bank transfer option' : 'Already paid by bank transfer or MoMo? Enter the reference' }}
+        </button>
+      </div>
+
+      <!-- Saved cards and autopay (opt-in). Cards are saved by Paystack after a card payment. -->
+      <div class="saved-cards" *ngIf="savedCards.length">
+        <h4><i class="fas fa-sync-alt"></i> Saved cards &amp; autopay</h4>
+        <div class="card-row" *ngFor="let card of savedCards">
+          <span>{{ card.card_type || 'Card' }} •••• {{ card.last4 }} <small *ngIf="card.expiry">exp {{ card.expiry }}</small></span>
+          <span class="autopay-state" [class.on]="card.autopay_enabled">
+            Autopay {{ card.autopay_enabled ? 'on' : 'off' }}
+          </span>
+          <button type="button" class="link-btn" (click)="toggleAutopay(card)">
+            {{ card.autopay_enabled ? 'Turn off' : 'Turn on' }}
+          </button>
+          <button type="button" class="link-btn danger" (click)="removeCard(card)">Remove</button>
         </div>
+        <small class="hint">With autopay on, we charge this card on each due date (and retry the next days if it fails).</small>
+      </div>
+
+      <!-- Manual payment: customer reports a transfer; an admin confirms it -->
+      <form *ngIf="showManualForm" [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
 
         <div class="form-group">
           <label>Payment Method *</label>
@@ -62,8 +85,8 @@
         </div>
 
         <div class="form-group">
-          <label>Payment Reference (Optional)</label>
-          <input type="text" formControlName="payment_reference" placeholder="Enter transaction reference number">
+          <label>Transaction Reference *</label>
+          <input type="text" formControlName="payment_reference" placeholder="Reference from your MoMo or bank receipt">
         </div>
 
         <div class="form-group">
@@ -73,14 +96,14 @@
 
         <div class="payment-note">
           <i class="fas fa-info-circle"></i>
-          <span>Your payment will be processed immediately. A receipt will be sent to your email.</span>
+          <span>Send the amount due by MoMo or bank transfer first, then enter the reference here. Your instalment is marked paid once Tabital confirms the money was received.</span>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
           <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isProcessing">
             <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
-            {{ isProcessing ? 'Processing...' : 'Pay Now' }}
+            {{ isProcessing ? 'Submitting...' : 'Submit Payment' }}
           </button>
         </div>
       </form>

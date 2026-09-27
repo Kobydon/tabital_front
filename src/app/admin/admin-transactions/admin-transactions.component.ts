@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { notify } from 'src/app/shared/notify';
 interface Transaction {
   id: number;
   transaction_id: string;
@@ -140,7 +141,6 @@ export class AdminTransactionsComponent implements OnInit {
   loadTransactionStats(): void {
     this.adminService.getTransactionStats().subscribe({
       next: (response: any) => {
-        console.log('Transaction stats:', response);
         this.transactionStats = response;
         this.updateStatsCards();
       },
@@ -177,7 +177,6 @@ export class AdminTransactionsComponent implements OnInit {
     
     this.adminService.getAllTransactions(filters).subscribe({
       next: (response: any) => {
-        console.log('Transactions response:', response);
         if (Array.isArray(response)) {
           this.transactions = response;
           this.totalItems = response.length;
@@ -208,7 +207,7 @@ export class AdminTransactionsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading transaction details:', error);
-        alert('Failed to load transaction details');
+        notify('Failed to load transaction details', 'error');
       }
     });
   }
@@ -232,7 +231,7 @@ export class AdminTransactionsComponent implements OnInit {
     this.adminService.updateTransactionStatus(this.selectedTransaction.transaction.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Transaction status updated successfully');
+        notify('Transaction status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadTransactions();
         this.loadTransactionStats();
@@ -240,7 +239,7 @@ export class AdminTransactionsComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify('Failed to update status', 'error');
       }
     });
   }
@@ -263,14 +262,14 @@ export class AdminTransactionsComponent implements OnInit {
     this.adminService.updateDeliveryStatus(this.selectedTransaction.transaction.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Delivery status updated successfully');
+        notify('Delivery status updated successfully');
         this.showUpdateDeliveryModal = false;
         this.loadTransactions();
       },
       error: (error) => {
         console.error('Error updating delivery status:', error);
         this.isSubmitting = false;
-        alert('Failed to update delivery status');
+        notify('Failed to update delivery status', 'error');
       }
     });
   }
@@ -293,7 +292,7 @@ export class AdminTransactionsComponent implements OnInit {
     this.adminService.refundTransaction(this.selectedTransaction.transaction.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Refund processed successfully');
+        notify('Refund processed successfully');
         this.showRefundModal = false;
         this.loadTransactions();
         this.loadTransactionStats();
@@ -301,7 +300,7 @@ export class AdminTransactionsComponent implements OnInit {
       error: (error) => {
         console.error('Error processing refund:', error);
         this.isSubmitting = false;
-        alert('Failed to process refund');
+        notify('Failed to process refund', 'error');
       }
     });
   }
@@ -324,11 +323,11 @@ export class AdminTransactionsComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Transactions exported successfully!');
+        notify('Transactions exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting transactions:', error);
-        alert('Failed to export transactions');
+        notify('Failed to export transactions', 'error');
       }
     });
   }
@@ -433,7 +432,7 @@ export class AdminTransactionsComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

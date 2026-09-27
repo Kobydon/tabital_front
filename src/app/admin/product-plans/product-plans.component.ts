@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+import { notify } from 'src/app/shared/notify';
 interface Product {
   id: number;
   product_id: string;
@@ -122,7 +123,6 @@ export class ProductPlansComponent implements OnInit {
   loadProductStats(): void {
     this.adminService.getProductStats().subscribe({
       next: (response: any) => {
-        console.log('Product stats:', response);
         this.productStats = response;
         this.updateStatsCards();
       },
@@ -158,7 +158,6 @@ export class ProductPlansComponent implements OnInit {
     
     this.adminService.getAllProducts(filters).subscribe({
       next: (response: any) => {
-        console.log('Products response:', response);
         if (Array.isArray(response)) {
           this.products = response;
           this.totalItems = response.length;
@@ -189,7 +188,7 @@ export class ProductPlansComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading product details:', error);
-        alert('Failed to load product details');
+        notify('Failed to load product details', 'error');
       }
     });
   }
@@ -213,7 +212,7 @@ export class ProductPlansComponent implements OnInit {
     this.adminService.updateProductStatus(this.selectedProduct.product.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Product status updated successfully');
+        notify('Product status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadProducts();
         this.loadProductStats();
@@ -221,7 +220,7 @@ export class ProductPlansComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update product status');
+        notify('Failed to update product status', 'error');
       }
     });
   }
@@ -241,7 +240,7 @@ export class ProductPlansComponent implements OnInit {
     this.adminService.updateProductStock(this.selectedProduct.product.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Stock updated successfully');
+        notify('Stock updated successfully');
         this.showUpdateStockModal = false;
         this.loadProducts();
         this.loadProductStats();
@@ -249,7 +248,7 @@ export class ProductPlansComponent implements OnInit {
       error: (error) => {
         console.error('Error updating stock:', error);
         this.isSubmitting = false;
-        alert('Failed to update stock');
+        notify('Failed to update stock', 'error');
       }
     });
   }
@@ -259,12 +258,12 @@ export class ProductPlansComponent implements OnInit {
     
     this.adminService.updateProductFeatured(product.id, { is_featured: newFeatured }).subscribe({
       next: (response) => {
-        alert(`Product ${newFeatured ? 'featured' : 'unfeatured'} successfully`);
+        notify(`Product ${newFeatured ? 'featured' : 'unfeatured'} successfully`);
         this.loadProducts();
       },
       error: (error) => {
         console.error('Error toggling featured:', error);
-        alert('Failed to update featured status');
+        notify('Failed to update featured status', 'error');
       }
     });
   }
@@ -285,11 +284,11 @@ export class ProductPlansComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Products exported successfully!');
+        notify('Products exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting products:', error);
-        alert('Failed to export products');
+        notify('Failed to export products', 'error');
       }
     });
   }
@@ -369,7 +368,7 @@ export class ProductPlansComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

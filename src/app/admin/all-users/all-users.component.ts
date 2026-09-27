@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+import { notify } from 'src/app/shared/notify';
 interface User {
   id: number;
   user_id: string;
@@ -21,7 +22,7 @@ interface User {
 @Component({
   selector: 'app-all-users',
   templateUrl: './all-users.component.html',
-  styleUrls: ['./all-users.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }`]
 })
 export class AllUsersComponent implements OnInit {
   // Data
@@ -56,14 +57,14 @@ export class AllUsersComponent implements OnInit {
   
   // Stats Cards
   statsCards = [
-    { label: 'Total Users', value: 0, icon: '👥', color: 'blue', isCurrency: false },
-    { label: 'Customers', value: 0, icon: '👤', color: 'green', isCurrency: false },
-    { label: 'Merchants', value: 0, icon: '🏪', color: 'purple', isCurrency: false },
-    { label: 'Active', value: 0, icon: '✅', color: 'green', isCurrency: false },
-    { label: 'Pending', value: 0, icon: '⏳', color: 'orange', isCurrency: false },
-    { label: 'Suspended', value: 0, icon: '🚫', color: 'red', isCurrency: false },
-    { label: 'KYC Verified', value: 0, icon: '✓', color: 'teal', isCurrency: false },
-    { label: 'New (30 Days)', value: 0, icon: '🆕', color: 'purple', isCurrency: false }
+    { label: 'Total Users', value: 0, color: 'blue', isCurrency: false },
+    { label: 'Customers', value: 0, color: 'green', isCurrency: false },
+    { label: 'Merchants', value: 0, color: 'purple', isCurrency: false },
+    { label: 'Active', value: 0, color: 'green', isCurrency: false },
+    { label: 'Pending', value: 0, color: 'orange', isCurrency: false },
+    { label: 'Suspended', value: 0, color: 'red', isCurrency: false },
+    { label: 'KYC Verified', value: 0, color: 'teal', isCurrency: false },
+    { label: 'New (30 Days)', value: 0, color: 'purple', isCurrency: false }
   ];
 
   // Role Options
@@ -97,7 +98,7 @@ export class AllUsersComponent implements OnInit {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
   }
 
@@ -113,7 +114,6 @@ export class AllUsersComponent implements OnInit {
   loadUserStats(): void {
     this.adminService.getUserStats().subscribe({
       next: (response: any) => {
-        console.log('User stats:', response);
         this.userStats = response;
         this.updateStatsCards();
       },
@@ -150,7 +150,6 @@ export class AllUsersComponent implements OnInit {
     
     this.adminService.getAllUsers(filters).subscribe({
       next: (response: any) => {
-        console.log('Users response:', response);
         if (Array.isArray(response)) {
           this.users = response;
           this.totalItems = response.length;
@@ -181,7 +180,7 @@ export class AllUsersComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading user details:', error);
-        alert('Failed to load user details');
+        notify('Failed to load user details', 'error');
       }
     });
   }
@@ -191,6 +190,7 @@ export class AllUsersComponent implements OnInit {
   // ============================================
 
   openUpdateStatusModal(user: User): void {
+    this.showUserModal = false;
     this.selectedUser = { user };
     this.updateStatusForm.patchValue({ status: user.status, reason: '' });
     this.showUpdateStatusModal = true;
@@ -205,7 +205,7 @@ export class AllUsersComponent implements OnInit {
     this.adminService.updateUserStatus(this.selectedUser.user.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('User status updated successfully');
+        notify('User status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadUsers();
         this.loadUserStats();
@@ -213,12 +213,13 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update user status');
+        notify(error?.message || 'Failed to update user status', 'error');
       }
     });
   }
 
   openDeleteConfirmModal(user: User): void {
+    this.showUserModal = false;
     this.selectedUser = { user };
     this.showDeleteConfirmModal = true;
   }
@@ -229,7 +230,7 @@ export class AllUsersComponent implements OnInit {
     this.adminService.deleteUser(this.selectedUser.user.id).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('User deactivated successfully');
+        notify('User deactivated successfully');
         this.showDeleteConfirmModal = false;
         this.loadUsers();
         this.loadUserStats();
@@ -237,7 +238,7 @@ export class AllUsersComponent implements OnInit {
       error: (error) => {
         console.error('Error deleting user:', error);
         this.isSubmitting = false;
-        alert('Failed to deactivate user');
+        notify(error?.message || 'Failed to deactivate user', 'error');
       }
     });
   }
@@ -258,11 +259,11 @@ export class AllUsersComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Users exported successfully!');
+        notify('Users exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting users:', error);
-        alert('Failed to export users');
+        notify('Failed to export users', 'error');
       }
     });
   }
@@ -270,6 +271,17 @@ export class AllUsersComponent implements OnInit {
   // ============================================
   // FILTERS & SORTING
   // ============================================
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
 
   applyFilters(): void {
     this.currentPage = 1;
@@ -355,7 +367,7 @@ export class AllUsersComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

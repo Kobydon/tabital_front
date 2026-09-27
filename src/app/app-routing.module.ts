@@ -41,9 +41,7 @@ const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { role: 'admin' },
     loadChildren: () => {
-      console.log('🔄 Loading Admin Module...');
       return import('./admin/admin.module').then(m => {
-        console.log('✅ Admin Module Loaded');
         return m.AdminModule;
       });
     }
@@ -55,9 +53,7 @@ const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { role: 'merchant' },
     loadChildren: () => {
-      console.log('🔄 Loading Merchant Module...');
       return import('./merchant/merchant.module').then(m => {
-        console.log('✅ Merchant Module Loaded');
         return m.MerchantModule;
       });
     }
@@ -69,9 +65,7 @@ const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { role: 'customer' },
     loadChildren: () => {
-      console.log('🔄 Loading Customer Module...');
       return import('./customer/customer.module').then(m => {
-        console.log('✅ Customer Module Loaded');
         return m.CustomerModule;
       });
     }
@@ -86,7 +80,7 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, {
-    enableTracing: true, // TEMPORARILY ENABLE TO SEE ROUTER EVENTS
+    enableTracing: false,
     useHash: false
   })],
   exports: [RouterModule]

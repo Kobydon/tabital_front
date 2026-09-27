@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 // signup.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -6,13 +7,19 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss']
 })
 export class SignupComponent implements OnInit, OnDestroy {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   activeTab: string = 'customer';
+  readonly today = new Date().toISOString().slice(0, 10);
   isLoading = false;
   
   serverErrors: { [key: string]: string } = {};
@@ -66,133 +73,9 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ============================================
-  // REAL-TIME DUPLICATE CHECKING
-  // ============================================
-
-  setupRealtimeDuplicateCheck() {
-    // Check for customer form
-    const customerEmailControl = this.customerForm.get('business_email');
-    const customerPhoneControl = this.customerForm.get('phone');
-    
-    if (customerEmailControl) {
-      customerEmailControl.valueChanges.pipe(
-        debounceTime(800),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      ).subscribe(email => {
-        if (email && customerEmailControl.valid && !this.checkingEmail) {
-          const phone = customerPhoneControl?.value || '';
-          this.checkDuplicate(email, phone, 'customer');
-        }
-      });
-    }
-    
-    if (customerPhoneControl) {
-      customerPhoneControl.valueChanges.pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      ).subscribe(phone => {
-        if (phone && customerPhoneControl.valid && !this.checkingPhone) {
-          const email = customerEmailControl?.value || '';
-          this.checkDuplicate(email, phone, 'customer');
-        }
-      });
-    }
-    
-    // Check for merchant form
-    const merchantEmailControl = this.merchantForm.get('business_email');
-    const merchantPhoneControl = this.merchantForm.get('phone');
-    
-    if (merchantEmailControl) {
-      merchantEmailControl.valueChanges.pipe(
-        debounceTime(800),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      ).subscribe(email => {
-        if (email && merchantEmailControl.valid && !this.checkingEmail) {
-          const phone = merchantPhoneControl?.value || '';
-          this.checkDuplicate(email, phone, 'merchant');
-        }
-      });
-    }
-    
-    if (merchantPhoneControl) {
-      merchantPhoneControl.valueChanges.pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      ).subscribe(phone => {
-        if (phone && merchantPhoneControl.valid && !this.checkingPhone) {
-          const email = merchantEmailControl?.value || '';
-          this.checkDuplicate(email, phone, 'merchant');
-        }
-      });
-    }
-  }
-
-  checkDuplicate(email: string, phone: string, formType: 'customer' | 'merchant') {
-    if (!email && !phone) return;
-    
-    const form = formType === 'customer' ? this.customerForm : this.merchantForm;
-    
-    // Clear previous duplicate errors
-    if (email) {
-      const emailControl = form.get('business_email');
-      if (emailControl?.errors) {
-        const { emailAlreadyExists, ...otherErrors } = emailControl.errors;
-        emailControl.setErrors(Object.keys(otherErrors).length ? otherErrors : null);
-      }
-    }
-    
-    if (phone) {
-      const phoneControl = form.get('phone');
-      if (phoneControl?.errors) {
-        const { phoneAlreadyExists, ...otherErrors } = phoneControl.errors;
-        phoneControl.setErrors(Object.keys(otherErrors).length ? otherErrors : null);
-      }
-    }
-    
-    this.auth.checkUserExists(email, phone).subscribe({
-      next: (response) => {
-        if (response.email_exists && email) {
-          const emailControl = form.get('business_email');
-          if (emailControl && email === emailControl.value) {
-            const currentErrors = emailControl.errors || {};
-            emailControl.setErrors({ ...currentErrors, emailAlreadyExists: true });
-            this.serverErrors['business_email'] = response.email_message;
-            this.showDuplicateAlert('email', email);
-          }
-        }
-        
-        if (response.phone_exists && phone) {
-          const phoneControl = form.get('phone');
-          if (phoneControl && phone === phoneControl.value) {
-            const currentErrors = phoneControl.errors || {};
-            phoneControl.setErrors({ ...currentErrors, phoneAlreadyExists: true });
-            this.serverErrors['phone'] = response.phone_message;
-            this.showDuplicateAlert('phone', phone);
-          }
-        }
-      },
-      error: (error) => {
-        console.error('Error checking user existence:', error);
-      }
-    });
-  }
-
-  showDuplicateAlert(fieldType: 'email' | 'phone', value: string) {
-    const alertMessage = fieldType === 'email' 
-      ? `⚠️ This email (${value}) is already registered.\n\nDo you want to login instead?`
-      : `⚠️ This phone number (${value}) is already registered.\n\nDo you want to login instead?`;
-    
-    const userConfirmed = confirm(alertMessage + '\n\nClick OK to go to login page, Cancel to continue with registration.');
-    
-    if (userConfirmed) {
-      this.router.navigate(['/login']);
-    }
-  }
+  // No live "already registered" lookup: a public check let anyone test which phone numbers and emails
+  // have accounts. A duplicate is reported when the form is submitted (the sign-up request).
+  setupRealtimeDuplicateCheck() {}
 
   // ============================================
   // CUSTOM VALIDATORS
@@ -314,7 +197,12 @@ export class SignupComponent implements OnInit, OnDestroy {
       address: ['', Validators.required],
       designation: [''],
       company: [''],
-      income_range: ['', Validators.required],
+      // Underwriting (Phase 3): Tabital verifies salary and employment before giving a limit
+      monthly_salary: [null, [Validators.required, Validators.min(1)]],
+      employment_start_date: ['', Validators.required],
+      salary_paid_to_bank: [null, Validators.required],
+      national_id: ['', [Validators.required, Validators.minLength(8)]],
+      momo_number: ['', [Validators.required, this.validMobileNumberValidator.bind(this)]],
       ref_name: ['', Validators.required],
       ref_phone: ['', [Validators.required, this.validMobileNumberValidator.bind(this)]],
       ref_relationship: ['', Validators.required],
@@ -465,7 +353,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.serverErrors = {};
     this.generalError = '';
     
-    console.log('Full error object:', error);
     
     let errorMessage = '';
     let errorDetail = '';
@@ -486,7 +373,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     
     const fullErrorText = (errorMessage + ' ' + errorDetail + ' ' + JSON.stringify(error)).toLowerCase();
     
-    console.log('Full error text:', fullErrorText);
     
     if (fullErrorText.includes('integrityerror') || 
         fullErrorText.includes('uniqueviolation') || 
@@ -587,7 +473,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.customerForm.markAllAsTouched();
     
     if (this.customerForm.invalid) {
-      console.log('Customer Form Errors:', this.getFormErrors());
       this.scrollToFirstError();
       return;
     }
@@ -602,18 +487,14 @@ export class SignupComponent implements OnInit, OnDestroy {
     };
     
     delete customerData.confirmPassword;
-    
-    console.log('Submitting customer data:', customerData);
 
     this.auth.register(customerData).subscribe({
       next: (res: any) => {
-        console.log('Customer registered successfully', res);
         this.isLoading = false;
-        alert('Registration successful! Please login to continue.');
+        notify('Registration successful! Please login to continue.');
         this.router.navigate(['/login']);
       },
       error: (err) => {
-        alert(err.message);
         this.isLoading = false;
         this.handleServerErrors(err);
         
@@ -631,7 +512,6 @@ export class SignupComponent implements OnInit, OnDestroy {
     this.merchantForm.markAllAsTouched();
     
     if (this.merchantForm.invalid) {
-      console.log('Merchant Form Errors:', this.getFormErrors());
       this.scrollToFirstError();
       return;
     }
@@ -649,9 +529,8 @@ export class SignupComponent implements OnInit, OnDestroy {
 
     this.auth.register(merchantData).subscribe({
       next: (res: any) => {
-        console.log('Merchant registered successfully', res);
         this.isLoading = false;
-        alert('Registration successful! Please wait for admin approval.');
+        notify('Registration successful! Please wait for admin approval.');
         this.router.navigate(['/login']);
       },
       error: (err) => {

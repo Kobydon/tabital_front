@@ -1,65 +1,56 @@
-<div class="login-container">
-  <div class="login-card">
-    <h2>✨ Welcome Back</h2>
-    <div class="subtitle">Sign in to continue your journey</div>
+<!-- Login: Vault. Navy brand panel + form card. -->
+<div class="auth">
+  <section class="auth__brand" aria-hidden="true">
+    <div class="auth__mark">
+      <img class="auth__logo" src="assets/brand/logo-on-navy@1x.png"
+           srcset="assets/brand/logo-on-navy@1x.png 1x, assets/brand/logo-on-navy@2x.png 2x"
+           width="48" height="36" alt="Tabital Pay">
+      Tabital Pay
+    </div>
+    <p class="auth__tag">Own it today. Pay later.</p>
+    <ul class="auth__points">
+      <li><lucide-icon name="calendar-clock" [size]="18"></lucide-icon> Pay in 2, 3 or 4, interest-free when you pay on time</li>
+      <li><lucide-icon name="shield-check" [size]="18"></lucide-icon> Payments secured by Paystack: MoMo or card</li>
+      <li><lucide-icon name="receipt" [size]="18"></lucide-icon> See every payment and fee before you agree</li>
+    </ul>
+  </section>
 
-    <form [formGroup]="form" (ngSubmit)="login()">
-      <!-- Phone Input with Icon -->
-      <div class="input-group">
-        <span class="input-icon">
-          <i class="fas fa-user"></i>
-        </span>
-        <input 
-          formControlName="phone" 
-          placeholder="Phone Number / Email"
-          type="text"
-          autocomplete="username">
-      </div>
+  <section class="auth__panel">
+    <div class="auth__card">
+      <h1>Sign in</h1>
+      <p class="auth__sub">Welcome back. Sign in to shop, pay or manage your store.</p>
 
-      <!-- Password Input with Icon and Eye Toggle -->
-      <div class="input-group password-group">
-        <span class="input-icon">
-          <i class="fas fa-lock"></i>
-        </span>
-        <input 
-          [type]="showPassword ? 'text' : 'password'" 
-          formControlName="password" 
-          placeholder="Password"
-          autocomplete="current-password">
-        <button 
-          type="button" 
-          class="eye-icon" 
-          (click)="togglePasswordVisibility()"
-          [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-          <i class="fas" [class.fa-eye]="showPassword" [class.fa-eye-slash]="!showPassword"></i>
+      <form [formGroup]="form" (ngSubmit)="login()" novalidate>
+        <tp-field label="Phone number or business email" for="login-phone"
+                  hint="The number you registered with (e.g. 0241234567). Merchants can also use their business email.">
+          <input id="login-phone" formControlName="phone" type="text" autocomplete="username"
+                 aria-describedby="login-phone-hint">
+        </tp-field>
+
+        <tp-field label="Password" for="login-password">
+          <div class="auth__pw">
+            <input id="login-password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
+                   autocomplete="current-password">
+            <button type="button" class="auth__eye" (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword">
+              <i class="fas" [class.fa-eye]="showPassword" [class.fa-eye-slash]="!showPassword" aria-hidden="true"></i>
+            </button>
+          </div>
+        </tp-field>
+
+        <div class="auth__row"><a routerLink="/forgot-password">Forgot password?</a></div>
+
+        <div class="auth__error" role="alert" *ngIf="error">
+          <lucide-icon name="triangle-alert" [size]="16"></lucide-icon> {{ error }}
+        </div>
+
+        <button tpButton type="submit" [block]="true" [disabled]="loading" [loading]="loading">
+          <span *ngIf="loading" class="tp-spinner" aria-hidden="true"></span>
+          {{ loading ? 'Signing in…' : 'Sign in' }}
         </button>
-      </div>
+      </form>
 
-      <!-- Forgot Password Link -->
-      <div class="forgot-password">
-        <a routerLink="/forgot-password">Forgot Password?</a>
-      </div>
-
-      <!-- Error Message -->
-      <div class="error" *ngIf="error">
-        {{ error }}
-      </div>
-
-      <!-- Login Button with Loading State -->
-      <button 
-        type="submit" 
-        class="login-btn"
-        [disabled]="loading">
-        <span *ngIf="loading" class="spinner"></span>
-        <span *ngIf="!loading">🚀 Login</span>
-        <span *ngIf="loading">Logging in...</span>
-      </button>
-    </form>
-
-    <!-- Signup Link -->
-    <p class="link">
-      New to our platform?
-      <a routerLink="/signup">Create an account →</a>
-    </p>
-  </div>
+      <p class="auth__alt">New to Tabital Pay? <a routerLink="/signup">Create an account</a></p>
+    </div>
+  </section>
 </div>

@@ -1,463 +1,223 @@
-<div class="kyc-approval-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <h1>
-        <i class="fas fa-shield-alt"></i>
-        KYC/KYB Verification
-      </h1>
-      <p class="subtitle">Review and verify merchant applications</p>
-    </div>
-    <div class="header-right">
-      <div class="stats">
-        <div class="stat-card pending">
-          <span class="stat-value">{{ stats.pending }}</span>
-          <span class="stat-label">Pending</span>
-        </div>
-        <div class="stat-card verified">
-          <span class="stat-value">{{ stats.verified }}</span>
-          <span class="stat-label">Verified</span>
-        </div>
-        <div class="stat-card rejected">
-          <span class="stat-value">{{ stats.rejected }}</span>
-          <span class="stat-label">Rejected</span>
-        </div>
-        <div class="stat-card total">
-          <span class="stat-value">{{ stats.totalDocuments }}</span>
-          <span class="stat-label">Documents</span>
-        </div>
-      </div>
-    </div>
+<!-- Merchant KYB queue: Vault. Contact and payout numbers arrive masked. Decisions need Management Access. -->
+<tp-page-header title="Merchant KYB"
+  subtitle="Check each merchant's business documents and payout details before they can sell. Approving also sets the merchant fee tier (§6.1).">
+</tp-page-header>
+
+<div class="tp-kpis">
+  <div class="tp-kpi" [class.tp-kpi--attention]="stats.pending > 0"><span>Waiting for review</span><strong>{{ stats.pending }}</strong></div>
+  <div class="tp-kpi"><span>Documents to check</span><strong>{{ stats.totalDocuments }}</strong></div>
+  <div class="tp-kpi"><span>Verified</span><strong>{{ stats.verified }}</strong></div>
+  <div class="tp-kpi"><span>Rejected</span><strong>{{ stats.rejected }}</strong></div>
+</div>
+
+<div class="tp-toolbar">
+  <div class="tp-pills" role="tablist" aria-label="KYB status">
+    <button type="button" role="tab" [attr.aria-selected]="activeTab === 'pending'" [class.is-on]="activeTab === 'pending'" (click)="switchTab('pending')">
+      Waiting for review<span class="tp-count" *ngIf="stats.pending">{{ stats.pending }}</span></button>
+    <button type="button" role="tab" [attr.aria-selected]="activeTab === 'verified'" [class.is-on]="activeTab === 'verified'" (click)="switchTab('verified')">Verified</button>
+    <button type="button" role="tab" [attr.aria-selected]="activeTab === 'rejected'" [class.is-on]="activeTab === 'rejected'" (click)="switchTab('rejected')">Rejected</button>
   </div>
+</div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="switchTab('pending')">
-      <i class="fas fa-clock"></i> Pending Review
-      <span class="badge" *ngIf="stats.pending > 0">{{ stats.pending }}</span>
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'verified'" (click)="switchTab('verified')">
-      <i class="fas fa-check-circle"></i> Verified
-      <span class="badge verified" *ngIf="stats.verified > 0">{{ stats.verified }}</span>
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'rejected'" (click)="switchTab('rejected')">
-      <i class="fas fa-times-circle"></i> Rejected
-      <span class="badge rejected" *ngIf="stats.rejected > 0">{{ stats.rejected }}</span>
-    </button>
-  </div>
+<div *ngIf="isLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading merchants…</div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading verification requests...</p>
-  </div>
-
-  <!-- Pending Tab -->
-  <div *ngIf="!isLoading && activeTab === 'pending'" class="tab-content">
-    <div *ngIf="pendingMerchants.length === 0" class="empty-state">
-      <div class="empty-icon">✅</div>
-      <h3>No Pending Verifications</h3>
-      <p>All merchant applications have been processed</p>
-    </div>
-
-    <div class="merchants-grid" *ngIf="pendingMerchants.length > 0">
-      <div class="merchant-card" *ngFor="let merchant of pendingMerchants">
-        <div class="card-header">
-          <div class="merchant-icon">
-            <span>🏪</span>
-          </div>
-          <div class="merchant-info">
-            <h3>{{ merchant.merchant_name }}</h3>
-            <p class="owner">{{ merchant.owner_name }}</p>
-          </div>
-          <div class="status-badge pending">
-            <span class="status-icon">⏳</span>
-            Pending
-          </div>
-        </div>
-
-        <div class="card-details">
-          <div class="detail-row">
-            <span class="label">📞 Phone:</span>
-            <span>{{ merchant.phone }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">📧 Email:</span>
-            <span>{{ merchant.business_email }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">📍 Location:</span>
-            <span>{{ merchant.city }}{{ merchant.address ? ', ' + merchant.address : '' }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">📅 Submitted:</span>
-            <span>{{ formatDate(merchant.submitted_at) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">📄 Documents:</span>
-            <span class="doc-count">{{ merchant.documents.length || 0 }} uploaded</span>
-          </div>
-        </div>
-
-        <div class="card-actions">
-          <button class="btn-view" (click)="viewMerchantDetails(merchant)">
-            <i class="fas fa-eye"></i> Review Documents
-          </button>
-          <button class="btn-reject" (click)="openRejectModalForMerchant(merchant)">
-            <i class="fas fa-times"></i> Reject
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Verified Tab -->
-  <div *ngIf="!isLoading && activeTab === 'verified'" class="tab-content">
-    <div *ngIf="verifiedMerchants.length === 0" class="empty-state">
-      <div class="empty-icon">📋</div>
-      <h3>No Verified Merchants</h3>
-      <p>Verified merchants will appear here</p>
-    </div>
-
-    <div class="merchants-list" *ngIf="verifiedMerchants.length > 0">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Business Name</th>
-            <th>Owner</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Verified On</th>
-            <th>Level</th>
-          </tr>
-        </thead>
+<!-- Waiting for review -->
+<ng-container *ngIf="!isLoading && activeTab === 'pending'">
+  <tp-card *ngIf="pendingMerchants.length">
+    <div class="tp-table-wrap">
+      <table class="tp-table">
+        <thead><tr><th scope="col">Business</th><th scope="col">Owner</th><th scope="col">Location</th><th scope="col">Documents</th>
+          <th scope="col">Submitted</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
         <tbody>
-          <tr *ngFor="let merchant of verifiedMerchants">
-            <td><strong>{{ merchant.merchant_name }}</strong></td>
-            <td>{{ merchant.owner_name }}</td>
-                        <td>{{ merchant.owner_name }}</td>
-            <td>{{ merchant.phone }}</td>
-            <td>{{ merchant.email }}</td>
-            <td>{{ formatDate(merchant.verified_at) }}</td>
-            <td><span class="level-badge">{{ merchant.verification_level }}</span></td>
+          <tr *ngFor="let m of pendingMerchants">
+            <td><strong>{{ m.merchant_name }}</strong><div class="tp-sub">{{ m.business_email }}</div></td>
+            <td>{{ m.owner_name }}<div class="tp-sub">{{ m.phone }}</div></td>
+            <td>{{ m.city }}</td>
+            <td>{{ m.documents.length || 0 }}
+              <div class="tp-sub">{{ countDocs(m, 'verified') }} checked · {{ countDocs(m, 'pending') }} to check</div></td>
+            <td>{{ m.submitted_at | tpDate }}</td>
+            <td><div class="tp-row-actions">
+              <button tpButton="navy" size="sm" type="button" (click)="viewMerchantDetails(m)">Review</button>
+            </div></td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </tp-card>
+  <tp-card *ngIf="!pendingMerchants.length">
+    <tp-empty-state icon="badge-check" title="Nothing to review" text="New merchant applications appear here."></tp-empty-state>
+  </tp-card>
+</ng-container>
 
-  <!-- Rejected Tab -->
-  <div *ngIf="!isLoading && activeTab === 'rejected'" class="tab-content">
-    <div *ngIf="rejectedMerchants.length === 0" class="empty-state">
-      <div class="empty-icon">✨</div>
-      <h3>No Rejected Applications</h3>
-      <p>All applications have been processed</p>
-    </div>
-
-    <div class="merchants-list" *ngIf="rejectedMerchants.length > 0">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Business Name</th>
-            <th>Owner</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Rejection Reason</th>
-            <th>Rejected On</th>
-          </tr>
-        </thead>
+<!-- Verified -->
+<ng-container *ngIf="!isLoading && activeTab === 'verified'">
+  <tp-card *ngIf="verifiedMerchants.length">
+    <div class="tp-table-wrap">
+      <table class="tp-table">
+        <thead><tr><th scope="col">Business</th><th scope="col">Owner</th><th scope="col">Merchant fee</th><th scope="col">Verified</th>
+          <th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
         <tbody>
-          <tr *ngFor="let merchant of rejectedMerchants">
-            <td><strong>{{ merchant.merchant_name }}</strong></td>
-            <td>{{ merchant.owner_name }}</td>
-            <td>{{ merchant.phone }}</td>
-            <td>{{ merchant.email }}</td>
-            <td class="rejection-reason">{{ merchant.rejection_reason || 'No reason provided' }}</td>
-            <td>{{ formatDate(merchant.rejected_at) }}</td>
+          <tr *ngFor="let m of verifiedMerchants">
+            <td><strong>{{ m.merchant_name }}</strong><div class="tp-sub">{{ m.business_email || m.email }}</div></td>
+            <td>{{ m.owner_name }}<div class="tp-sub">{{ m.phone }}</div></td>
+            <td><tp-chip [tone]="tierTone(m.fee_tier)" [label]="(m.fee_tier_label || 'Standard') + ' · ' + (m.fee_percentage ?? '') + '%'"></tp-chip></td>
+            <td>{{ m.verified_at | tpDate }}</td>
+            <td><div class="tp-row-actions">
+              <button *tpManagement tpButton="ghost" size="sm" type="button" (click)="openTierDialog(m)">Change fee tier</button>
+            </div></td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </tp-card>
+  <tp-card *ngIf="!verifiedMerchants.length">
+    <tp-empty-state icon="store" title="No verified merchants yet"></tp-empty-state>
+  </tp-card>
+</ng-container>
 
-  <!-- Merchant Details Modal -->
-  <div class="modal-overlay" *ngIf="showMerchantModal" (click)="closeAllModals()">
-    <div class="modal-container large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-store"></i>
-          Merchant Verification Details
-        </h2>
-        <button class="close-btn" (click)="closeAllModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+<!-- Rejected -->
+<ng-container *ngIf="!isLoading && activeTab === 'rejected'">
+  <tp-card *ngIf="rejectedMerchants.length">
+    <div class="tp-table-wrap">
+      <table class="tp-table">
+        <thead><tr><th scope="col">Business</th><th scope="col">Owner</th><th scope="col">Reason</th><th scope="col">Rejected</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let m of rejectedMerchants">
+            <td><strong>{{ m.merchant_name }}</strong><div class="tp-sub">{{ m.business_email || m.email }}</div></td>
+            <td>{{ m.owner_name }}<div class="tp-sub">{{ m.phone }}</div></td>
+            <td>{{ m.rejection_reason || 'No reason recorded' }}</td>
+            <td>{{ m.rejected_at | tpDate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </tp-card>
+  <tp-card *ngIf="!rejectedMerchants.length">
+    <tp-empty-state icon="circle-x" title="No rejected merchants"></tp-empty-state>
+  </tp-card>
+</ng-container>
 
-      <div class="modal-body" *ngIf="selectedMerchant">
-        <!-- Merchant Info -->
-        <div class="info-section">
-          <h3><i class="fas fa-info-circle"></i> Business Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Business Name:</label>
-              <span>{{ selectedMerchant.merchant_name }}</span>
-            </div>
-            <div class="info-item">
-              <label>Owner Name:</label>
-              <span>{{ selectedMerchant.owner_name }}</span>
-            </div>
-            <div class="info-item">
-              <label>Phone Number:</label>
-              <span>{{ selectedMerchant.phone }}</span>
-            </div>
-            <div class="info-item">
-              <label>Email Address:</label>
-              <span>{{ selectedMerchant.business_email }}</span>
-            </div>
-            <div class="info-item">
-              <label>City:</label>
-              <span>{{ selectedMerchant.city }}</span>
-            </div>
-            <div class="info-item">
-              <label>Address:</label>
-              <span>{{ selectedMerchant.address }}</span>
-            </div>
-            <div class="info-item">
-              <label>Submitted:</label>
-              <span>{{ formatDate(selectedMerchant.submitted_at) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Status:</label>
-              <span class="status-badge pending">Pending Review</span>
-            </div>
-          </div>
-        </div>
+<!-- Review a merchant -->
+<div class="tp-dialog-backdrop" *ngIf="showMerchantModal && selectedMerchant" (click)="closeAllModals()">
+  <div class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="kyb-title" (click)="$event.stopPropagation()">
+    <h2 id="kyb-title">{{ selectedMerchant.merchant_name }} <tp-chip [status]="selectedMerchant.kyc_status || 'pending'"></tp-chip></h2>
 
-        <!-- Bank Details -->
-        <div class="info-section" *ngIf="selectedMerchant.bank_details">
-          <h3><i class="fas fa-university"></i> Bank Account Details</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Bank Name:</label>
-              <span>{{ selectedMerchant.bank_details.bank_name || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Account Name:</label>
-              <span>{{ selectedMerchant.bank_details.account_name || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Account Number:</label>
-              <span>{{ selectedMerchant.bank_details.account_number || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Branch:</label>
-              <span>{{ selectedMerchant.bank_details.branch_name || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Swift Code:</label>
-              <span>{{ selectedMerchant.bank_details.swift_code || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Mobile Money:</label>
-              <span>{{ selectedMerchant.bank_details.momo_name ? selectedMerchant.bank_details.momo_name + ' (' + selectedMerchant.bank_details.momo_number + ')' : 'Not provided' }}</span>
-            </div>
-          </div>
-        </div>
+    <h3 class="tp-section-title">Business</h3>
+    <dl class="tp-dl">
+      <dt>Owner</dt><dd>{{ selectedMerchant.owner_name }}</dd>
+      <dt>Phone</dt><dd><tp-reveal [userId]="selectedMerchant.merchant_id" field="phone" [value]="selectedMerchant.phone" label="phone"></tp-reveal></dd>
+      <dt>Email</dt><dd>{{ selectedMerchant.business_email || '—' }}</dd>
+      <dt>Address</dt><dd>{{ selectedMerchant.address || '—' }}<ng-container *ngIf="selectedMerchant.city">, {{ selectedMerchant.city }}</ng-container></dd>
+      <dt>Submitted</dt><dd>{{ selectedMerchant.submitted_at | tpDate }}</dd>
+    </dl>
 
-        <!-- Documents -->
-        <div class="info-section">
-          <h3><i class="fas fa-file-alt"></i> Uploaded Documents</h3>
-          <div class="documents-grid">
-            <div class="document-card" *ngFor="let doc of selectedMerchant.documents">
-              <div class="document-icon">
-                <span>{{ getDocumentIcon(doc.document_type) }}</span>
-              </div>
-              <div class="document-info">
-                <h4>{{ getDocumentTypeName(doc.document_type) }}</h4>
-                <p class="file-name">{{ doc.file_name }}</p>
-                <p class="file-size">{{ formatFileSize(doc.file_size) }}</p>
-                <p class="upload-date">Uploaded: {{ formatDate(doc.uploaded_at) }}</p>
-              </div>
-              <div class="document-status">
-                <span class="status-badge" [class]="getStatusClass(doc.status)">
-                  {{ getStatusIcon(doc.status) }} {{ doc.status }}
-                </span>
-              </div>
-              <div class="document-actions">
-                <button class="btn-view-doc" (click)="viewDocument(doc)">
-                  <i class="fas fa-eye"></i> View
-                </button>
-                <button class="btn-approve-doc" (click)="approveDocument()" *ngIf="doc.status === 'pending'">
-                  <i class="fas fa-check"></i> Approve
-                </button>
-                <button class="btn-reject-doc" (click)="openRejectModalForDocument(doc)" *ngIf="doc.status === 'pending'">
-                  <i class="fas fa-times"></i> Reject
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <h3 class="tp-section-title">Payout account</h3>
+    <dl class="tp-dl" *ngIf="selectedMerchant.bank_details as b">
+      <dt>Bank</dt><dd>{{ b.bank_name || 'Not provided' }}<ng-container *ngIf="b.branch_name"> · {{ b.branch_name }}</ng-container></dd>
+      <dt>Account name</dt><dd>{{ b.account_name || 'Not provided' }}</dd>
+      <dt>Account number</dt><dd><tp-reveal [userId]="selectedMerchant.merchant_id" field="account_number" [value]="b.account_number" label="account number"></tp-reveal></dd>
+      <dt>Mobile Money</dt><dd>{{ b.momo_name || 'Not provided' }}<ng-container *ngIf="b.momo_number"> ·
+        <tp-reveal [userId]="selectedMerchant.merchant_id" field="momo_number" [value]="b.momo_number" label="MoMo number"></tp-reveal></ng-container></dd>
+    </dl>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeAllModals()">Close</button>
-        <button class="btn-approve" (click)="approveMerchant()" [disabled]="isProcessing">
-          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
-          <span *ngIf="!isProcessing"><i class="fas fa-check-circle"></i> Approve All</span>
-        </button>
-        <button class="btn-reject" (click)="openRejectModalForMerchant(selectedMerchant)" *ngIf="selectedMerchant">
-          <i class="fas fa-times-circle"></i> Reject All
-        </button>
-      </div>
+    <h3 class="tp-section-title">Documents</h3>
+    <div class="tp-table-wrap tp-table-wrap--flush" *ngIf="selectedMerchant.documents?.length; else noDocs">
+      <table class="tp-table">
+        <thead><tr><th scope="col">Document</th><th scope="col">File</th><th scope="col">Status</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let doc of selectedMerchant.documents">
+            <td>{{ getDocumentTypeName(doc.document_type) }}<div class="tp-sub">{{ doc.uploaded_at | tpDate }}</div></td>
+            <td>{{ doc.file_name }}<div class="tp-sub">{{ formatFileSize(doc.file_size) }}</div></td>
+            <td><tp-chip [status]="doc.status"></tp-chip></td>
+            <td><div class="tp-row-actions"><button tpButton="ghost" size="sm" type="button" (click)="viewDocument(doc)">Open</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noDocs><p class="tp-sub">No documents uploaded yet.</p></ng-template>
+
+    <ng-container *tpManagement>
+      <h3 class="tp-section-title">Merchant fee tier</h3>
+      <tp-field label="Fee tier" for="kyb-tier" hint="Kept from each sale's payout. Applies to orders approved from now on. Standard unless you choose another.">
+        <select id="kyb-tier" [(ngModel)]="approvalTier" name="approvalTier">
+          <option *ngFor="let t of tiers" [value]="t.value">{{ t.label }} · {{ t.fee_percentage }}%</option>
+        </select>
+      </tp-field>
+      <tp-field *ngIf="approvalTier !== 'standard'" label="Why this tier?" for="kyb-tier-reason" hint="Logged with the decision.">
+        <input id="kyb-tier-reason" type="text" [(ngModel)]="approvalTierReason" name="approvalTierReason" maxlength="500">
+      </tp-field>
+    </ng-container>
+
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeAllModals()">Close</button>
+      <ng-container *tpManagement>
+        <button tpButton="danger" type="button" (click)="openRejectModalForMerchant(selectedMerchant)">Reject</button>
+        <button tpButton="navy" type="button" [disabled]="isProcessing" [loading]="isProcessing" (click)="approveMerchant()">Approve merchant</button>
+      </ng-container>
     </div>
   </div>
+</div>
 
-  <!-- Document Preview Modal with Fixed Preview -->
-  <div class="modal-overlay" *ngIf="showDocumentModal" (click)="closeAllModals()">
-    <div class="modal-container document-preview" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-file-alt"></i>
-          Document Preview
-        </h2>
-        <button class="close-btn" (click)="closeAllModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body" *ngIf="selectedDocument">
-        <div class="document-info-header">
-          <h3>{{ getDocumentTypeName(selectedDocument.document_type) }}</h3>
-          <p class="file-info">{{ selectedDocument.file_name }} ({{ formatFileSize(selectedDocument.file_size) }})</p>
-          <div class="document-meta-row">
-            <span class="meta-item">
-              <strong>Document ID:</strong> {{ selectedDocument.document_id }}
-            </span>
-            <span class="meta-item">
-              <strong>Type:</strong> {{ getDocumentTypeName(selectedDocument.document_type) }}
-            </span>
-            <span class="meta-item">
-              <strong>Uploaded:</strong> {{ formatDate(selectedDocument.uploaded_at) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="document-preview-area">
-          <!-- Loading State -->
-          <div *ngIf="isPdfLoading" class="loading-preview">
-            <div class="spinner-small"></div>
-            <p>Loading document preview...</p>
-          </div>
-
-          <!-- PDF Preview using iframe with blob URL -->
-          <div *ngIf="isPdf(selectedDocument.mime_type) && pdfUrl && !isPdfLoading" class="pdf-preview-container">
-            <iframe [src]="pdfUrl" 
-                    class="preview-pdf" 
-                    frameborder="0"
-                    (load)="isPdfLoading = false"
-                    (error)="onPdfError()">
-            </iframe>
-            <div class="preview-actions">
-              <button class="download-btn" (click)="downloadDocument()">
-                <i class="fas fa-download"></i> Download PDF
-              </button>
-            </div>
-          </div>
-
-          <!-- PDF Error Fallback -->
-          <div *ngIf="pdfError && isPdf(selectedDocument.mime_type) && !isPdfLoading" class="pdf-error-container">
-            <i class="fas fa-file-pdf fa-5x"></i>
-            <p>Unable to preview PDF in your browser.</p>
-            <button class="download-btn" (click)="downloadDocument()">
-              <i class="fas fa-download"></i> Download PDF to view
-            </button>
-          </div>
-
-          <!-- Image Preview -->
-          <div *ngIf="isImage(selectedDocument.mime_type) && imageUrl && !isPdfLoading" class="image-preview-container">
-            <img [src]="imageUrl" 
-                 [alt]="selectedDocument.document_name" 
-                 class="preview-image"
-                 (error)="onPdfError()">
-            <div class="preview-actions">
-              <button class="download-btn" (click)="downloadDocument()">
-                <i class="fas fa-download"></i> Download Image
-              </button>
-            </div>
-          </div>
-
-          <!-- No File Data -->
-          <div *ngIf="!selectedDocument.file_data && !isPdfLoading" class="unsupported-preview">
-            <i class="fas fa-file-alt fa-5x"></i>
-            <p>Document data not available</p>
-            <p class="file-info">{{ selectedDocument.file_name }} ({{ formatFileSize(selectedDocument.file_size) }})</p>
-          </div>
-        </div>
-
-        <div class="document-meta">
-          <div class="meta-item" *ngIf="selectedDocument.status === 'rejected' && selectedDocument.rejection_reason">
-            <label>Rejection Reason:</label>
-            <span class="rejection-text">{{ selectedDocument.rejection_reason }}</span>
-          </div>
-          <div class="meta-item" *ngIf="selectedDocument.verified_at">
-            <label>Verified At:</label>
-            <span>{{ formatDate(selectedDocument.verified_at) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeAllModals()">Close</button>
-        <button class="btn-approve" (click)="approveDocument()" *ngIf="selectedDocument?.status === 'pending'" [disabled]="isProcessing">
-          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
-          <span *ngIf="!isProcessing"><i class="fas fa-check"></i> Approve Document</span>
-        </button>
-        <button class="btn-reject" (click)="openRejectModalForDocument(selectedDocument!)" *ngIf="selectedDocument?.status === 'pending'">
-          <i class="fas fa-times"></i> Reject Document
-        </button>
-      </div>
+<!-- A document -->
+<div class="tp-dialog-backdrop" *ngIf="showDocumentModal && selectedDocument" (click)="closeDocument()">
+  <div class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="kyb-doc-title" (click)="$event.stopPropagation()">
+    <h2 id="kyb-doc-title">{{ getDocumentTypeName(selectedDocument.document_type) }} <tp-chip [status]="selectedDocument.status"></tp-chip></h2>
+    <p class="tp-sub">{{ selectedDocument.file_name }} · {{ formatFileSize(selectedDocument.file_size) }} · uploaded {{ selectedDocument.uploaded_at | tpDate }}</p>
+    <div class="kyb-preview">
+      <p *ngIf="isPdfLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading preview…</p>
+      <img *ngIf="imageUrl" [src]="imageUrl" [alt]="getDocumentTypeName(selectedDocument.document_type)">
+      <iframe *ngIf="pdfUrl && !pdfError" [src]="pdfUrl" title="Document preview" (error)="onPdfError()"></iframe>
+      <p *ngIf="pdfError || (!imageUrl && !pdfUrl && !isPdfLoading)" class="tp-sub">No preview. Download the file to check it.</p>
+    </div>
+    <div class="tp-note tp-note--error" *ngIf="selectedDocument.rejection_reason">
+      <lucide-icon name="circle-x" [size]="16"></lucide-icon><span>Rejected: {{ selectedDocument.rejection_reason }}</span>
+    </div>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeDocument()">Back</button>
+      <button tpButton="ghost" type="button" (click)="downloadDocument()"><lucide-icon name="download" [size]="16"></lucide-icon> Download</button>
+      <ng-container *tpManagement>
+        <ng-container *ngIf="selectedDocument.status !== 'verified'">
+          <button tpButton="danger" type="button" (click)="openRejectModalForDocument(selectedDocument)">Reject document</button>
+          <button tpButton="navy" type="button" [disabled]="isProcessing" [loading]="isProcessing" (click)="approveDocument()">Accept document</button>
+        </ng-container>
+      </ng-container>
     </div>
   </div>
+</div>
 
-  <!-- Reject Reason Modal -->
-  <div class="modal-overlay" *ngIf="showRejectModal" (click)="closeAllModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-exclamation-triangle"></i>
-          Reject Verification
-        </h2>
-        <button class="close-btn" (click)="closeAllModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="warning-text">
-          Please provide a reason for rejecting this verification. This will be shared with the merchant.
-        </p>
-
-        <form [formGroup]="rejectForm">
-          <div class="form-group">
-            <label>Rejection Reason *</label>
-            <textarea formControlName="rejection_reason" 
-                      rows="4" 
-                      placeholder="Explain why the verification is being rejected..."></textarea>
-            <small class="error-text" *ngIf="rejectForm.get('rejection_reason')?.invalid && rejectForm.get('rejection_reason')?.touched">
-              Rejection reason is required (minimum 10 characters)
-            </small>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeAllModals()">Cancel</button>
-        <button class="btn-reject" (click)="confirmRejection()" 
-                [disabled]="rejectForm.invalid || isProcessing">
-          <i class="fas fa-spinner fa-spin" *ngIf="isProcessing"></i>
-          <span *ngIf="!isProcessing"><i class="fas fa-times-circle"></i> Confirm Rejection</span>
-        </button>
-      </div>
+<!-- Reject (merchant or document) -->
+<div class="tp-dialog-backdrop" *ngIf="showRejectModal" (click)="showRejectModal = false">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="kyb-reject-title" [formGroup]="rejectForm"
+        (ngSubmit)="confirmRejection()" (click)="$event.stopPropagation()">
+    <h2 id="kyb-reject-title">{{ rejectType === 'merchant' ? 'Reject this merchant' : 'Reject this document' }}</h2>
+    <p>{{ rejectType === 'merchant' ? 'The merchant is told why and can apply again.' : 'The merchant is asked to upload it again.' }}</p>
+    <tp-field label="Reason" for="kyb-reason" [required]="true" hint="At least 10 characters. The merchant sees this."
+              [error]="rejectForm.get('rejection_reason')?.invalid && rejectForm.get('rejection_reason')?.touched ? 'Give a reason of at least 10 characters' : null">
+      <textarea id="kyb-reason" formControlName="rejection_reason" rows="3"></textarea>
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="showRejectModal = false">Cancel</button>
+      <button tpButton="danger" type="submit" [disabled]="isProcessing" [loading]="isProcessing">Reject</button>
     </div>
-  </div>
+  </form>
+</div>
+
+<!-- Change a verified merchant's fee tier -->
+<div class="tp-dialog-backdrop" *ngIf="tierMerchant" (click)="tierMerchant = null">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="kyb-tier-title" (ngSubmit)="saveTier()" (click)="$event.stopPropagation()">
+    <h2 id="kyb-tier-title">Fee tier: {{ tierMerchant.merchant_name }}</h2>
+    <p>Orders approved from now on use the new fee. Existing plans keep the fee they were approved with.</p>
+    <tp-field label="Fee tier" for="kyb-tier-edit">
+      <select id="kyb-tier-edit" [(ngModel)]="tierValue" name="tierValue">
+        <option *ngFor="let t of tiers" [value]="t.value">{{ t.label }} · {{ t.fee_percentage }}%</option>
+      </select>
+    </tp-field>
+    <tp-field label="Reason" for="kyb-tier-edit-reason" [required]="true" hint="At least 5 characters. Logged with your name.">
+      <input id="kyb-tier-edit-reason" type="text" [(ngModel)]="tierReason" name="tierReason" maxlength="500">
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="tierMerchant = null">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="isProcessing || tierReason.trim().length < 5" [loading]="isProcessing">Save</button>
+    </div>
+  </form>
 </div>

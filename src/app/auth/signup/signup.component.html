@@ -42,16 +42,16 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Full Name *</label>
-            <input formControlName="full_name" type="text" placeholder="Enter your full name" [class.error]="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
+            <label for="su-full-name">Full Name *</label>
+            <input id="su-full-name" formControlName="full_name" type="text" placeholder="Enter your full name" [class.error]="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
             <small class="error-text" *ngIf="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
               Full name is required
             </small>
           </div>
 
           <div class="form-field">
-            <label>Email *</label>
-            <input 
+            <label for="su-business-email">Email *</label>
+            <input id="su-business-email" 
               formControlName="business_email" 
               type="email" 
               placeholder="your@email.com"
@@ -68,8 +68,8 @@
           </div>
 
           <div class="form-field">
-            <label>Phone Number *</label>
-            <input 
+            <label for="su-phone">Phone Number *</label>
+            <input id="su-phone" 
               formControlName="phone" 
               type="tel" 
               placeholder="024XXXXXXX"
@@ -87,8 +87,8 @@
           </div>
 
           <div class="form-field">
-            <label>Date of Birth *</label>
-            <input formControlName="dob" type="date" [class.error]="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
+            <label for="su-dob">Date of Birth *</label>
+            <input id="su-dob" formControlName="dob" type="date" [class.error]="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
             <small class="error-text" *ngIf="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
               Date of birth is required
             </small>
@@ -104,21 +104,21 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>City *</label>
-            <input formControlName="city" placeholder="Accra, Kumasi, etc." [class.error]="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
+            <label for="su-city">City *</label>
+            <input id="su-city" formControlName="city" placeholder="Accra, Kumasi, etc." [class.error]="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
             <small class="error-text" *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
               City is required
             </small>
           </div>
 
           <div class="form-field">
-            <label>Ghana Post GPS</label>
-            <input formControlName="gps" placeholder="GA-123-4567">
+            <label for="su-gps">Ghana Post GPS</label>
+            <input id="su-gps" formControlName="gps" placeholder="GA-123-4567">
           </div>
 
           <div class="form-field full-width">
-            <label>Full Address *</label>
-            <textarea formControlName="address" placeholder="House number, street, landmark" rows="2" [class.error]="customerForm.get('address')?.invalid && customerForm.get('address')?.touched"></textarea>
+            <label for="su-address">Full Address *</label>
+            <textarea id="su-address" formControlName="address" placeholder="House number, street, landmark" rows="2" [class.error]="customerForm.get('address')?.invalid && customerForm.get('address')?.touched"></textarea>
             <small class="error-text" *ngIf="customerForm.get('address')?.invalid && customerForm.get('address')?.touched">
               Address is required
             </small>
@@ -134,26 +134,63 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Job Title</label>
-            <input formControlName="designation" placeholder="e.g., Software Engineer">
+            <label for="su-designation">Job Title</label>
+            <input id="su-designation" formControlName="designation" placeholder="e.g., Software Engineer">
           </div>
 
           <div class="form-field">
-            <label>Company Name</label>
-            <input formControlName="company" placeholder="Company/organization">
+            <label for="su-company">Company Name</label>
+            <input id="su-company" formControlName="company" placeholder="Company/organization">
+          </div>
+
+          <!-- Underwriting details (verified by Tabital before a limit is given) -->
+          <div class="form-field">
+            <label for="su-monthly-salary">Monthly Salary (GHS) *</label>
+            <input id="su-monthly-salary" type="number" min="0" step="1" formControlName="monthly_salary" placeholder="e.g. 4500"
+                   [class.error]="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
+            <small class="hint">Net monthly salary. We'll check it against your salary certificate.</small>
+            <small class="error-text" *ngIf="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
+              Enter your monthly salary
+            </small>
           </div>
 
           <div class="form-field">
-            <label>Income Range *</label>
-            <select formControlName="income_range" [class.error]="customerForm.get('income_range')?.invalid && customerForm.get('income_range')?.touched">
-              <option value="">Select income range</option>
-              <option>Below GHS 1,000</option>
-              <option>GHS 1,000 – 3,000</option>
-              <option>GHS 3,000 – 5,000</option>
-              <option>GHS 5,000+</option>
+            <label for="su-employment-start-date">Employed Since *</label>
+            <input id="su-employment-start-date" type="date" formControlName="employment_start_date" [max]="today"
+                   [class.error]="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
+              Enter the date you started with your current employer
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label for="su-salary-paid-to-bank">Is your salary paid into a bank account? *</label>
+            <select id="su-salary-paid-to-bank" formControlName="salary_paid_to_bank"
+                    [class.error]="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
+              <option [ngValue]="null">Select</option>
+              <option [ngValue]="true">Yes</option>
+              <option [ngValue]="false">No</option>
             </select>
-            <small class="error-text" *ngIf="customerForm.get('income_range')?.invalid && customerForm.get('income_range')?.touched">
-              Income range is required
+            <small class="error-text" *ngIf="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
+              Please choose Yes or No
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label for="su-national-id">Ghana Card Number *</label>
+            <input id="su-national-id" formControlName="national_id" placeholder="GHA-XXXXXXXXX-X"
+                   [class.error]="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
+              Enter your full Ghana Card number
+            </small>
+          </div>
+
+          <div class="form-field">
+            <label for="su-momo-number">Mobile Money Number *</label>
+            <input id="su-momo-number" formControlName="momo_number" placeholder="024XXXXXXX"
+                   [class.error]="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
+            <small class="error-text" *ngIf="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
+              {{ getMobileNumberErrorMessage(customerForm.get('momo_number')) }}
             </small>
           </div>
         </div>
@@ -167,24 +204,24 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Reference Name *</label>
-            <input formControlName="ref_name" placeholder="Full name of reference" [class.error]="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
+            <label for="su-ref-name">Reference Name *</label>
+            <input id="su-ref-name" formControlName="ref_name" placeholder="Full name of reference" [class.error]="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
             <small class="error-text" *ngIf="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
               Reference name is required
             </small>
           </div>
 
           <div class="form-field">
-            <label>Reference Phone *</label>
-            <input formControlName="ref_phone" placeholder="Reference's phone number" [class.error]="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
+            <label for="su-ref-phone">Reference Phone *</label>
+            <input id="su-ref-phone" formControlName="ref_phone" placeholder="Reference's phone number" [class.error]="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
             <small class="error-text" *ngIf="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
               {{ getMobileNumberErrorMessage(customerForm.get('ref_phone')) }}
             </small>
           </div>
 
           <div class="form-field">
-            <label>Relationship *</label>
-            <input formControlName="ref_relationship" placeholder="Friend, family, colleague" [class.error]="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
+            <label for="su-ref-relationship">Relationship *</label>
+            <input id="su-ref-relationship" formControlName="ref_relationship" placeholder="Friend, family, colleague" [class.error]="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
             <small class="error-text" *ngIf="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
               Relationship is required
             </small>
@@ -200,8 +237,8 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Create Password *</label>
-            <input formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
+            <label for="su-password">Create Password *</label>
+            <input id="su-password" formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
             <small class="error-text" *ngIf="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
               {{ getPasswordErrorMessage(customerForm.get('password')) }}
             </small>
@@ -211,8 +248,8 @@
           </div>
 
           <div class="form-field">
-            <label>Confirm Password *</label>
-            <input formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="customerForm.get('confirmPassword')?.invalid && customerForm.get('confirmPassword')?.touched">
+            <label for="su-confirmPassword">Confirm Password *</label>
+            <input id="su-confirmPassword" formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="customerForm.get('confirmPassword')?.invalid && customerForm.get('confirmPassword')?.touched">
             <small class="error-text" *ngIf="customerForm.get('confirmPassword')?.invalid && customerForm.get('confirmPassword')?.touched">
               Please confirm your password
             </small>
@@ -225,9 +262,9 @@
 
       <!-- Terms & Conditions -->
       <div class="terms">
-        <label class="checkbox-label">
-          <input type="checkbox" formControlName="agree">
-          <span>I agree to the <a href="#" class="terms-link">Terms and Conditions</a> and <a href="#" class="terms-link">Privacy Policy</a></span>
+        <label for="su-agree" class="checkbox-label">
+          <input id="su-agree" type="checkbox" formControlName="agree">
+          <span>I agree to the <a [href]="legal.terms" target="_blank" rel="noopener" class="terms-link">Terms and Conditions</a> and <a [href]="legal.privacy" target="_blank" rel="noopener" class="terms-link">Privacy Policy</a></span>
         </label>
         <small class="error-text" *ngIf="customerForm.get('agree')?.invalid && customerForm.get('agree')?.touched">
           You must agree to the terms
@@ -258,16 +295,16 @@
         </h3>
         <div class="form-grid">
           <div class="form-field full-width">
-            <label>Business Name *</label>
-            <input formControlName="business_name" placeholder="Official business name" [class.error]="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
+            <label for="su-business-name">Business Name *</label>
+            <input id="su-business-name" formControlName="business_name" placeholder="Official business name" [class.error]="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
               Business name is required
             </small>
           </div>
 
           <div class="form-field">
-            <label>Business Type</label>
-            <select formControlName="business_type">
+            <label for="su-business-type">Business Type</label>
+            <select id="su-business-type" formControlName="business_type">
               <option value="">Select business type</option>
               <option value="retail">Retail</option>
               <option value="wholesale">Wholesale</option>
@@ -280,16 +317,16 @@
           </div>
 
           <div class="form-field">
-            <label>Owner Name *</label>
-            <input formControlName="owner_name" placeholder="Full name of owner" [class.error]="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
+            <label for="su-owner-name">Owner Name *</label>
+            <input id="su-owner-name" formControlName="owner_name" placeholder="Full name of owner" [class.error]="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
               Owner name is required
             </small>
           </div>
 
           <div class="form-field">
-            <label>Phone Number *</label>
-            <input 
+            <label for="sm-phone">Phone Number *</label>
+            <input id="sm-phone" 
               formControlName="phone" 
               placeholder="Business contact number"
               [class.error]="merchantForm.get('phone')?.invalid && merchantForm.get('phone')?.touched"
@@ -306,16 +343,16 @@
           </div>
 
           <div class="form-field">
-            <label>Business Phone</label>
-            <input formControlName="business_phone" placeholder="Alternative business phone" [class.error]="merchantForm.get('business_phone')?.invalid && merchantForm.get('business_phone')?.touched">
+            <label for="su-business-phone">Business Phone</label>
+            <input id="su-business-phone" formControlName="business_phone" placeholder="Alternative business phone" [class.error]="merchantForm.get('business_phone')?.invalid && merchantForm.get('business_phone')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('business_phone')?.invalid && merchantForm.get('business_phone')?.touched">
               {{ getMobileNumberErrorMessage(merchantForm.get('business_phone')) }}
             </small>
           </div>
 
           <div class="form-field">
-            <label>Business Email</label>
-            <input 
+            <label for="sm-business-email">Business Email</label>
+            <input id="sm-business-email" 
               formControlName="business_email" 
               type="email" 
               placeholder="business@example.com"
@@ -331,8 +368,8 @@
           </div>
 
           <div class="form-field">
-            <label>City *</label>
-            <input formControlName="city" placeholder="City/Town" [class.error]="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
+            <label for="sm-city">City *</label>
+            <input id="sm-city" formControlName="city" placeholder="City/Town" [class.error]="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
               City is required
             </small>
@@ -348,16 +385,16 @@
         </h3>
         <div class="form-grid">
           <div class="form-field full-width">
-            <label>Shop Address *</label>
-            <textarea formControlName="address" placeholder="Full shop address with landmark" rows="2" [class.error]="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched"></textarea>
+            <label for="sm-address">Shop Address *</label>
+            <textarea id="sm-address" formControlName="address" placeholder="Full shop address with landmark" rows="2" [class.error]="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched"></textarea>
             <small class="error-text" *ngIf="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched">
               Shop address is required
             </small>
           </div>
 
           <div class="form-field full-width">
-            <label>Business Address</label>
-            <textarea formControlName="business_address" placeholder="Alternative business address" rows="2"></textarea>
+            <label for="su-business-address">Business Address</label>
+            <textarea id="su-business-address" formControlName="business_address" placeholder="Alternative business address" rows="2"></textarea>
           </div>
         </div>
       </div>
@@ -370,8 +407,8 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Product Type *</label>
-            <select formControlName="product_type" [class.error]="merchantForm.get('product_type')?.invalid && merchantForm.get('product_type')?.touched">
+            <label for="su-product-type">Product Type *</label>
+            <select id="su-product-type" formControlName="product_type" [class.error]="merchantForm.get('product_type')?.invalid && merchantForm.get('product_type')?.touched">
               <option value="">Select category</option>
               <option>Electronics</option>
               <option>Phones & Tablets</option>
@@ -387,8 +424,8 @@
           </div>
 
           <div class="form-field">
-            <label>Physical Shop *</label>
-            <select formControlName="has_shop" [class.error]="merchantForm.get('has_shop')?.invalid && merchantForm.get('has_shop')?.touched">
+            <label for="su-has-shop">Physical Shop *</label>
+            <select id="su-has-shop" formControlName="has_shop" [class.error]="merchantForm.get('has_shop')?.invalid && merchantForm.get('has_shop')?.touched">
               <option value="">Select option</option>
               <option value="yes">Yes, I have a physical shop</option>
               <option value="no">No, online only</option>
@@ -401,10 +438,10 @@
           
           <!-- Conditional Shop URL Field -->
           <div class="form-field full-width" *ngIf="showShopUrl()">
-            <label>Shop URL / Website <span class="optional-badge">Required</span></label>
+            <label for="su-shop-url">Shop URL / Website <span class="optional-badge">Required</span></label>
             <div class="url-input-wrapper">
               <span class="url-prefix">🔗</span>
-              <input 
+              <input id="su-shop-url" 
                 formControlName="shop_url" 
                 type="url" 
                 placeholder="https://your-shop.com or https://facebook.com/yourpage"
@@ -421,8 +458,8 @@
           </div>
 
           <div class="form-field">
-            <label>Years in Business *</label>
-            <select formControlName="years_in_business" [class.error]="merchantForm.get('years_in_business')?.invalid && merchantForm.get('years_in_business')?.touched">
+            <label for="su-years-in-business">Years in Business *</label>
+            <select id="su-years-in-business" formControlName="years_in_business" [class.error]="merchantForm.get('years_in_business')?.invalid && merchantForm.get('years_in_business')?.touched">
               <option value="">Select range</option>
               <option>Less than 1 year</option>
               <option>1–3 years</option>
@@ -435,8 +472,8 @@
           </div>
 
           <div class="form-field full-width">
-            <label>Business Description</label>
-            <textarea formControlName="description" placeholder="Describe your business, products, and services" rows="3"></textarea>
+            <label for="su-description">Business Description</label>
+            <textarea id="su-description" formControlName="description" placeholder="Describe your business, products, and services" rows="3"></textarea>
           </div>
         </div>
       </div>
@@ -449,8 +486,8 @@
         </h3>
         <div class="form-grid">
           <div class="form-field">
-            <label>Create Password *</label>
-            <input formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
+            <label for="sm-password">Create Password *</label>
+            <input id="sm-password" formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
               {{ getPasswordErrorMessage(merchantForm.get('password')) }}
             </small>
@@ -460,8 +497,8 @@
           </div>
 
           <div class="form-field">
-            <label>Confirm Password *</label>
-            <input formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="merchantForm.get('confirmPassword')?.invalid && merchantForm.get('confirmPassword')?.touched">
+            <label for="sm-confirmPassword">Confirm Password *</label>
+            <input id="sm-confirmPassword" formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="merchantForm.get('confirmPassword')?.invalid && merchantForm.get('confirmPassword')?.touched">
             <small class="error-text" *ngIf="merchantForm.get('confirmPassword')?.invalid && merchantForm.get('confirmPassword')?.touched">
               Please confirm your password
             </small>
@@ -474,9 +511,9 @@
 
       <!-- Terms -->
       <div class="terms">
-        <label class="checkbox-label">
-          <input type="checkbox" formControlName="agree">
-          <span>I agree to the <a href="#" class="terms-link">Partnership Terms</a> and <a href="#" class="terms-link">Merchant Agreement</a></span>
+        <label for="sm-agree" class="checkbox-label">
+          <input id="sm-agree" type="checkbox" formControlName="agree">
+          <span>I agree to the <a [href]="legal.merchantAgreement" target="_blank" rel="noopener" class="terms-link">Merchant Agreement</a> and <a [href]="legal.privacy" target="_blank" rel="noopener" class="terms-link">Privacy Policy</a></span>
         </label>
         <small class="error-text" *ngIf="merchantForm.get('agree')?.invalid && merchantForm.get('agree')?.touched">
           You must agree to the terms

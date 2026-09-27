@@ -1,0 +1,60 @@
+<div class="tp-page">
+  <tp-page-header title="Team and access"
+    subtitle="Management Access covers all approvals, rates and settings, revealing personal data, exports and any change to records. Operations can read the queues (with personal data masked), send reminders and add notes.">
+  </tp-page-header>
+
+  <p *ngIf="loading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading…</p>
+  <div class="tp-note tp-note--error" *ngIf="error" role="alert"><lucide-icon name="circle-x" [size]="16"></lucide-icon><span>{{ error }}</span></div>
+
+  <tp-card *ngIf="!loading && admins.length" title="Admins">
+    <div class="tp-table-wrap">
+      <table class="tp-table">
+        <thead><tr><th scope="col">Name</th><th scope="col">Phone</th><th scope="col">Access</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let a of admins">
+            <td>{{ a.name }}<div class="tp-sub" *ngIf="a.status !== 'approved'">{{ a.status }}</div></td>
+            <td>{{ a.phone }}</td>
+            <td><tp-chip [tone]="a.admin_level === 'management' ? 'info' : 'neutral'" [label]="levelLabel(a.admin_level)"></tp-chip></td>
+            <td><div class="tp-row-actions">
+              <button tpButton="secondary" size="sm" type="button" (click)="change(a)">
+                {{ a.admin_level === 'management' ? 'Move to Operations' : 'Give Management Access' }}</button>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </tp-card>
+  <p class="tp-sub">New admins are created on the server (<code>flask create-admin</code>) and start with Operations access unless created with <code>--management</code>.</p>
+
+  <tp-card title="Access changes" *ngIf="!loading && history.length">
+    <div class="tp-table-wrap">
+      <table class="tp-table">
+        <thead><tr><th scope="col">When</th><th scope="col">Admin</th><th scope="col">Change</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let h of history">
+            <td>{{ h.at | tpDate }}</td>
+            <td>{{ nameOf(h.admin_id) }}</td>
+            <td>{{ levelLabel(h.from) }} → {{ levelLabel(h.to) }}</td>
+            <td>{{ h.by || '—' }}</td>
+            <td>{{ h.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </tp-card>
+</div>
+
+<div class="tp-dialog-backdrop" *ngIf="editing" (click)="editing = null">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="team-title" (ngSubmit)="save()" (click)="$event.stopPropagation()">
+    <h2 id="team-title">{{ newLevel === 'management' ? 'Give Management Access' : 'Move to Operations' }}</h2>
+    <p>{{ editing.name }} will have {{ levelLabel(newLevel) }} access from their next action.
+      <ng-container *ngIf="newLevel === 'management'"> They'll be able to approve orders and payouts, change rates and reveal personal data.</ng-container></p>
+    <tp-field label="Reason" for="team-reason" [required]="true" hint="Logged with your name.">
+      <input id="team-reason" type="text" name="reason" [(ngModel)]="reason" required minlength="5" maxlength="500">
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="editing = null">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="saving || reason.trim().length < 5" [loading]="saving">Confirm</button>
+    </div>
+  </form>
+</div>

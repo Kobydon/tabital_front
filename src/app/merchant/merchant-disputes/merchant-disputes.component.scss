@@ -37,7 +37,7 @@
   .stat-count {
     font-size: 20px;
     font-weight: 700;
-    color: #667eea;
+    color: #0a2d73;
   }
   
   .stat-label {
@@ -70,9 +70,9 @@
       font-size: 24px;
       
       &.red { color: #dc3545; }
-      &.green { color: #28a745; }
+      &.green { color: #15803d; }
       &.blue { color: #4facfe; }
-      &.purple { color: #667eea; }
+      &.purple { color: #0a2d73; }
     }
     
     .stat-label {
@@ -120,7 +120,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
   
@@ -170,11 +170,11 @@
   transition: all 0.3s;
   
   &:hover {
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &.active {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0a2d73, #02163f);
     color: white;
     border-color: transparent;
   }
@@ -204,7 +204,7 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #0a2d73;
       }
     }
   }
@@ -259,7 +259,7 @@
   }
   
   .dispute-id { color: #dc3545; }
-  .transaction-id { color: #667eea; }
+  .transaction-id { color: #0a2d73; }
   
   .customer-info {
     .customer-name {
@@ -322,9 +322,9 @@
         transform: scale(1.1);
       }
       
-      &.view:hover { color: #667eea; }
+      &.view:hover { color: #0a2d73; }
       &.respond:hover { color: #4facfe; }
-      &.accept:hover { color: #28a745; }
+      &.accept:hover { color: #15803d; }
       &.reject:hover { color: #dc3545; }
       &.escalate:hover { color: #fd7e14; }
     }
@@ -349,7 +349,7 @@
   
   &:hover:not(:disabled) {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
   
   &:disabled {
@@ -359,7 +359,7 @@
 }
 
 .page-number.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border-color: transparent;
 }
@@ -372,7 +372,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -469,7 +469,7 @@
     h3 {
       margin: 0 0 12px 0;
       padding-bottom: 8px;
-      border-bottom: 2px solid #667eea;
+      border-bottom: 2px solid #0a2d73;
       font-size: 16px;
     }
     
@@ -484,7 +484,7 @@
       }
       
       .amount {
-        color: #28a745;
+        color: #15803d;
         font-weight: 600;
       }
     }
@@ -531,7 +531,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
   
@@ -544,7 +544,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #0a2d73, #02163f);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -554,7 +554,7 @@
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(10, 45, 115, 0.3);
   }
 }
 
@@ -572,7 +572,7 @@
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #15803d, #15803d);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -615,3 +615,7 @@
     box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
   }
 }
+.action-text { background: none; border: 0; padding: 4px 6px; color: var(--tp-navy-2); font-weight: 600; font-size: var(--tp-text-sm); cursor: pointer; }
+.action-text:hover, .action-text:focus-visible { text-decoration: underline; }
+.form-note { font-size: var(--tp-text-sm); color: var(--tp-text); background: var(--tp-info-bg); border-radius: var(--tp-radius-sm); padding: 10px 12px; margin: 0 0 14px; }
+

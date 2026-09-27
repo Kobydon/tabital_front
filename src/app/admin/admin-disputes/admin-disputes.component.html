@@ -1,0 +1,85 @@
+<div class="disputes-page">
+  <div class="page-header">
+    <div>
+      <h1><i class="fas fa-shield-alt"></i> Disputes</h1>
+      <p>Buyer protection. A customer's payments are paused while their dispute is open.</p>
+    </div>
+    <button class="btn-secondary" (click)="runServicing()" [disabled]="isRunningServicing">
+      <i class="fas fa-sync-alt"></i> {{ isRunningServicing ? 'Running...' : 'Run daily servicing now' }}
+    </button>
+  </div>
+
+  <div class="servicing-summary" *ngIf="servicingSummary">
+    <strong>Servicing run {{ servicingSummary.date }}:</strong>
+    {{ servicingSummary.plans_checked }} plans checked ·
+    {{ servicingSummary.first_fees }} late fees · {{ servicingSummary.second_fees }} second fees ·
+    {{ servicingSummary.charged_off }} charged off · {{ servicingSummary.reminders_queued }} reminders ·
+    {{ servicingSummary.autopay_attempts }} autopay attempts
+  </div>
+
+  <div class="filters">
+    <label>Status</label>
+    <select [(ngModel)]="statusFilter" (change)="load()">
+      <option value="open">Open</option>
+      <option value="resolved">Resolved</option>
+      <option value="">All</option>
+    </select>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Loading…</div>
+  <div *ngIf="!isLoading && !disputes.length" class="empty">No disputes.</div>
+
+  <table class="disputes-table" *ngIf="!isLoading && disputes.length">
+    <thead>
+      <tr>
+        <th>Dispute</th><th>Product</th><th>Reason</th><th>Amount</th><th>Respond by</th><th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let d of disputes" [class.late]="isOverdue(d)">
+        <td>{{ d.dispute_id }}</td>
+        <td>{{ d.product_name || '—' }}</td>
+        <td>{{ reasonLabels[d.reason] || d.reason }}</td>
+        <td>{{ formatCurrency(d.amount) }}</td>
+        <td>{{ d.respond_by }} <span class="late-tag" *ngIf="isOverdue(d)">overdue</span></td>
+        <td>
+          <span class="status" [class]="d.status">{{ d.status | titlecase }}</span>
+          <small *ngIf="d.resolution"> · {{ d.resolution === 'customer_won' ? 'Customer won' : 'Merchant won' }}</small>
+        </td>
+        <td><button class="btn-link" (click)="open(d)">{{ d.status === 'resolved' ? 'View' : 'Review' }}</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="modal-overlay" *ngIf="selected" (click)="selected = null">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>{{ selected.dispute_id }} · {{ reasonLabels[selected.reason] || selected.reason }}</h2>
+      <p class="desc">{{ selected.description }}</p>
+      <p *ngIf="selected.merchant_notes"><strong>Merchant:</strong> {{ selected.merchant_notes }}</p>
+      <p><strong>Outstanding when opened:</strong> {{ formatCurrency(selected.amount) }}
+        · <strong>Payments:</strong> {{ selected.paused ? 'paused' : 'not paused' }}</p>
+
+      <ng-container *ngIf="selected.status !== 'resolved'">
+        <div class="outcomes">
+          <label><input type="radio" name="outcome" value="merchant_won" [(ngModel)]="outcome">
+            Merchant won: resume payments (due dates move forward by the days paused)</label>
+          <label><input type="radio" name="outcome" value="customer_won" [(ngModel)]="outcome">
+            Customer won: write off the remaining balance and cancel the plan</label>
+        </div>
+        <textarea [(ngModel)]="notes" rows="3" placeholder="Resolution notes (required): evidence checked, what was agreed"></textarea>
+        <div class="actions">
+          <button class="btn-secondary" (click)="selected = null">Cancel</button>
+          <button class="btn-primary" (click)="resolve()" [disabled]="isSubmitting || notes.trim().length < 5">
+            {{ isSubmitting ? 'Saving...' : 'Resolve dispute' }}
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="selected.status === 'resolved'">
+        <p><strong>Resolution:</strong> {{ selected.resolution_notes }}</p>
+        <p *ngIf="selected.refund_amount"><strong>Refund due to customer:</strong> {{ formatCurrency(selected.refund_amount) }}</p>
+        <div class="actions"><button class="btn-secondary" (click)="selected = null">Close</button></div>
+      </ng-container>
+    </div>
+  </div>
+</div>

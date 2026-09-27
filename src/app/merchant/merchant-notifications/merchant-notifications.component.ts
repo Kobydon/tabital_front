@@ -3,6 +3,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MerchantService } from '../../merchant.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export type FilterStatus = 'all' | 'unread' | 'read';
 export type NotificationType = 'order' | 'payment' | 'kyc' | 'settlement' | 'warning' | 'success' | 'system';
 
@@ -63,11 +65,11 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   typeOptions: { value: NotificationType | 'all'; label: string; icon: string; color: string }[] = [
     { value: 'all', label: 'All Types', icon: '📋', color: '#6c757d' },
     { value: 'order', label: 'Orders', icon: '📦', color: '#f9a826' },
-    { value: 'payment', label: 'Payments', icon: '💰', color: '#28a745' },
+    { value: 'payment', label: 'Payments', icon: '💰', color: '#15803d' },
     { value: 'kyc', label: 'KYC', icon: '🆔', color: '#ffc107' },
     { value: 'settlement', label: 'Settlements', icon: '🏦', color: '#17a2b8' },
     { value: 'warning', label: 'Warnings', icon: '⚠️', color: '#dc3545' },
-    { value: 'success', label: 'Success', icon: '✅', color: '#28a745' },
+    { value: 'success', label: 'Success', icon: '✅', color: '#15803d' },
     { value: 'system', label: 'System', icon: '⚙️', color: '#6c757d' }
   ];
   
@@ -268,8 +270,8 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteNotification(notification: MerchantNotification): void {
-    if (confirm('Are you sure you want to delete this notification?')) {
+  async deleteNotification(notification: MerchantNotification): Promise<void> {
+    if (await ask('Are you sure you want to delete this notification?')) {
       this.merchantService.deleteMerchantNotification(notification.id).subscribe({
         next: () => {
           this.notifications = this.notifications.filter(n => n.id !== notification.id);
@@ -283,8 +285,8 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
     }
   }
 
-  clearAll(): void {
-    if (confirm('Are you sure you want to clear all notifications?')) {
+  async clearAll(): Promise<void> {
+    if (await ask('Are you sure you want to clear all notifications?')) {
       this.merchantService.clearAllMerchantNotifications().subscribe({
         next: () => {
           this.notifications = [];
@@ -319,17 +321,17 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   saveSettings(): void {
     this.merchantService.updateMerchantNotificationSettings(this.settingsForm.value).subscribe({
       next: (response) => {
-        alert('Notification settings saved successfully!');
+        notify('Notification settings saved successfully!');
       },
       error: (error) => {
         console.error('Error saving notification settings:', error);
-        alert('Failed to save settings. Please try again.');
+        notify('Failed to save settings. Please try again.', 'error');
       }
     });
   }
 
-  resetSettings(): void {
-    if (confirm('Reset all notification settings to default?')) {
+  async resetSettings(): Promise<void> {
+    if (await ask('Reset all notification settings to default?')) {
       this.settingsForm.reset({
         email_notifications: true,
         sms_notifications: true,
@@ -413,11 +415,11 @@ export class MerchantNotificationsComponent implements OnInit, OnDestroy {
   getTypeColor(type: string): string {
     const colors: Record<string, string> = {
       order: '#f9a826',
-      payment: '#28a745',
+      payment: '#15803d',
       kyc: '#ffc107',
       settlement: '#17a2b8',
       warning: '#dc3545',
-      success: '#28a745',
+      success: '#15803d',
       system: '#6c757d'
     };
     return colors[type] || '#6c757d';

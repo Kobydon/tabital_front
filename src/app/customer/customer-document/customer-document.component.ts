@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface Document {
   id: number;
   document_id: string;
@@ -207,17 +208,17 @@ export class CustomerDocumentComponent implements OnInit {
     const extension = file.name.split('.').pop()?.toLowerCase();
     
     if (!extension || !this.ALLOWED_EXTENSIONS.includes(extension)) {
-      alert(`Invalid file type. Please upload ${this.ALLOWED_EXTENSIONS.join(', ')} files only.`);
+      notify(`Invalid file type. Please upload ${this.ALLOWED_EXTENSIONS.join(', ')} files only.`);
       return false;
     }
     
     if (file.size === 0) {
-      alert('File is empty. Please select a valid file.');
+      notify('File is empty. Please select a valid file.');
       return false;
     }
     
     if (file.size > this.MAX_FILE_SIZE) {
-      alert(`File size exceeds ${this.MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please compress your file.`);
+      notify(`File size exceeds ${this.MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please compress your file.`);
       return false;
     }
     
@@ -230,7 +231,7 @@ export class CustomerDocumentComponent implements OnInit {
 
   onFrontImageSelected(event: Event): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -250,7 +251,7 @@ export class CustomerDocumentComponent implements OnInit {
 
   onBackImageSelected(event: Event): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -284,7 +285,7 @@ export class CustomerDocumentComponent implements OnInit {
 
   onSalaryCertificateSelected(event: Event): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -318,7 +319,7 @@ export class CustomerDocumentComponent implements OnInit {
 
   onBankStatementSelected(event: Event): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
@@ -402,23 +403,23 @@ export class CustomerDocumentComponent implements OnInit {
 
   uploadDocuments(): void {
     if (!this.canUploadDocuments) {
-      alert(this.uploadBlockReason);
+      notify(this.uploadBlockReason);
       return;
     }
     
     // Check required documents
     if (!this.frontImageFile || !this.backImageFile) {
-      alert('Please upload both front and back images of your Ghana Card');
+      notify('Please upload both front and back images of your Ghana Card');
       return;
     }
     
     if (!this.salaryCertificateFile) {
-      alert('Please upload your Salary Certificate');
+      notify('Please upload your Salary Certificate');
       return;
     }
     
     if (!this.bankStatementFile) {
-      alert('Please upload your 3 months Bank Statement');
+      notify('Please upload your 3 months Bank Statement');
       return;
     }
     
@@ -434,7 +435,7 @@ export class CustomerDocumentComponent implements OnInit {
     this.customerService.uploadKycDocuments(formData).subscribe({
       next: (response) => {
         this.isUploading = false;
-        alert('✅ Documents uploaded successfully! Your verification is pending.');
+        notify('✅ Documents uploaded successfully! Your verification is pending.');
         this.resetForm();
         this.loadDocuments();
         this.loadKYCStatus();
@@ -442,7 +443,7 @@ export class CustomerDocumentComponent implements OnInit {
       error: (error) => {
         console.error('Error uploading documents:', error);
         this.isUploading = false;
-        alert('❌ Failed to upload documents. Please try again.');
+        notify('❌ Failed to upload documents. Please try again.', 'error');
       }
     });
   }

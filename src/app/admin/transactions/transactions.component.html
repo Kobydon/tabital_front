@@ -187,12 +187,6 @@
             <button class="action-btn view" (click)="viewTransactionDetails(transaction)" title="View Details">
               👁️
             </button>
-            <button class="action-btn edit" (click)="openUpdateModal(transaction)" title="Update Status">
-              ✏️
-            </button>
-            <button class="action-btn delete" (click)="openDeleteModal(transaction)" title="Delete">
-              🗑️
-            </button>
           </td>
         </tr>
       </tbody>
@@ -430,7 +424,6 @@
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" (click)="closeModals()">Close</button>
-        <button class="btn-edit" (click)="openUpdateModal(selectedTransaction!)">Update Status</button>
       </div>
     </div>
   </div>
@@ -599,12 +592,6 @@
       </div>
       <button class="action-sheet-btn" (click)="selectedTransaction && viewTransactionDetails(selectedTransaction)">
         👁️ View Details
-      </button>
-      <button class="action-sheet-btn" (click)="selectedTransaction && openUpdateModal(selectedTransaction)">
-        ✏️ Update Status
-      </button>
-      <button class="action-sheet-btn delete" (click)="selectedTransaction && openDeleteModal(selectedTransaction)">
-        🗑️ Delete Transaction
       </button>
       <button class="action-sheet-btn cancel" (click)="closeModals()">
         Cancel

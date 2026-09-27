@@ -1,458 +1,251 @@
-<div class="collection-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="breadcrumb">
-        <a routerLink="/admin/dashboard">Dashboard</a>
-        <span class="separator">></span>
-        <span class="current">Collections</span>
-      </div>
-      <h1 class="title">Collections Management</h1>
-      <p class="subtitle">Monitor and manage overdue payments and recovery activities</p>
-    </div>
-    <div class="header-right">
-      <button class="btn-export" (click)="exportOverduePayments()">
-        <i class="fas fa-download"></i> Export
-      </button>
-    </div>
+<!-- Collections queue: Vault. Phone numbers arrive masked; reveal one (with a reason) to call. -->
+<tp-page-header title="Collections"
+  subtitle="Overdue instalments by days past due (§8.4). Reminders go out automatically; use this queue for calls, manual reminders and payments received outside Paystack.">
+  <button *tpManagement tpButton="secondary" size="sm" type="button" (click)="exportOverduePayments()">
+    <lucide-icon name="download" [size]="16"></lucide-icon> Export CSV
+  </button>
+</tp-page-header>
+
+<div class="tp-kpis">
+  <div class="tp-kpi tp-kpi--attention"><span>Total overdue</span><strong>{{ collectionStats.total_overdue || 0 | money }}</strong></div>
+  <div class="tp-kpi"><span>Accounts overdue</span><strong>{{ collectionStats.accounts_overdue || 0 }}</strong></div>
+  <div class="tp-kpi"><span>DPD 1–30 · early</span><strong>{{ collectionStats.overdue_dpd_1_30 || 0 | money }}</strong></div>
+  <div class="tp-kpi"><span>DPD 31–60 · high risk</span><strong>{{ collectionStats.overdue_dpd_31_60 || 0 | money }}</strong></div>
+  <div class="tp-kpi"><span>DPD 61–90 · default watch</span><strong>{{ collectionStats.overdue_dpd_61_90 || 0 | money }}</strong></div>
+  <div class="tp-kpi"><span>DPD 90+ · charge-off</span><strong>{{ collectionStats.overdue_dpd_90_plus || 0 | money }}</strong></div>
+</div>
+
+<div class="tp-toolbar">
+  <div class="tp-pills" role="tablist" aria-label="Days past due">
+    <button type="button" role="tab" *ngFor="let opt of overdueRangeOptions" [attr.aria-selected]="selectedOverdueRange === opt.value"
+            [class.is-on]="selectedOverdueRange === opt.value" (click)="setRange(opt.value)">{{ opt.label }}</button>
   </div>
-
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card" *ngFor="let stat of statsCards">
-      <div class="stat-icon" [class]="stat.color">
-        <span class="stat-emoji">{{ stat.icon }}</span>
-      </div>
-      <div class="stat-info">
-        <h3>{{ stat.label }}</h3>
-        <p class="stat-value">
-          <span *ngIf="!stat.isCurrency">{{ formatNumber(stat.value) }}</span>
-          <span *ngIf="stat.isCurrency">{{ formatCurrency(stat.value) }}</span>
-        </p>
-        <span class="stat-trend" [class]="getTrendClass(stat.growth)">
-          <i class="fas" [class.fa-arrow-up]="stat.growth > 0" [class.fa-arrow-down]="stat.growth < 0"></i>
-          {{ Math.abs(stat.growth) }}% vs last 30 days
-        </span>
-      </div>
-    </div>
+  <div class="tp-search">
+    <lucide-icon name="search" [size]="18" aria-hidden="true"></lucide-icon>
+    <input type="search" aria-label="Search overdue accounts" placeholder="Customer, phone or plan ID"
+           [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
   </div>
+</div>
 
-  <!-- Filters Section -->
-  <div class="filters-section">
-    <div class="filters-row">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input
-          type="text"
-          placeholder="Search by customer name, phone or plan ID..."
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="applyFilters()"
-        />
-        <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="filter-group">
-        <select [(ngModel)]="selectedOverdueRange" (change)="applyFilters()">
-          <option *ngFor="let opt of overdueRangeOptions" [value]="opt.value">{{ opt.label }}</option>
-        </select>
-      </div>
-
-      <button class="reset-btn" (click)="resetFilters()">
-        <i class="fas fa-undo-alt"></i> Reset
-      </button>
-    </div>
+<!-- Customers saying they've paid outside the app: nothing changes until the money is confirmed -->
+<tp-card *ngIf="claims.length" [title]="'Payments customers say they made (' + claims.length + ')'"
+         subtitle="Check the MoMo or bank statement. The instalment stays due, with late fees, until you confirm the money arrived.">
+  <div class="tp-table-wrap">
+    <table class="tp-table">
+      <thead><tr><th scope="col">Customer</th><th scope="col">Instalment</th><th scope="col">Reference</th>
+        <th scope="col" class="num">Still owed</th><th scope="col">Told us</th><th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let c of claims">
+          <td><strong>{{ c.customer_name }}</strong><div class="tp-sub">{{ c.customer_phone }}</div></td>
+          <td>#{{ c.installment_number }}<div class="tp-sub">was due {{ c.due_date | tpDate }}</div></td>
+          <td><span class="tp-reveal__value">{{ c.reference }}</span><div class="tp-sub">{{ methodLabel(c.method) }}</div></td>
+          <td class="num">{{ c.still_owed | money }}</td>
+          <td>{{ c.created_at | tpDate }}</td>
+          <td><div class="tp-row-actions" *tpManagement>
+            <button tpButton="ghost" size="sm" type="button" (click)="openClaim(c, 'reject')">Not found</button>
+            <button tpButton="navy" size="sm" type="button" (click)="openClaim(c, 'confirm')">Money arrived</button>
+          </div></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+</tp-card>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading overdue payments...</p>
+<div *ngIf="isLoading" class="tp-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading overdue accounts…</div>
+
+<tp-card *ngIf="!isLoading && overduePayments.length" [title]="'Overdue accounts (' + totalItems + ')'">
+  <div class="tp-table-wrap">
+    <table class="tp-table">
+      <thead><tr><th scope="col">Customer</th><th scope="col">Merchant</th><th scope="col">Plan</th>
+        <th scope="col" class="num">Amount due</th><th scope="col">Days past due</th><th scope="col">Was due</th>
+        <th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let payment of overduePayments">
+          <td><strong>{{ payment.customer_name }}</strong><div class="tp-sub">{{ payment.customer_phone }}</div></td>
+          <td>{{ payment.merchant_name }}</td>
+          <td>{{ payment.plan_id }}<div class="tp-sub">Instalment {{ payment.installment_number }}</div></td>
+          <td class="num"><strong>{{ payment.total_due | money }}</strong>
+            <div class="tp-sub" *ngIf="payment.late_fee > 0">incl. {{ payment.late_fee | money }} late fee</div>
+            <div class="tp-sub" *ngIf="(payment.part_paid || 0) > 0">{{ payment.part_paid | money }} already paid</div></td>
+          <td><tp-chip [tone]="dpdTone(payment.days_overdue)" [label]="payment.days_overdue + ' days'"></tp-chip>
+            <div class="tp-sub">{{ dpdLabel(payment.days_overdue) }}</div></td>
+          <td>{{ payment.due_date | tpDate }}</td>
+          <td><div class="tp-row-actions">
+            <button tpButton="ghost" size="sm" type="button" (click)="viewPaymentDetails(payment)">Details</button>
+            <button tpButton="secondary" size="sm" type="button" (click)="openReminderModal(payment)">Remind</button>
+            <button *tpManagement tpButton="navy" size="sm" type="button" (click)="openMarkReceivedModal(payment)">Record payment</button>
+          </div></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+  <div card-footer class="tp-pager" *ngIf="totalPages > 1">
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">Previous</button>
+    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">Next</button>
+  </div>
+</tp-card>
 
-  <!-- Overdue Payments Table -->
-  <div *ngIf="!isLoading" class="payments-table-container">
-    <div class="table-header">
-      <h3>Overdue Accounts ({{ totalItems }})</h3>
-    </div>
-    <div class="table-responsive">
-      <table class="payments-table">
-        <thead>
-          <tr>
-            <th>Customer</th>
-            <th>Merchant</th>
-            <th>Plan</th>
-            <th>Overdue Amount</th>
-            <th>Days Overdue</th>
-            <th>Next Action</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+<tp-card *ngIf="!isLoading && !overduePayments.length">
+  <tp-empty-state icon="circle-check" title="No overdue accounts"
+    [text]="searchTerm || selectedOverdueRange ? 'Nothing matches these filters.' : 'Every instalment is paid up.'">
+    <button *ngIf="searchTerm || selectedOverdueRange" tpButton="secondary" size="sm" type="button" (click)="resetFilters()">Clear filters</button>
+  </tp-empty-state>
+</tp-card>
+
+<!-- Details -->
+<div class="tp-dialog-backdrop" *ngIf="showPaymentModal && selectedPayment" (click)="closeModals()">
+  <div class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="co-title" (click)="$event.stopPropagation()">
+    <h2 id="co-title">{{ selectedPayment.customer?.name }}
+      <tp-chip [tone]="dpdTone(selectedPayment.payment?.days_overdue)" [label]="selectedPayment.payment?.days_overdue + ' days past due'"></tp-chip></h2>
+
+    <h3 class="tp-section-title">Contact</h3>
+    <dl class="tp-dl">
+      <dt>Customer phone</dt>
+      <dd><tp-reveal [userId]="selectedPayment.customer?.id" field="phone" [value]="selectedPayment.customer?.phone" label="customer phone"></tp-reveal></dd>
+      <dt>Email</dt><dd>{{ selectedPayment.customer?.email || '—' }}</dd>
+      <dt>Merchant</dt><dd>{{ selectedPayment.merchant?.name }}</dd>
+      <dt>Merchant phone</dt>
+      <dd><tp-reveal [userId]="selectedPayment.merchant?.id" field="phone" [value]="selectedPayment.merchant?.phone" label="merchant phone"></tp-reveal></dd>
+    </dl>
+
+    <h3 class="tp-section-title">This instalment</h3>
+    <dl class="tp-dl">
+      <dt>Plan</dt><dd>{{ selectedPayment.plan?.plan_id }} · instalment {{ selectedPayment.payment?.installment_number }}</dd>
+      <dt>Instalment</dt><dd>{{ selectedPayment.payment?.amount | money }}</dd>
+      <dt>Late fee</dt><dd>{{ selectedPayment.payment?.late_fee | money }}</dd>
+      <ng-container *ngIf="selectedPayment.payment?.part_paid > 0">
+        <dt>Paid so far</dt><dd>{{ selectedPayment.payment?.part_paid | money }}</dd>
+      </ng-container>
+      <dt>Still owed</dt><dd><strong>{{ selectedPayment.payment?.total_due | money }}</strong></dd>
+      <dt>Was due</dt><dd>{{ selectedPayment.payment?.due_date | tpDate }}</dd>
+    </dl>
+
+    <ng-container *ngIf="selectedPayment.payment?.part_payments?.length">
+      <h3 class="tp-section-title">Part payments received</h3>
+      <dl class="tp-dl">
+        <ng-container *ngFor="let r of selectedPayment.payment?.part_payments">
+          <dt>{{ r.at | tpDate }}</dt>
+          <dd>{{ r.amount | money }} · {{ methodLabel(r.method) }} · <span class="tp-reveal__value">{{ r.reference }}</span>
+            <span class="tp-sub" *ngIf="r.recorded_by"> (recorded by {{ r.recorded_by }})</span></dd>
+        </ng-container>
+      </dl>
+    </ng-container>
+
+    <h3 class="tp-section-title">Schedule</h3>
+    <div class="tp-table-wrap tp-table-wrap--flush">
+      <table class="tp-table">
+        <thead><tr><th scope="col">#</th><th scope="col">Due</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Late fee</th><th scope="col" class="num">Paid</th><th scope="col">Status</th></tr></thead>
         <tbody>
-          <tr *ngFor="let payment of overduePayments">
-            <td>
-              <div class="customer-info">
-                <strong>{{ payment.customer_name }}</strong>
-                <small>{{ payment.customer_phone }}</small>
-              </div>
-            </td>
-            <td>{{ payment.merchant_name }}</td>
-            <td class="plan-id">{{ payment.plan_id }}</td>
-            <td class="amount">{{ formatCurrency(payment.total_due) }}</td>
-            <td class="days-overdue">
-              <span class="overdue-badge" [class]="getOverdueRangeClass(payment.overdue_range)">
-                {{ payment.days_overdue }} days
-              </span>
-            </td>
-            <td>{{ formatDate(payment.due_date) }}</td>
-            <td>
-              <span class="status-badge" [class]="getOverdueRangeClass(payment.overdue_range)">
-                {{ payment.overdue_range }}
-              </span>
-            </td>
-            <td class="actions">
-              <button class="action-btn view" (click)="viewPaymentDetails(payment)" title="View Details">
-                <i class="fas fa-eye"></i>
-              </button>
-              <button class="action-btn reminder" (click)="openReminderModal(payment)" title="Send Reminder">
-                <i class="fas fa-bell"></i>
-              </button>
-              <button class="action-btn mark" (click)="openMarkReceivedModal(payment)" title="Mark Received">
-                <i class="fas fa-check-circle"></i>
-              </button>
-              <button class="action-btn plan" (click)="openPaymentPlanModal(payment)" title="Set Payment Plan">
-                <i class="fas fa-calendar-alt"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="overduePayments.length === 0">
-            <td colspan="8" class="empty-row">
-              <div class="empty-state">
-                <i class="fas fa-check-circle"></i>
-                <p>No overdue payments found</p>
-                <button class="reset-btn" (click)="resetFilters()">Clear Filters</button>
-              </div>
-            </td>
+          <tr *ngFor="let p of selectedPayment.payment_schedule">
+            <td>{{ p.installment_number }}</td>
+            <td>{{ p.due_date | tpDate }}</td>
+            <td class="num">{{ p.amount | money }}</td>
+            <td class="num">{{ p.late_fee > 0 ? (p.late_fee | money) : '—' }}</td>
+            <td class="num">{{ p.part_paid > 0 ? (p.part_paid | money) : '—' }}</td>
+            <td><tp-chip [status]="p.status"></tp-chip></td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
-      <div class="pagination-info">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} overdue payments
-      </div>
-      <div class="pagination-controls">
-        <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-          <i class="fas fa-chevron-left"></i> Previous
-        </button>
-        <div class="page-numbers">
-          <button
-            *ngFor="let page of getPageNumbers()"
-            class="page-number"
-            [class.active]="currentPage === page"
-            (click)="changePage(page)">
-            {{ page }}
-          </button>
-        </div>
-        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-          Next <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
+    <ng-container *ngIf="selectedPayment.collection_timeline?.length">
+      <h3 class="tp-section-title">What has happened</h3>
+      <dl class="tp-dl">
+        <ng-container *ngFor="let stage of selectedPayment.collection_timeline">
+          <dt>{{ stage.completed_date | tpDate }}</dt>
+          <dd>{{ stage.stage }}<span class="tp-sub" *ngIf="!stage.completed"> (not sent)</span>
+            <div class="tp-sub" *ngFor="let a of stage.actions">{{ a }}</div></dd>
+        </ng-container>
+      </dl>
+    </ng-container>
+
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Close</button>
+      <button tpButton="secondary" type="button" (click)="openReminderModal(selectedPayment.payment)">Send reminder</button>
+      <button *tpManagement tpButton="navy" type="button" (click)="openMarkReceivedModal(selectedPayment.payment)">Record payment</button>
     </div>
   </div>
+</div>
 
-  <!-- Payment Details Modal -->
-  <div class="modal-overlay" *ngIf="showPaymentModal" (click)="closeModals()">
-    <div class="modal-container large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-receipt"></i>
-          Overdue Payment Details
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body" *ngIf="selectedPayment">
-        <!-- Customer & Payment Info -->
-        <div class="info-section">
-          <div class="info-grid two-columns">
-            <div class="info-card">
-              <h4><i class="fas fa-user"></i> Customer Information</h4>
-              <div class="info-item">
-                <label>Name:</label>
-                <span>{{ selectedPayment.customer?.name }}</span>
-              </div>
-              <div class="info-item">
-                <label>Phone:</label>
-                <span>{{ selectedPayment.customer?.phone }}</span>
-              </div>
-              <div class="info-item">
-                <label>Email:</label>
-                <span>{{ selectedPayment.customer?.email }}</span>
-              </div>
-            </div>
-            <div class="info-card">
-              <h4><i class="fas fa-store"></i> Merchant Information</h4>
-              <div class="info-item">
-                <label>Business Name:</label>
-                <span>{{ selectedPayment.merchant?.name }}</span>
-              </div>
-              <div class="info-item">
-                <label>Phone:</label>
-                <span>{{ selectedPayment.merchant?.phone }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Details -->
-        <div class="info-section">
-          <h3><i class="fas fa-info-circle"></i> Payment Details</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Payment ID:</label>
-              <span>{{ selectedPayment.payment?.payment_id }}</span>
-            </div>
-            <div class="info-item">
-              <label>Plan ID:</label>
-              <span>{{ selectedPayment.plan?.plan_id }}</span>
-            </div>
-            <div class="info-item">
-              <label>Installment #:</label>
-              <span>{{ selectedPayment.payment?.installment_number }}</span>
-            </div>
-            <div class="info-item">
-              <label>Original Amount:</label>
-              <span>{{ formatCurrency(selectedPayment.payment?.amount) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Late Fee:</label>
-              <span class="late-fee">{{ formatCurrency(selectedPayment.payment?.late_fee) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Total Due:</label>
-              <span class="total-due">{{ formatCurrency(selectedPayment.payment?.total_due) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Due Date:</label>
-              <span>{{ formatDate(selectedPayment.payment?.due_date) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Days Overdue:</label>
-              <span class="days-overdue">{{ selectedPayment.payment?.days_overdue }} days</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Schedule -->
-        <div class="info-section">
-          <h3><i class="fas fa-calendar-alt"></i> Payment Schedule</h3>
-          <div class="schedule-table">
-            <div class="schedule-header">
-              <span>#</span>
-              <span>Due Date</span>
-              <span>Amount</span>
-              <span>Late Fee</span>
-              <span>Status</span>
-            </div>
-            <div class="schedule-row" *ngFor="let payment of selectedPayment.payment_schedule">
-              <span>{{ payment.installment_number }}</span>
-              <span>{{ formatDate(payment.due_date) }}</span>
-              <span>{{ formatCurrency(payment.amount) }}</span>
-              <span class="late-fee" *ngIf="payment.late_fee > 0">{{ formatCurrency(payment.late_fee) }}</span>
-              <span *ngIf="payment.late_fee == 0">-</span>
-              <span class="status-badge" [class]="payment.status === 'paid' ? 'status-paid' : 'status-overdue'">
-                {{ payment.status | titlecase }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Collection Timeline -->
-        <div class="info-section">
-          <h3><i class="fas fa-timeline"></i> Collection Timeline</h3>
-          <div class="timeline">
-            <div class="timeline-item" *ngFor="let stage of selectedPayment.collection_timeline">
-              <div class="timeline-icon" [class.completed]="stage.completed">
-                <i class="fas" [class.fa-check]="stage.completed" [class.fa-clock]="!stage.completed"></i>
-              </div>
-              <div class="timeline-content">
-                <h4>{{ stage.stage }}</h4>
-                <p *ngIf="stage.completed_date">Completed: {{ formatDate(stage.completed_date) }}</p>
-                <ul>
-                  <li *ngFor="let action of stage.actions">{{ action }}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openReminderModal(selectedPayment.payment)">
-          <i class="fas fa-bell"></i> Send Reminder
-        </button>
-        <button class="btn-success" (click)="openMarkReceivedModal(selectedPayment.payment)">
-          <i class="fas fa-check-circle"></i> Mark Received
-        </button>
-        <button class="btn-warning" (click)="openPaymentPlanModal(selectedPayment.payment)">
-          <i class="fas fa-calendar-alt"></i> Set Payment Plan
-        </button>
-      </div>
+<!-- Reminder -->
+<div class="tp-dialog-backdrop" *ngIf="showReminderModal && selectedPayment" (click)="closeModals()">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-rem-title" [formGroup]="reminderForm"
+        (ngSubmit)="sendReminder()" (click)="$event.stopPropagation()">
+    <h2 id="co-rem-title">Send a reminder</h2>
+    <p>To {{ selectedPayment.payment?.customer_name }} for {{ selectedPayment.payment?.total_due | money }}.
+      The message says the amount due, the date and how to pay.</p>
+    <fieldset class="tp-choice">
+      <legend class="tp-field__label">Send by</legend>
+      <label *ngFor="let type of reminderTypeOptions">
+        <input type="radio" formControlName="reminder_type" [value]="type.value"> {{ type.label }}
+      </label>
+    </fieldset>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="reminderForm.invalid || isSubmitting" [loading]="isSubmitting">
+        {{ isSubmitting ? 'Sending…' : 'Send reminder' }}</button>
     </div>
-  </div>
+  </form>
+</div>
 
-  <!-- Send Reminder Modal -->
-  <div class="modal-overlay" *ngIf="showReminderModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-bell"></i>
-          Send Payment Reminder
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Send reminder to <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
-        </p>
-        <p>Amount Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
-
-        <form [formGroup]="reminderForm">
-          <div class="form-group">
-            <label>Reminder Type *</label>
-            <div class="reminder-options">
-              <label *ngFor="let type of reminderTypeOptions" class="reminder-option">
-                <input type="radio" formControlName="reminder_type" [value]="type.value">
-                <i class="fab {{ type.icon }}"></i>
-                <span>{{ type.label }}</span>
-              </label>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-primary" (click)="sendReminder()" [disabled]="reminderForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Sending...' : 'Send Reminder' }}
-        </button>
-      </div>
+<!-- Record a payment received outside Paystack -->
+<div class="tp-dialog-backdrop" *ngIf="showMarkReceivedModal && selectedPayment" (click)="closeModals()">
+  <form class="tp-dialog tp-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="co-rec-title" [formGroup]="markReceivedForm"
+        (ngSubmit)="markAsReceived()" (click)="$event.stopPropagation()">
+    <h2 id="co-rec-title">Record a payment</h2>
+    <p>For money {{ selectedPayment.payment?.customer_name }} paid outside Paystack. Payments through the app are recorded automatically.</p>
+    <div class="tp-note">
+      <lucide-icon name="info" [size]="16"></lucide-icon>
+      <span>{{ (selectedPayment.payment?.total_due || 0) | money }} is still owed. Less than that is recorded as a part payment:
+        it goes to the instalment first, then late fees, and the instalment stays overdue until the rest arrives.</span>
     </div>
-  </div>
-
-  <!-- Mark Received Modal -->
-  <div class="modal-overlay" *ngIf="showMarkReceivedModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-check-circle"></i>
-          Mark Payment Received
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Mark payment as received for <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
-        </p>
-        <p>Total Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
-
-        <form [formGroup]="markReceivedForm">
-          <div class="form-group">
-            <label>Amount Received *</label>
-            <input type="number" formControlName="amount_received" step="0.01" placeholder="Enter amount received">
-          </div>
-
-          <div class="form-group">
-            <label>Payment Method *</label>
-            <select formControlName="payment_method">
-              <option value="cash">Cash</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="mobile_money">Mobile Money</option>
-              <option value="card">Card</option>
-              <option value="manual">Manual Entry</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Payment Reference</label>
-            <input type="text" formControlName="payment_reference" placeholder="Transaction ID or Reference">
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-success" (click)="markAsReceived()" [disabled]="markReceivedForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Processing...' : 'Mark as Received' }}
-        </button>
-      </div>
+    <tp-field label="Amount received" for="co-amount" [required]="true"
+              [hint]="'Up to ' + ((selectedPayment.payment?.total_due || 0) | money) + '. More than that can\'t be recorded.'">
+      <input id="co-amount" type="number" inputmode="decimal" step="0.01" formControlName="amount_received">
+    </tp-field>
+    <tp-field label="Paid by" for="co-method" [required]="true">
+      <select id="co-method" formControlName="payment_method">
+        <option value="mobile_money">Mobile Money</option>
+        <option value="bank_transfer">Bank transfer</option>
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+      </select>
+    </tp-field>
+    <tp-field label="Reference" for="co-ref" [required]="true" hint="The MoMo or bank transaction ID, or the receipt number for cash.">
+      <input id="co-ref" type="text" formControlName="payment_reference">
+    </tp-field>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="closeModals()">Cancel</button>
+      <button tpButton="navy" type="submit" [disabled]="markReceivedForm.invalid || isSubmitting" [loading]="isSubmitting">
+        {{ isSubmitting ? 'Recording…' : 'Record payment' }}</button>
     </div>
-  </div>
+  </form>
+</div>
 
-  <!-- Set Payment Plan Modal -->
-  <div class="modal-overlay" *ngIf="showPaymentPlanModal" (click)="closeModals()">
-    <div class="modal-container small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>
-          <i class="fas fa-calendar-alt"></i>
-          Set Payment Plan
-        </h2>
-        <button class="close-btn" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="info-text">
-          Arrange payment plan for <strong>{{ selectedPayment?.payment?.customer_name }}</strong>
-        </p>
-        <p>Amount Due: <strong>{{ formatCurrency(selectedPayment?.payment?.total_due) }}</strong></p>
-
-        <form [formGroup]="paymentPlanForm">
-          <div class="form-group">
-            <label>Plan Type *</label>
-            <select formControlName="plan_type">
-              <option value="installments">Installments</option>
-              <option value="extension">Due Date Extension</option>
-              <option value="partial">Partial Payment</option>
-            </select>
-          </div>
-
-          <div class="form-group" *ngIf="paymentPlanForm.get('plan_type')?.value === 'extension'">
-            <label>New Due Date *</label>
-            <input type="date" formControlName="new_due_date">
-          </div>
-
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea formControlName="notes" rows="3" placeholder="Additional notes..."></textarea>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button class="btn-primary" (click)="setPaymentPlan()" [disabled]="paymentPlanForm.invalid || isSubmitting">
-          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
-          {{ isSubmitting ? 'Processing...' : 'Set Payment Plan' }}
-        </button>
-      </div>
+<!-- Confirm or reject a payment claim -->
+<div class="tp-dialog-backdrop" *ngIf="claim" (click)="claim = null">
+  <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="co-claim-title" (ngSubmit)="submitClaim()" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="claimAction === 'confirm'; else rejectClaim">
+      <h2 id="co-claim-title">Money arrived</h2>
+      <p>{{ claim.customer_name }}, instalment #{{ claim.installment_number }}, reference {{ claim.reference }}.
+        {{ claim.still_owed | money }} is still owed; less is recorded as a part payment.</p>
+      <tp-field label="Amount received" for="co-claim-amount" [required]="true">
+        <input id="co-claim-amount" type="number" inputmode="decimal" step="0.01" [(ngModel)]="claimAmount" name="claimAmount">
+      </tp-field>
+    </ng-container>
+    <ng-template #rejectClaim>
+      <h2 id="co-claim-title">Payment not found</h2>
+      <p>{{ claim.customer_name }} is told why, and that the instalment is still due.</p>
+      <tp-field label="Reason" for="co-claim-reason" [required]="true" hint="At least 5 characters. The customer sees this.">
+        <input id="co-claim-reason" type="text" [(ngModel)]="claimReason" name="claimReason" maxlength="300">
+      </tp-field>
+    </ng-template>
+    <div class="tp-dialog__actions">
+      <button tpButton="secondary" type="button" (click)="claim = null">Cancel</button>
+      <button [tpButton]="claimAction === 'confirm' ? 'navy' : 'danger'" type="submit" [loading]="isSubmitting"
+              [disabled]="isSubmitting || (claimAction === 'confirm' ? !(claimAmount > 0) : claimReason.trim().length < 5)">
+        {{ claimAction === 'confirm' ? 'Record payment' : 'Tell the customer' }}</button>
     </div>
-  </div>
+  </form>
 </div>

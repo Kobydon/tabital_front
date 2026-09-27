@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface Payment {
   id: number;
   payment_id: string;
@@ -128,7 +129,6 @@ export class CustomerPaymentsComponent implements OnInit {
     
     this.customerService.getMyPlans({ status: 'active' }).subscribe({
       next: (response: any) => {
-        console.log('Active Plans Response:', response);
         
         if (response && response.plans) {
           this.activePlans = response.plans.map((plan: any) => {
@@ -298,12 +298,12 @@ export class CustomerPaymentsComponent implements OnInit {
         this.loadActivePlans();
         this.loadPayments();
         this.loadPaymentStats();
-        alert('Payment successful!');
+        notify('Payment successful!');
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error making payment:', error);
-        alert('Payment failed. Please try again.');
+        notify('Payment failed. Please try again.', 'error');
         this.isLoading = false;
       }
     });
@@ -337,7 +337,7 @@ export class CustomerPaymentsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error downloading receipt:', error);
-        alert('Failed to download receipt. Please try again.');
+        notify('Failed to download receipt. Please try again.', 'error');
       }
     });
   }
@@ -345,11 +345,11 @@ export class CustomerPaymentsComponent implements OnInit {
   requestReminder(plan: PaymentPlan): void {
     this.customerService.requestPaymentReminder().subscribe({
       next: (response: any) => {
-        alert('Payment reminder sent successfully!');
+        notify('Payment reminder sent successfully!');
       },
       error: (error) => {
         console.error('Error sending reminder:', error);
-        alert('Failed to send reminder. Please try again.');
+        notify('Failed to send reminder. Please try again.', 'error');
       }
     });
   }
@@ -374,7 +374,7 @@ export class CustomerPaymentsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error exporting transactions:', error);
-        alert('Failed to export. Please try again.');
+        notify('Failed to export. Please try again.', 'error');
       }
     });
   }
@@ -425,7 +425,7 @@ export class CustomerPaymentsComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

@@ -46,6 +46,9 @@
       <button class="tab-btn" [class.active]="activeTab === 'profile'" (click)="switchTab('profile')">
         <i class="fas fa-user"></i> Profile Information
       </button>
+      <button class="tab-btn" [class.active]="activeTab === 'credit'" (click)="switchTab('credit')">
+        <i class="fas fa-wallet"></i> Income &amp; Limit
+      </button>
       <button class="tab-btn" [class.active]="activeTab === 'security'" (click)="switchTab('security')">
         <i class="fas fa-lock"></i> Security
       </button>
@@ -55,6 +58,62 @@
       <button class="tab-btn" [class.active]="activeTab === 'activity'" (click)="switchTab('activity')">
         <i class="fas fa-history"></i> Activity Log
       </button>
+    </div>
+
+    <!-- Income & spending limit tab (Phase 3) -->
+    <div class="tab-content" *ngIf="activeTab === 'credit'">
+      <div class="credit-summary" *ngIf="credit" [class.not-eligible]="!credit.eligible">
+        <ng-container *ngIf="credit.eligible">
+          <h3>Available to spend: {{ credit.available_limit | currency:'GHS ':'symbol':'1.2-2' }}</h3>
+          <p>Your limit is {{ credit.credit_limit | currency:'GHS ':'symbol':'1.2-2' }}. It grows as you complete plans on time.</p>
+        </ng-container>
+        <ng-container *ngIf="!credit.eligible">
+          <h3>Your spending limit isn't available yet</h3>
+          <ul><li *ngFor="let reason of credit.reasons">{{ reason }}</li></ul>
+        </ng-container>
+      </div>
+
+      <form [formGroup]="creditForm" (ngSubmit)="saveCreditDetails()">
+        <div class="form-section">
+          <h3><i class="fas fa-briefcase"></i> Employment &amp; income</h3>
+          <p class="hint">Changing your salary or employment details means we need to verify them again before your limit updates.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Ghana Card Number *</label>
+              <input formControlName="national_id" placeholder="GHA-XXXXXXXXX-X">
+            </div>
+            <div class="form-group">
+              <label>Monthly Salary (GHS) *</label>
+              <input type="number" min="0" formControlName="monthly_salary">
+              <small *ngIf="credit?.details">
+                {{ credit.details.salary_verified ? '✓ Verified by Tabital' : 'Not verified yet' }}
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Employed Since *</label>
+              <input type="date" formControlName="employment_start_date" [max]="today">
+            </div>
+            <div class="form-group">
+              <label>Salary paid into a bank account? *</label>
+              <select formControlName="salary_paid_to_bank">
+                <option [ngValue]="null">Select</option>
+                <option [ngValue]="true">Yes</option>
+                <option [ngValue]="false">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Mobile Money Number *</label>
+              <input formControlName="momo_number" placeholder="024XXXXXXX">
+              <small *ngIf="creditForm.get('momo_number')?.invalid && creditForm.get('momo_number')?.touched" class="error">
+                Enter a 10-digit number starting with 0
+              </small>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary" [disabled]="isSavingCredit">
+            {{ isSavingCredit ? 'Saving...' : 'Save details' }}
+          </button>
+        </div>
+      </form>
     </div>
 
     <!-- Profile Information Tab -->

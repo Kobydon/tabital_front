@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 @Component({
   selector: 'app-merchant-transactions',
   templateUrl: './merchant-transactions.component.html',
@@ -73,7 +75,6 @@ export class MerchantTransactionsComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.updateForm = this.fb.group({
-      delivery_status: [''],
       tracking_number: [''],
       notes: ['']
     });
@@ -173,7 +174,6 @@ export class MerchantTransactionsComponent implements OnInit {
   openUpdateModal(transaction: any) {
     this.selectedTransaction = transaction;
     this.updateForm.patchValue({
-      delivery_status: transaction.delivery_status,
       tracking_number: transaction.tracking_number,
       notes: transaction.notes
     });
@@ -186,11 +186,11 @@ export class MerchantTransactionsComponent implements OnInit {
         next: () => {
           this.loadTransactions();
           this.showUpdateModal = false;
-          alert('Transaction updated successfully');
+          notify('Transaction updated successfully');
         },
         error: (error) => {
           console.error('Error updating transaction:', error);
-          alert('Failed to update transaction');
+          notify('Failed to update transaction', 'error');
         }
       });
     }
@@ -212,27 +212,27 @@ export class MerchantTransactionsComponent implements OnInit {
           this.loadTransactions();
           this.loadStats();
           this.showRefundModal = false;
-          alert('Refund processed successfully');
+          notify('Refund processed successfully');
         },
         error: (error) => {
           console.error('Error processing refund:', error);
-          alert('Failed to process refund');
+          notify('Failed to process refund', 'error');
         }
       });
     }
   }
 
-  updateStatus(transaction: any, status: string) {
-    if (confirm(`Change transaction status to ${status}?`)) {
+  async updateStatus(transaction: any, status: string) {
+    if (await ask(`Change transaction status to ${status}?`)) {
       this.merchantService.updateTransactionStatus(transaction.id, { status }).subscribe({
         next: () => {
           this.loadTransactions();
           this.loadStats();
-          alert('Status updated successfully');
+          notify('Status updated successfully');
         },
         error: (error) => {
           console.error('Error updating status:', error);
-          alert('Failed to update status');
+          notify('Failed to update status', 'error');
         }
       });
     }
@@ -251,11 +251,11 @@ export class MerchantTransactionsComponent implements OnInit {
         a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('Export started');
+        notify('Export started');
       },
       error: (error) => {
         console.error('Error exporting transactions:', error);
-        alert('Failed to export transactions');
+        notify('Failed to export transactions', 'error');
       }
     });
   }
@@ -263,7 +263,7 @@ export class MerchantTransactionsComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

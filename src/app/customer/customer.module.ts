@@ -1,4 +1,5 @@
-import { NgModule } from '@angular/core';
+import { UiModule } from '../ui/ui.module';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 
 import { CustomerRoutingModule } from './customer-routing.module';
@@ -18,6 +19,9 @@ import { CustomerOrdersComponent } from './customer-order/customer-order.compone
 import { CustomerShopComponent } from './shop/shop.component';
 import { MakePaymentComponent } from './make-payment/make-payment.component';
 import { CustomerDocumentComponent } from './customer-document/customer-document.component';
+import { PaymentCallbackComponent } from './payment-callback/payment-callback.component';
+import { PayLinkComponent } from './pay-link/pay-link.component';
+import { VerifyIdentityComponent } from './verify-identity/verify-identity.component';
 // import { ShopComponent } from './shop/shop.component';
 // import { CustomerOrderComponent } from './customer-order/customer-order.component';
 
@@ -42,10 +46,15 @@ import { CustomerDocumentComponent } from './customer-document/customer-document
   CustomerOrdersComponent,
   CustomerShopComponent,
   MakePaymentComponent,
-  CustomerDocumentComponent
+  CustomerDocumentComponent,
+  PaymentCallbackComponent,
+  PayLinkComponent,
+  VerifyIdentityComponent
   ],
+  // <smart-camera-web> is Smile ID's web component (Phase 6)
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
-    CommonModule,
+    UiModule, CommonModule,
     CustomerRoutingModule,RouterModule,FormsModule,ReactiveFormsModule,TitleCasePipe
     
     

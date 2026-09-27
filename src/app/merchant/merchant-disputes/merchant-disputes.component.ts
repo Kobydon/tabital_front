@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 interface Dispute {
   id: number;
   dispute_id: string;
@@ -109,12 +110,11 @@ export class MerchantDisputesComponent implements OnInit {
     });
     
     this.acceptForm = this.fb.group({
-      refund_amount: ['', [Validators.required, Validators.min(0.01)]],
       notes: ['']
     });
     
     this.rejectForm = this.fb.group({
-      reason: ['', Validators.required]
+      reason: ['', [Validators.required, Validators.minLength(5)]]
     });
     
     this.escalateForm = this.fb.group({
@@ -209,7 +209,7 @@ export class MerchantDisputesComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading dispute details:', error);
-        alert('Failed to load dispute details');
+        notify('Failed to load dispute details', 'error');
       }
     });
   }
@@ -227,11 +227,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showResponseModal = false;
-          alert('Response submitted successfully');
+          notify('Response submitted successfully');
         },
         error: (error: any) => {
           console.error('Error submitting response:', error);
-          alert('Failed to submit response');
+          notify('Failed to submit response', 'error');
         }
       });
     }
@@ -240,7 +240,6 @@ export class MerchantDisputesComponent implements OnInit {
   openAcceptModal(dispute: Dispute) {
     this.selectedDispute = dispute as DisputeDetails;
     this.acceptForm.patchValue({
-      refund_amount: dispute.amount,
       notes: ''
     });
     this.showAcceptModal = true;
@@ -253,11 +252,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showAcceptModal = false;
-          alert('Dispute accepted and refund processed');
+          notify('Sent. Tabital will close the dispute in the customer\'s favour.', 'success');
         },
         error: (error: any) => {
           console.error('Error accepting dispute:', error);
-          alert('Failed to accept dispute');
+          notify(error?.error?.error || 'Failed to send your response', 'error');
         }
       });
     }
@@ -276,11 +275,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showRejectModal = false;
-          alert('Dispute rejected');
+          notify('Sent. Tabital will review both sides and decide.', 'success');
         },
         error: (error: any) => {
           console.error('Error rejecting dispute:', error);
-          alert('Failed to reject dispute');
+          notify(error?.error?.error || 'Failed to send your response', 'error');
         }
       });
     }
@@ -299,11 +298,11 @@ export class MerchantDisputesComponent implements OnInit {
           this.loadDisputes();
           this.loadStats();
           this.showEscalateModal = false;
-          alert('Dispute escalated to admin');
+          notify('Dispute escalated to admin');
         },
         error: (error: any) => {
           console.error('Error escalating dispute:', error);
-          alert('Failed to escalate dispute');
+          notify('Failed to escalate dispute', 'error');
         }
       });
     }
@@ -334,7 +333,7 @@ export class MerchantDisputesComponent implements OnInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface DashboardStats {
   total_outstanding: number;
   total_outstanding_plans_count: number;
@@ -213,9 +214,30 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Vault home: the earliest unpaid instalment across active plans leads the page. */
+  get nextDue(): { plan: any; payment: any } | null {
+    let best: { plan: any; payment: any } | null = null;
+    for (const plan of (this.activePlans as any[]) || []) {
+      for (const payment of plan.payment_schedule || []) {
+        if (payment.status !== 'pending' && payment.status !== 'overdue') continue;
+        if (!best || new Date(payment.due_date) < new Date(best.payment.due_date)) best = { plan, payment };
+      }
+    }
+    return best;
+  }
+
+  paidCount(plan: any): number {
+    return (plan?.payment_schedule || []).filter((p: any) => p.status === 'paid').length;
+  }
+
+  payNext(): void {
+    const nd = this.nextDue;
+    if (nd) this.router.navigate(['/customer/make-payment'], { queryParams: { planId: nd.plan.id } });
+  }
+
   private loadActivePlans(): Promise<void> {
     return new Promise((resolve) => {
-      this.customerService.getMyPlans({ status: 'active', limit: 3 }).subscribe({
+      this.customerService.getMyPlans({ status: 'active', limit: 20 }).subscribe({
         next: (data) => {
           this.activePlans = data?.plans || [];
           resolve();
@@ -249,7 +271,6 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   private initPaymentChart(): void {
     if (!this.paymentOverview?.monthly_data?.length) {
-      console.log('No payment overview data available');
       return;
     }
 
@@ -408,10 +429,10 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   requestPaymentReminder(): void {
     this.customerService.requestPaymentReminder().subscribe({
-      next: () => alert('Payment reminder has been sent to your email and phone.'),
+      next: () => notify('Payment reminder has been sent to your email and phone.'),
       error: (error) => {
         console.error('Error requesting payment reminder:', error);
-        alert('Failed to send payment reminder. Please try again.');
+        notify('Failed to send payment reminder. Please try again.', 'error');
       }
     });
   }
@@ -422,7 +443,7 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   copyToClipboard(text: string): void {
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+    navigator.clipboard.writeText(text).then(() => notify('Copied to clipboard!'));
   }
 
   upgradeKYC(): void {
@@ -485,7 +506,7 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-GH', { 
-      style: 'currency', currency: 'GHS', minimumFractionDigits: 2, maximumFractionDigits: 2
+      style: 'currency', currency: 'GHS', currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2
     }).format(amount || 0);
   }
 

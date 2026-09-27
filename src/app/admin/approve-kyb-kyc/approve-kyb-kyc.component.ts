@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
+import { notify } from 'src/app/shared/notify';
 export interface MerchantKYC {
   merchant_id: number;
   merchant_name: string;
@@ -17,6 +18,9 @@ export interface MerchantKYC {
   documents: Document[];
   bank_details: BankDetails;
   verified_at?: string;
+  fee_tier?: string;
+  fee_tier_label?: string;
+  fee_percentage?: number;
 }
 
 export interface Document {
@@ -47,7 +51,8 @@ export interface BankDetails {
 @Component({
   selector: 'app-approve-kyb-kyc',
   templateUrl: './approve-kyb-kyc.component.html',
-  styleUrls: ['./approve-kyb-kyc.component.scss']
+  styles: [`.kyb-preview { margin: 0 0 16px; } .kyb-preview img { max-width: 100%; border-radius: 8px; }
+    .kyb-preview iframe { width: 100%; height: 60vh; border: 1px solid var(--tp-line); border-radius: 8px; }`]
 })
 export class ApproveKybKycComponent implements OnInit {
   // Data
@@ -75,6 +80,14 @@ export class ApproveKybKycComponent implements OnInit {
   
   // Forms
   rejectForm: FormGroup;
+
+  // Merchant fee tiers (§6.1), chosen by management at approval or later with a reason
+  tiers: { value: string; label: string; fee_percentage: number }[] = [];
+  approvalTier = 'standard';
+  approvalTierReason = '';
+  tierMerchant: any = null;
+  tierValue = 'standard';
+  tierReason = '';
   
   // Statistics
   stats = {
@@ -96,6 +109,10 @@ export class ApproveKybKycComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAllData();
+    this.adminService.getMerchantFeeTiers().subscribe({
+      next: (res: any) => { this.tiers = res.tiers || []; },
+      error: () => { this.tiers = []; }            // operations admins can't change tiers anyway
+    });
   }
 
   @HostListener('window:keydown.escape', ['$event'])
@@ -117,7 +134,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadPendingKYC(): void {
     this.adminService.getPendingKYC().subscribe({
       next: (response) => {
-        console.log('Pending KYC response:', response);
         this.pendingMerchants = response.pending_verifications || [];
         this.stats.pending = this.pendingMerchants.length;
         this.stats.totalDocuments = this.pendingMerchants.reduce(
@@ -126,7 +142,6 @@ export class ApproveKybKycComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading pending KYC:', error);
         this.isLoading = false;
       }
     });
@@ -135,7 +150,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadVerifiedKYC(): void {
     this.adminService.getVerifiedKYC().subscribe({
       next: (response) => {
-        console.log('Verified KYC response:', response);
         this.verifiedMerchants = response.verified_merchants || [];
         this.stats.verified = this.verifiedMerchants.length;
       },
@@ -146,7 +160,6 @@ export class ApproveKybKycComponent implements OnInit {
   loadRejectedKYC(): void {
     this.adminService.getRejectedKYC().subscribe({
       next: (response) => {
-        console.log('Rejected KYC response:', response);
         this.rejectedMerchants = response.rejected_merchants || [];
         this.stats.rejected = this.rejectedMerchants.length;
       },
@@ -159,26 +172,56 @@ export class ApproveKybKycComponent implements OnInit {
   // ============================================
 
   viewMerchantDetails(merchant: MerchantKYC): void {
-    console.log('Viewing merchant:', merchant);
     this.selectedMerchant = merchant;
+    this.approvalTier = merchant.fee_tier || 'standard';
+    this.approvalTierReason = '';
     this.showMerchantModal = true;
+  }
+
+  countDocs(merchant: MerchantKYC, status: string): number {
+    return (merchant.documents || []).filter(d => d.status === status).length;
+  }
+
+  tierTone(tier: string | undefined): 'success' | 'info' | 'warn' {
+    return tier === 'premium' ? 'success' : tier === 'high_risk' ? 'warn' : 'info';
+  }
+
+  openTierDialog(merchant: any): void {
+    this.tierMerchant = merchant;
+    this.tierValue = merchant.fee_tier || 'standard';
+    this.tierReason = '';
+  }
+
+  saveTier(): void {
+    if (!this.tierMerchant || this.tierReason.trim().length < 5) return;
+    this.isProcessing = true;
+    this.adminService.setMerchantFeeTier(this.tierMerchant.merchant_id, this.tierValue, this.tierReason.trim()).subscribe({
+      next: (res: any) => {
+        this.isProcessing = false;
+        notify(res?.message || 'Fee tier saved', 'success');
+        this.tierMerchant = null;
+        this.loadVerifiedKYC();
+      },
+      error: (err: any) => { this.isProcessing = false; notify(err?.message || 'Could not save the fee tier', 'error'); }
+    });
   }
 
   approveMerchant(): void {
     if (!this.selectedMerchant) return;
     
     this.isProcessing = true;
-    this.adminService.approveMerchantKYC(this.selectedMerchant.merchant_id).subscribe({
+    const body = this.approvalTier && this.approvalTier !== (this.selectedMerchant.fee_tier || 'standard')
+      ? { fee_tier: this.approvalTier, fee_tier_reason: this.approvalTierReason.trim() || undefined } : {};
+    this.adminService.approveMerchantKYC(this.selectedMerchant.merchant_id, body).subscribe({
       next: (response) => {
         this.isProcessing = false;
-        alert('✅ Merchant KYC approved successfully!');
+        notify('Merchant approved', 'success');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error) => {
-        console.error('Error approving merchant:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve merchant. Please try again.');
+        notify(error?.message || 'Failed to approve merchant. Please try again.', 'error');
       }
     });
   }
@@ -194,7 +237,6 @@ export class ApproveKybKycComponent implements OnInit {
   openRejectModalForDocument(document: Document): void {
     this.rejectType = 'document';
     this.selectedDocument = document;
-    this.selectedMerchant = null;
     this.rejectForm.reset();
     this.showRejectModal = true;
   }
@@ -212,28 +254,26 @@ export class ApproveKybKycComponent implements OnInit {
       this.adminService.rejectMerchantKYC(this.selectedMerchant.merchant_id, reason).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          alert('❌ Merchant KYC rejected.');
+          notify('Merchant rejected', 'success');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error) => {
-          console.error('Error rejecting merchant:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject merchant. Please try again.');
+          notify(error?.message || 'Failed to reject merchant. Please try again.', 'error');
         }
       });
     } else if (this.rejectType === 'document' && this.selectedDocument) {
       this.adminService.rejectDocument(this.selectedDocument.id, reason).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          alert('❌ Document rejected.');
-          this.closeAllModals();
-          this.loadAllData();
+          notify('Document rejected', 'success');
+          this.showRejectModal = false;
+          this.markDocument('rejected', reason);
         },
         error: (error) => {
-          console.error('Error rejecting document:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject document. Please try again.');
+          notify(error?.message || 'Failed to reject document. Please try again.', 'error');
         }
       });
     }
@@ -244,7 +284,6 @@ export class ApproveKybKycComponent implements OnInit {
   // ============================================
 
   viewDocument(document: Document): void {
-    console.log('Viewing document:', document);
     this.selectedDocument = document;
     this.pdfError = false;
     this.isPdfLoading = true;
@@ -284,7 +323,6 @@ export class ApproveKybKycComponent implements OnInit {
       this.isPdfLoading = false;
       this.pdfError = false;
     } catch (error) {
-      console.error('Error creating PDF preview:', error);
       this.isPdfLoading = false;
       this.pdfError = true;
       // Fallback to data URL
@@ -296,7 +334,7 @@ export class ApproveKybKycComponent implements OnInit {
 
   downloadDocument(): void {
     if (!this.selectedDocument || !this.selectedDocument.file_data) {
-      alert('No document data available for download');
+      notify('No document data available for download');
       return;
     }
     
@@ -318,13 +356,11 @@ export class ApproveKybKycComponent implements OnInit {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading document:', error);
-      alert('Failed to download document. Please try again.');
+      notify('Failed to download document. Please try again.', 'error');
     }
   }
 
   onPdfError(): void {
-    console.error('PDF failed to load');
     this.pdfError = true;
     this.isPdfLoading = false;
   }
@@ -336,14 +372,12 @@ export class ApproveKybKycComponent implements OnInit {
     this.adminService.approveDocument(this.selectedDocument.id).subscribe({
       next: (response) => {
         this.isProcessing = false;
-        alert('✅ Document approved successfully!');
-        this.closeAllModals();
-        this.loadAllData();
+        notify('Document accepted', 'success');
+        this.markDocument('verified');
       },
       error: (error) => {
-        console.error('Error approving document:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve document. Please try again.');
+        notify(error?.message || 'Failed to accept document. Please try again.', 'error');
       }
     });
   }
@@ -375,18 +409,27 @@ export class ApproveKybKycComponent implements OnInit {
     this.isPdfLoading = false;
   }
 
-  stopPropagation(event: Event): void {
-    event.stopPropagation();
+  /** Back from a document to the merchant it belongs to. */
+  closeDocument(): void {
+    this.showDocumentModal = false;
+    if (this.currentPdfUrl) {
+      URL.revokeObjectURL(this.currentPdfUrl);
+      this.currentPdfUrl = null;
+    }
+    this.pdfUrl = null;
+    this.imageUrl = null;
+    this.selectedDocument = null;
   }
 
-  getDocumentIcon(docType: string): string {
-    const icons: Record<string, string> = {
-      'business_registration': '🏢',
-      'tax_document': '📊',
-      'bank_statement': '🏦'
-    };
-    return icons[docType] || '📄';
+  private markDocument(status: string, reason?: string): void {
+    if (this.selectedDocument) {
+      this.selectedDocument.status = status;
+      if (reason) this.selectedDocument.rejection_reason = reason;
+    }
+    this.closeDocument();
+    this.loadAllData();
   }
+
 
   getDocumentTypeName(docType: string): string {
     const names: Record<string, string> = {
@@ -406,14 +449,6 @@ export class ApproveKybKycComponent implements OnInit {
     }
   }
 
-  getStatusIcon(status: string): string {
-    switch (status) {
-      case 'verified': return '✅';
-      case 'pending': return '⏳';
-      case 'rejected': return '❌';
-      default: return '📄';
-    }
-  }
 
   getStatusText(status: string): string {
     switch (status) {

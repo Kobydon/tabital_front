@@ -17,7 +17,7 @@
         margin-bottom: 8px;
         
         a {
-          color: #6366f1;
+          color: #0a2d73;
           text-decoration: none;
           font-size: 13px;
           
@@ -27,7 +27,7 @@
         }
         
         .separator {
-          color: #94a3b8;
+          color: #64748b;
           margin: 0 8px;
         }
         
@@ -171,7 +171,7 @@
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #94a3b8;
+        color: #64748b;
         font-size: 14px;
       }
       
@@ -184,8 +184,8 @@
         
         &:focus {
           outline: none;
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+          border-color: #0a2d73;
+          box-shadow: 0 0 0 3px rgba(10, 45, 115,0.1);
         }
       }
       
@@ -197,7 +197,7 @@
         background: none;
         border: none;
         cursor: pointer;
-        color: #94a3b8;
+        color: #64748b;
         
         &:hover {
           color: #64748b;
@@ -217,7 +217,7 @@
         
         &:focus {
           outline: none;
-          border-color: #6366f1;
+          border-color: #0a2d73;
         }
       }
     }
@@ -252,7 +252,7 @@
       width: 40px;
       height: 40px;
       border: 3px solid #e2e8f0;
-      border-top-color: #6366f1;
+      border-top-color: #0a2d73;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -314,7 +314,7 @@
         i {
           margin-left: 6px;
           font-size: 12px;
-          color: #94a3b8;
+          color: #64748b;
         }
       }
     }
@@ -326,7 +326,7 @@
       &.transaction-id {
         font-family: monospace;
         font-weight: 600;
-        color: #6366f1;
+        color: #0a2d73;
       }
       
       &.amount {
@@ -362,7 +362,7 @@
     .status-pending { background: #fef3c7; color: #d97706; }
     .status-failed { background: #fee2e2; color: #dc2626; }
     .status-cancelled { background: #f1f5f9; color: #64748b; }
-    .status-refunded { background: #e0e7ff; color: #4f46e5; }
+    .status-refunded { background: #e0e7ff; color: #0a2d73; }
 
     .delivery-delivered { background: #d1fae5; color: #059669; }
     .delivery-shipped { background: #dbeafe; color: #2563eb; }
@@ -385,7 +385,7 @@
         
         &.view {
           background: #e0e7ff;
-          color: #4f46e5;
+          color: #0a2d73;
           &:hover { background: #c7d2fe; }
         }
         
@@ -462,8 +462,8 @@
           cursor: pointer;
           
           &.active {
-            background: #6366f1;
-            border-color: #6366f1;
+            background: #0a2d73;
+            border-color: #0a2d73;
             color: white;
           }
         }
@@ -535,7 +535,7 @@
         border: none;
         font-size: 20px;
         cursor: pointer;
-        color: #94a3b8;
+        color: #64748b;
         padding: 8px;
         border-radius: 8px;
         
@@ -576,9 +576,9 @@
         }
         
         &.btn-primary {
-          background: #6366f1;
+          background: #0a2d73;
           color: white;
-          &:hover { background: #4f46e5; }
+          &:hover { background: #0a2d73; }
         }
         
         &.btn-danger {
@@ -696,8 +696,8 @@
       
       &:focus {
         outline: none;
-        border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        border-color: #0a2d73;
+        box-shadow: 0 0 0 3px rgba(10, 45, 115,0.1);
       }
       
       &.error {
