@@ -155,10 +155,12 @@
           <td class="date-cell">{{ formatDate(dispute.created_at) }}</td>
           <td class="actions">
             <button class="action-text" (click)="viewDisputeDetails(dispute)">Details</button>
-            <button class="action-text" (click)="openResponseModal(dispute)">Respond</button>
-            <button class="action-text" (click)="openAcceptModal(dispute)">Agree</button>
-            <button class="action-text" (click)="openRejectModal(dispute)">Disagree</button>
-            <button class="action-text" (click)="openEscalateModal(dispute)">Escalate</button>
+            <ng-container *ngIf="dispute.status !== 'resolved' && dispute.status !== 'closed'">
+              <button class="action-text" (click)="openResponseModal(dispute)">Respond</button>
+              <button class="action-text" (click)="openAcceptModal(dispute)">Agree</button>
+              <button class="action-text" (click)="openRejectModal(dispute)">Disagree</button>
+              <button class="action-text" (click)="openEscalateModal(dispute)">Escalate</button>
+            </ng-container>
           </td>
         </tr>
       </tbody>

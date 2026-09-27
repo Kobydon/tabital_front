@@ -10,7 +10,7 @@
   <div class="tp-kpi"><span>Merchants</span><strong>{{ merchantStats.total_merchants || 0 }}</strong></div>
   <div class="tp-kpi"><span>Active</span><strong>{{ merchantStats.active_merchants || 0 }}</strong></div>
   <div class="tp-kpi"><span>New in 30 days</span><strong>{{ merchantStats.new_merchants || 0 }}</strong></div>
-  <div class="tp-kpi"><span>Sales through Tabital</span><strong>{{ merchantStats.total_gmv || 0 | money }}</strong></div>
+  <div class="tp-kpi"><span>Sales through Tabital (completed, 30 days)</span><strong>{{ merchantStats.total_gmv || 0 | money }}</strong></div>
   <div class="tp-kpi" [class.tp-kpi--attention]="merchantStats.restricted_merchants"><span>Restricted</span><strong>{{ merchantStats.restricted_merchants || 0 }}</strong></div>
 </div>
 
@@ -21,9 +21,6 @@
   </div>
   <select class="tp-input" aria-label="KYB status" [(ngModel)]="selectedKYCStatus" (change)="applyFilters()">
     <option *ngFor="let opt of kycStatusOptions" [value]="opt.value">{{ opt.label }}</option>
-  </select>
-  <select class="tp-input" aria-label="Risk level" [(ngModel)]="selectedRiskLevel" (change)="applyFilters()">
-    <option *ngFor="let opt of riskLevelOptions" [value]="opt.value">{{ opt.label }}</option>
   </select>
   <select class="tp-input" aria-label="Account status" [(ngModel)]="selectedMerchantStatus" (change)="applyFilters()">
     <option *ngFor="let opt of merchantStatusOptions" [value]="opt.value">{{ opt.label }}</option>
@@ -41,15 +38,15 @@
           <th scope="col"><button type="button" class="tp-sort" (click)="onSort('business_name')">Business {{ sortMark('business_name') }}</button></th>
           <th scope="col">Type</th>
           <th scope="col">Fee tier</th>
-          <th scope="col">Risk</th>
-          <th scope="col" class="num"><button type="button" class="tp-sort" (click)="onSort('total_gmv')">Sales {{ sortMark('total_gmv') }}</button></th>
+          <th scope="col">Volume</th>
+          <th scope="col" class="num">Sales, 30 days</th>
           <th scope="col">Account</th>
           <th scope="col"><span class="tp-sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let merchant of merchants">
-          <td><strong>{{ merchant.business_name }}</strong><div class="tp-sub">{{ merchant.merchant_id }} · {{ merchant.business_email }}</div></td>
+          <td><strong>{{ merchant.business_name }}</strong><div class="tp-sub">{{ merchant.merchant_id }} · {{ $any(merchant).email || merchant.business_email }}</div></td>
           <td>{{ merchant.business_type || '—' }}</td>
           <td><tp-chip [tone]="tierTone($any(merchant).fee_tier)" [label]="($any(merchant).fee_tier_label || 'Standard') + ' · ' + ($any(merchant).fee_percentage ?? '') + '%'"></tp-chip></td>
           <td><tp-chip [tone]="riskTone(merchant.risk_level)" [label]="merchant.risk_level || '—'"></tp-chip></td>
@@ -84,7 +81,7 @@
     <dl class="tp-dl">
       <dt>Owner</dt><dd>{{ selectedMerchant.merchant?.owner_name || '—' }}</dd>
       <dt>Phone</dt><dd><tp-reveal [userId]="selectedMerchant.merchant?.id" field="phone" [value]="selectedMerchant.merchant?.phone" label="phone"></tp-reveal></dd>
-      <dt>Email</dt><dd>{{ selectedMerchant.merchant?.business_email || '—' }}</dd>
+      <dt>Email</dt><dd>{{ selectedMerchant.merchant?.email || selectedMerchant.merchant?.business_email || '—' }}</dd>
       <dt>Type</dt><dd>{{ selectedMerchant.merchant?.business_type || '—' }}</dd>
       <dt>KYB</dt><dd><tp-chip [status]="selectedMerchant.merchant?.kyc_status"></tp-chip></dd>
       <dt>Merchant fee</dt>
@@ -95,7 +92,7 @@
 
     <h3 class="tp-section-title">Money</h3>
     <div class="tp-kpis">
-      <div class="tp-kpi"><span>Sales through Tabital</span><strong>{{ selectedMerchant.financial?.total_gmv | money }}</strong></div>
+      <div class="tp-kpi"><span>Sales through Tabital (completed, 30 days)</span><strong>{{ selectedMerchant.financial?.total_gmv | money }}</strong></div>
       <div class="tp-kpi"><span>Merchant fees</span><strong>{{ selectedMerchant.financial?.total_commission | money }}</strong></div>
       <div class="tp-kpi"><span>Customers still owe</span><strong>{{ selectedMerchant.financial?.total_outstanding | money }}</strong></div>
       <div class="tp-kpi"><span>Active plans</span><strong>{{ selectedMerchant.financial?.active_plans || 0 }}</strong></div>
@@ -136,7 +133,7 @@
   <form class="tp-dialog" role="dialog" aria-modal="true" aria-labelledby="mo-status-title" [formGroup]="updateStatusForm"
         (ngSubmit)="updateMerchantStatus()" (click)="$event.stopPropagation()">
     <h2 id="mo-status-title">Account status: {{ selectedMerchant?.merchant?.business_name }}</h2>
-    <p>Restricting or suspending stops new sales. Orders already approved carry on to delivery and settlement.</p>
+    <p>Restricting or suspending stops new sales, and <strong>holds their payouts</strong> until the account is active again. Customers' plans carry on.</p>
     <tp-field label="Status" for="mo-status" [required]="true">
       <select id="mo-status" formControlName="status">
         <option value="approved">Active (approved)</option>

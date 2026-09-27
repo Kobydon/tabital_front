@@ -30,7 +30,7 @@
           <th scope="col"><span class="tp-sr-only">Actions</span></th></tr></thead>
         <tbody>
           <tr *ngFor="let c of pendingCustomers">
-            <td><strong>{{ c.customer_name || 'No name' }}</strong><div class="tp-sub">{{ c.phone }}</div></td>
+            <td><strong>{{ c.customer_name && c.customer_name !== 'N/A' ? c.customer_name : 'No name' }}</strong><div class="tp-sub" *ngIf="c.phone && c.phone !== 'N/A'">{{ c.phone }}</div></td>
             <td>{{ c.documents.length || 0 }}<div class="tp-sub">{{ countDocs(c, 'verified') }} checked · {{ countDocs(c, 'pending') }} to check</div></td>
             <td>{{ levelLabel(c.verification_level) }}</td>
             <td>{{ c.submitted_at | tpDate }}</td>
@@ -52,7 +52,7 @@
         <thead><tr><th scope="col">Customer</th><th scope="col">Level</th><th scope="col">Verified</th></tr></thead>
         <tbody>
           <tr *ngFor="let c of verifiedCustomers">
-            <td><strong>{{ c.customer_name || 'No name' }}</strong><div class="tp-sub">{{ c.phone }}</div></td>
+            <td><strong>{{ c.customer_name && c.customer_name !== 'N/A' ? c.customer_name : 'No name' }}</strong><div class="tp-sub" *ngIf="c.phone && c.phone !== 'N/A'">{{ c.phone }}</div></td>
             <td>{{ levelLabel(c.verification_level) }}</td>
             <td>{{ c.verified_at | tpDate }}</td>
           </tr>
@@ -70,7 +70,7 @@
         <thead><tr><th scope="col">Customer</th><th scope="col">Reason</th><th scope="col">Rejected</th></tr></thead>
         <tbody>
           <tr *ngFor="let c of rejectedCustomers">
-            <td><strong>{{ c.customer_name || 'No name' }}</strong><div class="tp-sub">{{ c.phone }}</div></td>
+            <td><strong>{{ c.customer_name && c.customer_name !== 'N/A' ? c.customer_name : 'No name' }}</strong><div class="tp-sub" *ngIf="c.phone && c.phone !== 'N/A'">{{ c.phone }}</div></td>
             <td>{{ c.rejection_reason || 'No reason recorded' }}</td>
             <td>{{ c.rejected_at | tpDate }}</td>
           </tr>
@@ -87,7 +87,7 @@
     <h2 id="kyc-title">{{ selectedCustomer.customer_name || 'Customer' }} <tp-chip [status]="selectedCustomer.kyc_status || 'pending'"></tp-chip></h2>
     <dl class="tp-dl">
       <dt>Phone</dt><dd><tp-reveal [userId]="selectedCustomer.customer_id" field="phone" [value]="selectedCustomer.phone" label="phone"></tp-reveal></dd>
-      <dt>Email</dt><dd>{{ selectedCustomer.email || '—' }}</dd>
+      <dt>Email</dt><dd>{{ selectedCustomer.email && selectedCustomer.email !== 'N/A' ? selectedCustomer.email : '—' }}</dd>
       <dt>Level</dt><dd>{{ levelLabel(selectedCustomer.verification_level) }}</dd>
       <dt>Submitted</dt><dd>{{ selectedCustomer.submitted_at | tpDate }}</dd>
     </dl>

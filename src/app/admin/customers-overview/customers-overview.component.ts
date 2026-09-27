@@ -236,7 +236,7 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        notify('Failed to update status', 'error');
+        notify(error?.message || 'Failed to update status', 'error');
       }
     });
   }
@@ -407,6 +407,12 @@ export class CustomersOverviewComponent implements OnInit, OnDestroy {
   // ============================================
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** The detail payload has the current limit under financial, not on the customer. */
+  openLimitFromDetail(): void {
+    const c = { ...this.selectedCustomer.customer, credit_limit: this.selectedCustomer.financial?.credit_limit ?? 0 };
+    this.openUpdateLimitModal(c);
+  }
 
   onSearchChange(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);

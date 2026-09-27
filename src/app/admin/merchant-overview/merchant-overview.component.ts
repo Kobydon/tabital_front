@@ -240,7 +240,7 @@ formatDate(dateString: string): string {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        notify('Failed to update status', 'error');
+        notify(error?.message || 'Failed to update status', 'error');
       }
     });
   }
