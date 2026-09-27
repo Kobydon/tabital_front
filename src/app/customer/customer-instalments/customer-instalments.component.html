@@ -240,7 +240,7 @@
             </ng-container>
             <ng-container *ngIf="deferQuote.allowed">
               <p>Pay a one-off fee of <strong>{{ formatCurrency(deferQuote.fee) }}</strong>
-                ({{ deferQuote.fee_percentage }}% of instalment {{ deferQuote.installment_number }}) to move it
+                ({{ deferQuote.fee_percentage }}% of the {{ deferQuote.fee_base | money }} still to pay on instalment {{ deferQuote.installment_number }}) to move it
                 {{ deferQuote.months }} month{{ deferQuote.months > 1 ? 's' : '' }} later. The payments after it move too,
                 so you never pay two in one month. It isn't a late payment and doesn't affect your credit limit.</p>
               <div class="schedule-table">
