@@ -1,14 +1,29 @@
 <div class="instalments-container">
+  <!-- Vault: the next payment is the first thing a customer sees (Concept B card) -->
+  <tp-next-payment *ngIf="nextDue as nd" class="next-card"
+    [amount]="nd.payment.amount + (nd.payment.late_fee || 0)"
+    [instalment]="nd.payment.amount"
+    [lateFee]="nd.payment.late_fee || 0"
+    [dueDate]="nd.payment.due_date"
+    [paid]="nd.plan.paid_installments"
+    [total]="nd.plan.total_installments"
+    [productName]="nd.plan.plan_name"
+    [canDefer]="canDeferNext"
+    (pay)="openPaymentModal(nd.payment, nd.plan)"
+    (defer)="deferNext()">
+  </tp-next-payment>
+
+  <tp-empty-state *ngIf="!isLoading && !nextDue && instalments.length > 0" icon="circle-check"
+    title="You're all paid up" text="No payments are due on your plans right now.">
+  </tp-empty-state>
+
   <!-- Header -->
   <div class="header">
     <div class="header-left">
-      <h1 class="title">
-        <span class="icon">📅</span>
-        My Instalment Plans
-      </h1>
+      <h2 class="title">Your plans</h2>
       <div class="stats-badge">
         <span class="stat-count">{{ stats.active_plans }}</span>
-        <span class="stat-label">Active Plans</span>
+        <span class="stat-label">Active</span>
       </div>
     </div>
   </div>
@@ -176,7 +191,12 @@
             </div>
             <div class="schedule-row" *ngFor="let payment of selectedInstalment.payment_schedule">
               <span class="installment-num">Installment {{ payment.installment_number }}</span>
-              <span class="amount">{{ formatCurrency(payment.amount) }}</span>
+              <span class="amount">
+                {{ formatCurrency(payment.amount) }}
+                <small *ngIf="(payment.late_fee || 0) > 0 && payment.status !== 'paid'" class="late-fee-line">
+                  + {{ formatCurrency(payment.late_fee || 0) }} late fee = <strong>{{ formatCurrency(payment.amount + (payment.late_fee || 0)) }}</strong>
+                </small>
+              </span>
               <span [class.overdue]="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0">
                 {{ formatDate(payment.due_date) }}
                 <span *ngIf="payment.status === 'pending' && getDaysRemaining(payment.due_date) < 0" class="overdue-badge">Overdue</span>
@@ -191,10 +211,15 @@
                 <span *ngIf="!payment.paid_date">-</span>
               </span>
               <span>
-                <button *ngIf="payment.status === 'pending'" 
-                        class="btn-pay" 
+                <button *ngIf="payment.status === 'pending' || payment.status === 'overdue'"
+                        class="btn-pay"
                         (click)="openPaymentModal(payment, selectedInstalment)">
                   <i class="fas fa-credit-card"></i> Pay Now
+                </button>
+                <button *ngIf="payment.status === 'pending' && payment.installment_number > 1 && getDaysRemaining(payment.due_date) >= 0 && selectedInstalment.status === 'active'"
+                        class="btn-receipt"
+                        (click)="openDeferment(payment, selectedInstalment)" title="Pay a fee to move this payment back">
+                  <i class="fas fa-calendar-plus"></i> Defer
                 </button>
                 <button *ngIf="payment.status === 'paid'" 
                         class="btn-receipt" 
@@ -205,6 +230,75 @@
             </div>
           </div>
         </div>
+        <!-- Deferment (§4): full disclosure of the fee, new dates and new total before agreeing -->
+        <div class="dispute-box" *ngIf="deferLoading || deferQuote || deferError">
+          <h4><i class="fas fa-calendar-plus"></i> Defer a payment</h4>
+          <p *ngIf="deferLoading">Checking…</p>
+          <ng-container *ngIf="deferQuote && !deferLoading">
+            <ng-container *ngIf="!deferQuote.allowed">
+              <p class="hint" *ngFor="let r of deferQuote.reasons">⚠️ {{ r }}</p>
+            </ng-container>
+            <ng-container *ngIf="deferQuote.allowed">
+              <p>Pay a one-off fee of <strong>{{ formatCurrency(deferQuote.fee) }}</strong>
+                ({{ deferQuote.fee_percentage }}% of the {{ deferQuote.fee_base | money }} still to pay on instalment {{ deferQuote.installment_number }}) to move it
+                {{ deferQuote.months }} month{{ deferQuote.months > 1 ? 's' : '' }} later. The payments after it move too,
+                so you never pay two in one month. It isn't a late payment and doesn't affect your credit limit.</p>
+              <div class="schedule-table">
+                <div class="schedule-header"><span>Instalment</span><span>Amount</span><span>Now due</span><span>New due date</span></div>
+                <div class="schedule-row" *ngFor="let s of deferQuote.schedule">
+                  <span>Instalment {{ s.installment_number }}</span>
+                  <span>{{ formatCurrency(s.amount) }}</span>
+                  <span>{{ formatDate(s.due_date) }}</span>
+                  <span><strong>{{ formatDate(s.new_due_date) }}</strong></span>
+                </div>
+              </div>
+              <p>Total payable on this plan: {{ formatCurrency(deferQuote.total_payable_before) }} →
+                <strong>{{ formatCurrency(deferQuote.total_payable_after) }}</strong>.
+                You can defer {{ deferQuote.deferments_left }} time{{ deferQuote.deferments_left === 1 ? '' : 's' }} on this plan.</p>
+              <label class="hint" style="display:flex;gap:8px;align-items:flex-start">
+                <input type="checkbox" [(ngModel)]="deferAgree" [ngModelOptions]="{standalone: true}">
+                I agree to pay the {{ formatCurrency(deferQuote.fee) }} fee now and to the new payment dates above.
+              </label>
+              <p class="hint" *ngIf="!deferQuote.online_payment">Online payment isn't available right now, so deferment can't be paid yet.</p>
+            </ng-container>
+          </ng-container>
+          <p class="hint" *ngIf="deferError">⚠️ {{ deferError }}</p>
+          <div class="actions">
+            <button type="button" class="btn-secondary" (click)="closeDeferment()">Cancel</button>
+            <button type="button" class="btn-primary" *ngIf="deferQuote?.allowed"
+                    [disabled]="!deferAgree || deferring || !deferQuote.online_payment" (click)="confirmDeferment()">
+              {{ deferring ? 'Taking you to payment…' : 'Pay ' + formatCurrency(deferQuote.fee) + ' and defer' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Buyer protection: report a problem, which pauses the remaining payments -->
+        <div class="dispute-box" *ngIf="selectedInstalment.status === 'active'">
+          <ng-container *ngIf="!showDisputeForm">
+            <p>Problem with this purchase (not delivered, faulty, not as described)?</p>
+            <button class="btn-secondary" (click)="showDisputeForm = true">
+              <i class="fas fa-flag"></i> Report a problem
+            </button>
+          </ng-container>
+          <form *ngIf="showDisputeForm" [formGroup]="disputeForm" (ngSubmit)="submitDispute()">
+            <h4>Report a problem</h4>
+            <p class="hint">We'll pause your remaining payments while we look into it. Contact the merchant first if you can.</p>
+            <select formControlName="reason">
+              <option value="product_not_received">Item not received</option>
+              <option value="defective">Item is faulty or damaged</option>
+              <option value="not_as_described">Not as described</option>
+              <option value="unauthorized">I didn't make this purchase</option>
+              <option value="other">Something else</option>
+            </select>
+            <textarea formControlName="description" rows="3" placeholder="What happened? (at least 10 characters)"></textarea>
+            <div class="actions">
+              <button type="button" class="btn-secondary" (click)="showDisputeForm = false">Cancel</button>
+              <button type="submit" class="btn-primary" [disabled]="disputeForm.invalid || isSubmittingDispute">
+                {{ isSubmittingDispute ? 'Sending...' : 'Send report' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModals()">Close</button>
@@ -212,72 +306,11 @@
     </div>
   </div>
 
-  <!-- Make Payment Modal -->
-  <div class="modal" *ngIf="showPaymentModal" (click)="closeModals()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2><i class="fas fa-credit-card"></i> Make Payment</h2>
-        <button class="close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body" *ngIf="selectedInstalment && selectedPayment">
-        <div class="payment-summary">
-          <div class="summary-row">
-            <span>Plan:</span>
-            <strong>{{ selectedInstalment.plan_name }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Installment:</span>
-            <strong>Installment {{ selectedPayment.installment_number }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Due Date:</span>
-            <strong [class.urgent]="getDaysRemaining(selectedPayment.due_date) < 0">
-              {{ formatDate(selectedPayment.due_date) }}
-            </strong>
-          </div>
-          <div class="summary-row">
-            <span>Amount:</span>
-            <strong>{{ formatCurrency(selectedPayment.amount) }}</strong>
-          </div>
-        </div>
-
-        <form [formGroup]="paymentForm" (ngSubmit)="makePayment()">
-          <div class="form-group">
-            <label>Payment Method *</label>
-            <div class="payment-methods">
-              <button
-                *ngFor="let method of paymentMethods"
-                type="button"
-                class="method-btn"
-                [class.active]="paymentForm.get('payment_method')?.value === method.value"
-                (click)="paymentForm.patchValue({ payment_method: method.value })">
-                <span class="method-icon">{{ method.icon }}</span>
-                {{ method.label }}
-              </button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Payment Reference (Optional)</label>
-            <input type="text" formControlName="payment_reference" placeholder="Enter reference number if any">
-          </div>
-
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <textarea formControlName="notes" rows="2" placeholder="Any additional notes"></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="paymentForm.invalid || isPaying">
-              <i class="fas fa-spinner fa-spin" *ngIf="isPaying"></i>
-              {{ isPaying ? 'Processing...' : 'Pay Now' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <!-- Phones: the pay action stays in reach at the bottom of the screen (Concept B) -->
+  <ng-container *ngIf="nextDue as nd">
+    <tp-pay-bar *ngIf="!showDetailsModal" [label]="'Next payment · ' + (nd.payment.due_date | tpDate)"
+      [amount]="nd.payment.amount + (nd.payment.late_fee || 0)" action="Pay now"
+      (act)="openPaymentModal(nd.payment, nd.plan)">
+    </tp-pay-bar>
+  </ng-container>
 </div>

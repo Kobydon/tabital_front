@@ -4,7 +4,7 @@
 
 import { Component, OnDestroy } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { AuthService } from '../auth.service';
@@ -32,7 +32,8 @@ export class LoginComponent implements OnDestroy {
     private fb: FormBuilder,
     private auth: AuthService,
     private adminService: AdminService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnDestroy() {
@@ -55,7 +56,6 @@ export class LoginComponent implements OnDestroy {
   login(): void {
     // Prevent multiple login attempts
     if (this.loading || this.isNavigating) {
-      console.log('Login or navigation already in progress');
       return;
     }
 
@@ -70,11 +70,9 @@ export class LoginComponent implements OnDestroy {
 
     const loginSub = this.auth.login(this.form.value).subscribe({
       next: (res: any) => {
-        console.log('✅ Login successful:', res);
         
         if (res.access_token) {
           this.auth.saveToken(res.access_token);
-          console.log('💾 Token saved');
         } else {
           console.error('No access_token in response');
           this.error = 'Invalid server response';
@@ -84,7 +82,6 @@ export class LoginComponent implements OnDestroy {
 
         const userSub = this.adminService.getCurrentUser().subscribe({
           next: (user: any) => {
-            console.log('👤 User data received:', user);
             
             this.loading = false;
 
@@ -107,7 +104,6 @@ export class LoginComponent implements OnDestroy {
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userToStore));
-            console.log('💾 User saved to localStorage');
 
             // IMPORTANT: Use setTimeout to ensure we're outside the current change detection
             setTimeout(() => {
@@ -125,13 +121,11 @@ export class LoginComponent implements OnDestroy {
         this.subscriptions.push(userSub);
       },
       error: (err) => {
-        console.error('❌ Login error:', err);
         this.loading = false;
 
-        if (err.status === 401) {
+        // Same wording whether or not the account exists; 429 = too many attempts (server message)
+        if (err.status === 401 || err.status === 404) {
           this.error = 'Invalid phone or password';
-        } else if (err.status === 404) {
-          this.error = 'User not found';
         } else if (err.status === 0) {
           this.error = 'Network error. Check your connection.';
         } else {
@@ -152,15 +146,20 @@ export class LoginComponent implements OnDestroy {
   private navigateByRole(role: string): void {
     // Prevent multiple navigation calls
     if (this.isNavigating) {
-      console.log('Navigation already in progress, skipping...');
       return;
     }
     
     this.isNavigating = true;
-    console.log('➡️ Starting navigation for role:', role);
     
     let navigationPromise: Promise<boolean>;
-    
+
+    // Return to the page that sent us here, but only inside this role's own area (no open redirects)
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    if (['admin', 'merchant', 'customer'].includes(role) && returnUrl.startsWith(`/${role}/`) && !returnUrl.includes('//')) {
+      this.router.navigateByUrl(returnUrl).finally(() => { this.isNavigating = false; });
+      return;
+    }
+
     switch (role) {
       case 'admin':
         navigationPromise = this.router.navigate(['/admin/dashboard']);
@@ -181,7 +180,6 @@ export class LoginComponent implements OnDestroy {
     
     navigationPromise.then(
       (success) => {
-        console.log('Navigation result:', success);
         if (!success) {
           console.error('Navigation failed');
           this.error = 'Navigation failed. Please try again.';

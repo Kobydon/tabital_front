@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import Chart from 'chart.js/auto';
 import { saveAs } from 'file-saver';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-reports-analytics',
   templateUrl: './reports-analytics.component.html',
@@ -207,10 +208,10 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
           {
             label: 'Transactions',
             data: this.revenueData.map(d => d.transactions),
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 2,
-            pointBackgroundColor: '#6366f1',
+            pointBackgroundColor: '#0a2d73',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointRadius: 3,
@@ -316,8 +317,8 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
           {
             label: 'New Customers',
             data: this.customerData.map(d => d.new),
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 3,
             fill: true,
             tension: 0.4
@@ -425,8 +426,8 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
           {
             label: 'Active Plans',
             data: this.instalmentData.map(d => d.active_plans),
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 3,
             fill: true,
             tension: 0.4,
@@ -508,7 +509,7 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
       },
       error: (error) => {
         console.error('Error downloading report:', error);
-        alert('Failed to download report');
+        notify('Failed to download report', 'error');
       }
     });
   }
@@ -529,7 +530,7 @@ export class ReportsAnalyticsComponent implements OnInit, AfterViewInit, OnDestr
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

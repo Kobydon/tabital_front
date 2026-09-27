@@ -1,0 +1,149 @@
+{
+  "source_dir": "C:\\Users\\LENOVO\\Desktop\\Tabital APP  Review by Claude Code\\tabital_front\\brand\\source",
+  "out_dir": "C:\\Users\\LENOVO\\Desktop\\Tabital APP  Review by Claude Code\\tabital_front\\src\\assets\\brand",
+  "sources": {
+    "mark": {
+      "file": "mark.png",
+      "sha256": "c1c658539daed93e33201fe366bac79db8b8ba77736f1348870e5d0ce4fc0653",
+      "format": "png",
+      "mode": "RGBA",
+      "size": [
+        1182,
+        889
+      ],
+      "has_transparency": true
+    }
+  },
+  "dominant_colours": {
+    "logo": [],
+    "mark": [
+      {
+        "hex": "#fcb501",
+        "share": 0.5119,
+        "nearest_token": "gold",
+        "nearest_token_hex": "#f5b700",
+        "delta_e76": 4.08
+      },
+      {
+        "hex": "#f5a301",
+        "share": 0.3741,
+        "nearest_token": "gold-hover",
+        "nearest_token_hex": "#e8a400",
+        "delta_e76": 6.39
+      },
+      {
+        "hex": "#e68801",
+        "share": 0.114,
+        "nearest_token": "gold-hover",
+        "nearest_token_hex": "#e8a400",
+        "delta_e76": 16.22
+      }
+    ]
+  },
+  "contrast": {
+    "logo_on_navy_vs_#02163f": [
+      {
+        "hex": "#fcb803",
+        "share": 0.5156,
+        "contrast": 10.09,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      },
+      {
+        "hex": "#f8a702",
+        "share": 0.3959,
+        "contrast": 8.85,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      },
+      {
+        "hex": "#ed8e02",
+        "share": 0.0885,
+        "contrast": 7.12,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      }
+    ],
+    "logo_on_white_vs_#ffffff": [
+      {
+        "hex": "#fcb803",
+        "share": 0.5156,
+        "contrast": 1.75,
+        "passes_3_to_1_graphic": false,
+        "passes_4_5_to_1_text": false
+      },
+      {
+        "hex": "#f8a702",
+        "share": 0.3959,
+        "contrast": 2.0,
+        "passes_3_to_1_graphic": false,
+        "passes_4_5_to_1_text": false
+      },
+      {
+        "hex": "#ed8e02",
+        "share": 0.0885,
+        "contrast": 2.48,
+        "passes_3_to_1_graphic": false,
+        "passes_4_5_to_1_text": false
+      }
+    ],
+    "mark_on_navy_icons_vs_#02163f": [
+      {
+        "hex": "#fdb904",
+        "share": 0.6526,
+        "contrast": 10.19,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      },
+      {
+        "hex": "#f49d02",
+        "share": 0.1256,
+        "contrast": 8.13,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      },
+      {
+        "hex": "#f9a802",
+        "share": 0.1138,
+        "contrast": 8.94,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      },
+      {
+        "hex": "#e88703",
+        "share": 0.1079,
+        "contrast": 6.64,
+        "passes_3_to_1_graphic": true,
+        "passes_4_5_to_1_text": true
+      }
+    ]
+  },
+  "mark_box_in_logo": null,
+  "on_navy_recoloured_share": 0.0,
+  "outputs": [
+    "apple-touch-icon.png",
+    "favicon.ico",
+    "icon-192.png",
+    "icon-512.png",
+    "logo-on-navy@1x.png",
+    "logo-on-navy@2x.png",
+    "logo-on-white@1x.png",
+    "logo-on-white@2x.png",
+    "mark-128.png",
+    "mark-256.png",
+    "mark-32.png",
+    "mark-64.png",
+    "report.json"
+  ],
+  "notes": [
+    "logo: no logo.* file; mark-only mode, logo-on-* images are the mark alone. The app renders the \"Tabital Pay\" wordmark as HTML text.",
+    "logo-on-navy: no dark wordmark pixels found; copied with original colours."
+  ],
+  "warnings": [
+    "mark: source is not square (1182x889); it will be trimmed and centred on a square canvas.",
+    "mark: colour #e68801 (11%) is 16.2 delta E from the nearest brand token gold-hover #e8a400 (> 10); check for colour drift.",
+    "logo-on-white: outline colour #fcb803 (52% of edge pixels) has contrast 1.75:1 against #ffffff; below WCAG 3:1 for graphics.",
+    "logo-on-white: outline colour #f8a702 (40% of edge pixels) has contrast 2.00:1 against #ffffff; below WCAG 3:1 for graphics.",
+    "logo-on-white: outline colour #ed8e02 (9% of edge pixels) has contrast 2.48:1 against #ffffff; below WCAG 3:1 for graphics."
+  ]
+}

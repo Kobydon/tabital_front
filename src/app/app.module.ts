@@ -11,7 +11,9 @@ import { SignupComponent } from './auth/signup/signup.component';
 import { AuthInterceptor } from './auth/auth';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { AdminModule } from './admin/admin.module';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // ✅ Add this
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ToastrModule } from 'ngx-toastr';
+import { UiModule } from './ui/ui.module';
 // Interceptors - FIXED PATH (added .interceptor)
 
 
@@ -34,8 +36,17 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; 
     AppRoutingModule,      // This handles routing (including lazy loading)
     HttpClientModule,
     ReactiveFormsModule,
-        BrowserAnimationsModule, 
+    BrowserAnimationsModule,
     FormsModule,
+    UiModule,
+    // Toast messages (shared/notify.ts) instead of alert() pop-ups
+    ToastrModule.forRoot({
+      positionClass: 'toast-top-right',
+      preventDuplicates: true,
+      newestOnTop: true,
+      maxOpened: 4,
+      autoDismiss: true
+    }),
     // ❌ REMOVE AdminModule from here for lazy loading
     // AdminModule
   ],

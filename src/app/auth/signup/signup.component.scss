@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #fac400 0%, #764ba2 100%);
   padding: 2rem;
   position: relative;
   overflow-y: auto;
@@ -58,7 +58,7 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     border-radius: 10px;
   }
 }
@@ -81,7 +81,7 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   h2 {
     font-size: 2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -123,14 +123,14 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
     }
 
     &:hover {
-      background: rgba(102, 126, 234, 0.1);
-      color: #667eea;
+      background: rgba(10, 45, 115, 0.1);
+      color: #0a2d73;
     }
 
     &.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
       color: white;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 15px rgba(10, 45, 115, 0.3);
     }
   }
 }
@@ -190,8 +190,8 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
 
       &:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        border-color: #0a2d73;
+        box-shadow: 0 0 0 4px rgba(10, 45, 115, 0.1);
       }
 
       &:hover {
@@ -229,11 +229,11 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
         width: 18px;
         height: 18px;
         cursor: pointer;
-        accent-color: #667eea;
+        accent-color: #0a2d73;
       }
 
       .terms-link {
-        color: #667eea;
+        color: #0a2d73;
         text-decoration: none;
         font-weight: 600;
 
@@ -247,7 +247,7 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   .submit-btn {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a2d73 0%, #02163f 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -259,7 +259,7 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 25px rgba(10, 45, 115, 0.3);
     }
 
     &:active:not(:disabled) {
@@ -281,14 +281,14 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   color: #6b7280;
 
   a {
-    color: #667eea;
+    color: #0a2d73;
     text-decoration: none;
     font-weight: 600;
     margin-left: 5px;
     transition: all 0.3s ease;
 
     &:hover {
-      color: #764ba2;
+      color: #02163f;
       text-decoration: underline;
     }
   }
@@ -338,12 +338,12 @@ background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   font-weight: 500;
   
   .error-link {
-    color: #6366f1;
+    color: #0a2d73;
     text-decoration: underline;
     cursor: pointer;
     
     &:hover {
-      color: #4f46e5;
+      color: #0a2d73;
     }
   }
 }

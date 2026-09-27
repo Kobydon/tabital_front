@@ -37,7 +37,7 @@
   .stat-count {
     font-size: 20px;
     font-weight: 700;
-    color: #667eea;
+    color: #0a2d73;
   }
   
   .stat-label {
@@ -48,7 +48,7 @@
 }
 
 .create-btn {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #15803d, #15803d);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -92,7 +92,7 @@
       
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: #0a2d73;
       }
     }
     
@@ -122,11 +122,11 @@
     transition: all 0.3s;
     
     &:hover {
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
     
     &.active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       color: white;
       border-color: transparent;
     }
@@ -162,7 +162,7 @@
     .plan-id {
       font-family: monospace;
       font-weight: 600;
-      color: #667eea;
+      color: #0a2d73;
     }
     
     .plan-status {
@@ -240,7 +240,7 @@
       
       .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #28a745, #20c997);
+        background: linear-gradient(90deg, #15803d, #15803d);
         border-radius: 3px;
         transition: width 0.3s;
       }
@@ -273,8 +273,8 @@
         transform: scale(1.05);
       }
       
-      &.view:hover { background: #667eea; color: white; }
-      &.pay:hover { background: #28a745; color: white; }
+      &.view:hover { background: #0a2d73; color: white; }
+      &.pay:hover { background: #15803d; color: white; }
       &.edit:hover { background: #ffc107; color: white; }
       &.delete:hover { background: #dc3545; color: white; }
     }
@@ -289,7 +289,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -388,7 +388,7 @@
         }
         
         &.save {
-          background: #28a745;
+          background: #15803d;
           color: white;
           border: none;
         }
@@ -441,7 +441,7 @@
     
     &:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #0a2d73;
     }
   }
 }
@@ -453,7 +453,7 @@
     h4 {
       margin: 0 0 12px 0;
       padding-bottom: 8px;
-      border-bottom: 2px solid #667eea;
+      border-bottom: 2px solid #0a2d73;
     }
     
     .detail-row {

@@ -1,338 +1,117 @@
-<div class="orders-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <h1 class="title">
-        <span class="icon">📦</span>
-        Customer Orders
-      </h1>
-      <div class="stats-badge">
-        <span class="stat-count">{{ stats.total_orders }}</span>
-        <span class="stat-label">Total Orders</span>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="revenue-card">
-        <span class="revenue-label">Total Revenue</span>
-        <span class="revenue-value">{{ formatCurrency(stats.total_revenue) }}</span>
-      </div>
-    </div>
-  </div>
+<!-- Merchant orders: Vault -->
+<tp-page-header title="Orders" subtitle="Approved orders are ready to hand over. Confirm delivery to be paid on your next settlement.">
+  <a tpButton size="sm" routerLink="/merchant/payment-links"><lucide-icon name="qr-code" [size]="16"></lucide-icon> New sale</a>
+</tp-page-header>
 
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card pending">
-      <div class="stat-icon">⏳</div>
-      <div class="stat-info">
-        <span class="stat-value">{{ stats.pending_orders }}</span>
-        <span class="stat-label">Pending Orders</span>
-      </div>
-    </div>
-    <div class="stat-card approved">
-      <div class="stat-icon">✅</div>
-      <div class="stat-info">
-        <span class="stat-value">{{ stats.approved_orders }}</span>
-        <span class="stat-label">Approved Orders</span>
-      </div>
-    </div>
-    <div class="stat-card completed">
-      <div class="stat-icon">🎉</div>
-      <div class="stat-info">
-        <span class="stat-value">{{ stats.completed_orders }}</span>
-        <span class="stat-label">Completed Orders</span>
-      </div>
-    </div>
-  </div>
+<div class="mo-kpis">
+  <div class="mo-kpi"><span>To hand over</span><strong>{{ stats.approved_orders }}</strong></div>
+  <div class="mo-kpi"><span>Waiting for approval</span><strong>{{ stats.pending_orders }}</strong></div>
+  <div class="mo-kpi"><span>Completed</span><strong>{{ stats.completed_orders }}</strong></div>
+  <div class="mo-kpi"><span>Your payout on these orders</span><strong>{{ payoutTotal | money }}</strong></div>
+</div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="filterByTab('all')">
-      <i class="fas fa-list"></i> All Orders
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="filterByTab('pending')">
-      <i class="fas fa-clock"></i> Pending
-      <span class="badge" *ngIf="stats.pending_orders > 0">{{ stats.pending_orders }}</span>
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'approved'" (click)="filterByTab('approved')">
-      <i class="fas fa-check-circle"></i> Approved
-    </button>
-    <button class="tab-btn" [class.active]="activeTab === 'completed'" (click)="filterByTab('completed')">
-      <i class="fas fa-truck"></i> Completed
+<div class="mo-bar">
+  <div class="mo-tabs" role="tablist" aria-label="Order status">
+    <button type="button" role="tab" *ngFor="let t of tabs" [attr.aria-selected]="activeTab === t.value"
+            [class.is-on]="activeTab === t.value" (click)="filterByTab(t.value)">
+      {{ t.label }}<span class="mo-count" *ngIf="t.value === 'approved' && stats.approved_orders">{{ stats.approved_orders }}</span>
     </button>
   </div>
-
-  <!-- Search & Filters -->
-  <div class="filter-section">
-    <div class="search-box">
-      <i class="fas fa-search"></i>
-      <input
-        type="text"
-        placeholder="Search by order ID, customer, product..."
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="applyFilters()"
-      />
-      <button *ngIf="searchTerm" class="clear-btn" (click)="searchTerm = ''; applyFilters()">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="filter-actions">
-      <button *ngIf="searchTerm || activeTab !== 'all'" class="reset-btn" (click)="resetFilters()">
-        <i class="fas fa-undo-alt"></i> Reset
-      </button>
-    </div>
+  <div class="mo-search">
+    <lucide-icon name="search" [size]="18" aria-hidden="true"></lucide-icon>
+    <input type="search" aria-label="Search orders" placeholder="Order, customer, phone or product"
+           [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
   </div>
+</div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading orders...</p>
-  </div>
+<div *ngIf="isLoading" class="mo-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading orders…</div>
 
-  <!-- Orders Table -->
-  <div class="table-wrapper" *ngIf="!isLoading && filteredOrders.length > 0">
-    <table class="orders-table">
+<tp-card *ngIf="!isLoading && filteredOrders.length > 0">
+  <div class="mo-table-wrap">
+    <table class="mo-table">
       <thead>
-        <tr>
-          <th>Order ID</th>
-          <th>Customer</th>
-          <th>Product</th>
-          <th>Amount</th>
-          <th>Installment</th>
-          <th>Status</th>
-          <th>Delivery</th>
-          <th>Date</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>Order</th><th>Customer</th><th>Product</th><th>Plan</th><th class="num">Your payout</th>
+          <th>Status</th><th>Delivery</th><th><span class="sr-only">Actions</span></th></tr>
       </thead>
       <tbody>
         <tr *ngFor="let order of filteredOrders">
-          <td class="order-id">{{ order.order_id }}</td>
-          <td class="customer-info">
-            <div class="customer-name">{{ order.customer_name }}</div>
-            <div class="customer-phone">{{ order.customer_phone }}</div>
-          </td>
-          <td class="product-info">
-            <div class="product-name">{{ order.product_name }}</div>
-            <div class="product-price">{{ formatCurrency(order.product_price) }}</div>
-          </td>
-          <td class="amount">{{ formatCurrency(order.total_payable) }}</td>
-          <td class="installment">
-            {{ formatCurrency(order.installment_amount) }}/month<br>
-            <small>{{ order.number_of_installments }} months</small>
-          </td>
-          <td>
-            <span class="status-badge" [class]="getStatusClass(order.status)">
-              {{ getStatusIcon(order.status) }} {{ order.status | titlecase }}
-            </span>
-          </td>
-          <td>
-            <span class="delivery-badge" [class]="getDeliveryStatusClass(order.delivery_status)">
-              {{ getDeliveryStatusIcon(order.delivery_status) }} {{ order.delivery_status | titlecase }}
-            </span>
-          </td>
-          <td>{{ formatDate(order.created_at) }}</td>
-          <td class="actions">
-            <button class="action-icon view" (click)="viewOrderDetails(order)" title="View Details">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="action-icon delivery" (click)="openDeliveryModal(order)" title="Update Delivery" *ngIf="order.status === 'approved'">
-              <i class="fas fa-truck"></i>
-            </button>
+          <td><strong>{{ order.order_id }}</strong><div class="mo-sub">{{ order.created_at | tpDate }}</div></td>
+          <td>{{ order.customer_name }}<div class="mo-sub">{{ order.customer_phone }}</div></td>
+          <td>{{ order.product_name }}<div class="mo-sub" *ngIf="order.quantity > 1">× {{ order.quantity }}</div></td>
+          <td>{{ planLabel(order) }}</td>
+          <td class="num"><strong>{{ order.merchant_payout | money }}</strong>
+            <div class="mo-sub">{{ payoutNote(order) }}</div></td>
+          <td><tp-chip [status]="order.status"></tp-chip></td>
+          <td><tp-chip [tone]="deliveryTone(order.delivery_status)" [label]="deliveryLabel(order.delivery_status)"></tp-chip></td>
+          <td class="mo-actions">
+            <button tpButton="ghost" size="sm" type="button" (click)="viewOrderDetails(order)">Details</button>
+            <button *ngIf="order.status === 'approved' && order.delivery_status !== 'delivered'" tpButton="navy" size="sm"
+                    type="button" (click)="openDeliveryModal(order)">Update delivery</button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+  <div card-footer class="tp-card__foot" *ngIf="totalPages > 1">
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">Previous</button>
+    <span class="mo-page">Page {{ currentPage }} of {{ totalPages }}</span>
+    <button tpButton="secondary" size="sm" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">Next</button>
+  </div>
+</tp-card>
 
-    <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
-      <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-        <i class="fas fa-chevron-left"></i> Previous
-      </button>
-      <div class="page-numbers">
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="page-number"
-          [class.active]="currentPage === page"
-          (click)="changePage(page)">
-          {{ page }}
-        </button>
-      </div>
-      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-        Next <i class="fas fa-chevron-right"></i>
-      </button>
+<tp-card *ngIf="!isLoading && filteredOrders.length === 0">
+  <tp-empty-state icon="package" title="No orders here"
+    text="Orders from your customers appear here. Make a payment link or QR code to sell in your shop.">
+    <a tpButton size="sm" routerLink="/merchant/payment-links">Make a payment link</a>
+  </tp-empty-state>
+</tp-card>
+
+<!-- Details -->
+<div class="tp-dialog-backdrop" *ngIf="showOrderModal && selectedOrder" (click)="closeModals()">
+  <div class="tp-dialog mo-dialog" role="dialog" aria-modal="true" aria-labelledby="mo-details-title" (click)="$event.stopPropagation()">
+    <h2 id="mo-details-title">Order {{ selectedOrder.order_id }}</h2>
+    <dl class="mo-dl">
+      <dt>Status</dt><dd><tp-chip [status]="selectedOrder.status"></tp-chip></dd>
+      <dt>Customer</dt><dd>{{ selectedOrder.customer_name }} · {{ selectedOrder.customer_phone }}</dd>
+      <dt>Delivery</dt><dd>{{ selectedOrder.delivery_address || '—' }}</dd>
+      <dt>Product</dt><dd>{{ selectedOrder.product_name }} × {{ selectedOrder.quantity }}</dd>
+      <dt>Product total</dt><dd>{{ selectedOrder.product_total | money }}</dd>
+      <dt>Merchant fee</dt><dd>− {{ selectedOrder.merchant_fee | money }}</dd>
+      <dt>Your payout</dt><dd><strong>{{ selectedOrder.merchant_payout | money }}</strong> <span class="mo-sub">{{ payoutNote(selectedOrder) }}</span></dd>
+      <dt>Customer's plan</dt><dd>{{ planLabel(selectedOrder) }}. Tabital collects the instalments; you're paid in full.</dd>
+    </dl>
+    <div class="tp-dialog__actions">
+      <button tpButton="ghost" type="button" (click)="closeModals()">Close</button>
+      <button *ngIf="selectedOrder.status === 'approved' && selectedOrder.delivery_status !== 'delivered'" tpButton="navy"
+              type="button" (click)="openDeliveryModal(selectedOrder)">Update delivery</button>
     </div>
   </div>
+</div>
 
-  <!-- Empty State -->
-  <div *ngIf="!isLoading && filteredOrders.length === 0" class="empty-state">
-    <div class="empty-icon">📦</div>
-    <h3>No orders found</h3>
-    <p>Orders from customers will appear here</p>
-  </div>
-
-  <!-- Order Details Modal -->
-  <div class="modal" *ngIf="showOrderModal" (click)="closeModals()">
-    <div class="modal-content large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2><i class="fas fa-receipt"></i> Order Details</h2>
-        <button class="close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
+<!-- Update delivery -->
+<div class="tp-dialog-backdrop" *ngIf="showDeliveryModal && selectedOrder" (click)="closeModals()">
+  <div class="tp-dialog mo-dialog" role="dialog" aria-modal="true" aria-labelledby="mo-delivery-title" (click)="$event.stopPropagation()">
+    <h2 id="mo-delivery-title">Update delivery</h2>
+    <p>{{ selectedOrder.product_name }} for {{ selectedOrder.customer_name }} ({{ selectedOrder.order_id }})</p>
+    <form [formGroup]="deliveryForm" (ngSubmit)="updateDeliveryStatus()">
+      <tp-field label="Delivery status" for="mo-status" [required]="true"
+                hint="Choose Delivered only once the customer has the item: that's when you're paid.">
+        <select id="mo-status" formControlName="delivery_status">
+          <option *ngFor="let s of deliveryStatusOptions" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </tp-field>
+      <tp-field label="Tracking number (optional)" for="mo-tracking">
+        <input id="mo-tracking" type="text" formControlName="tracking_number">
+      </tp-field>
+      <tp-field label="Notes for the customer (optional)" for="mo-notes">
+        <textarea id="mo-notes" formControlName="notes" rows="3"></textarea>
+      </tp-field>
+      <div class="tp-dialog__actions">
+        <button tpButton="ghost" type="button" (click)="closeModals()">Cancel</button>
+        <button tpButton="navy" type="submit" [disabled]="deliveryForm.invalid || isUpdating" [loading]="isUpdating">
+          {{ isUpdating ? 'Saving…' : 'Save' }}
         </button>
       </div>
-      <div class="modal-body" *ngIf="selectedOrder">
-        <!-- Order Header -->
-        <div class="order-header">
-          <div class="order-id-section">
-            <span class="label">Order ID:</span>
-            <strong>{{ selectedOrder.order_id }}</strong>
-          </div>
-          <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
-            {{ getStatusIcon(selectedOrder.status) }} {{ selectedOrder.status | titlecase }}
-          </span>
-        </div>
-
-        <!-- Customer Information -->
-        <div class="detail-section">
-          <h3><i class="fas fa-user"></i> Customer Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">Name:</span>
-              <span class="value">{{ selectedOrder.customer_name }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">Phone:</span>
-              <span class="value">{{ selectedOrder.customer_phone }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="label">Delivery Address:</span>
-              <span class="value">{{ selectedOrder.delivery_address }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product Information -->
-        <div class="detail-section">
-          <h3><i class="fas fa-box"></i> Product Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">Product:</span>
-              <span class="value">{{ selectedOrder.product_name }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">Quantity:</span>
-              <span class="value">{{ selectedOrder.quantity }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">Unit Price:</span>
-              <span class="value">{{ formatCurrency(selectedOrder.product_price) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Breakdown -->
-        <div class="detail-section">
-          <h3><i class="fas fa-credit-card"></i> Payment Breakdown</h3>
-          <div class="payment-breakdown">
-            <div class="breakdown-row">
-              <span>Total Payable:</span>
-              <strong>{{ formatCurrency(selectedOrder.total_payable) }}</strong>
-            </div>
-            <!-- <div class="breakdown-row">
-              <span>Down Payment (40%):</span>
-              <strong>{{ formatCurrency(selectedOrder.down_payment_amount) }}</strong>
-            </div> -->
-            <!-- <div class="breakdown-row">
-              <span>Monthly Installment:</span>
-              <strong>{{ formatCurrency(selectedOrder.installment_amount) }} for {{ selectedOrder.number_of_installments - 1 }} months</strong>
-            </div> -->
-            <div class="breakdown-row total">
-              <span>Merchant Payout:</span>
-              <strong>{{ formatCurrency(selectedOrder.total_payable ) }}</strong>
-              <small>(After 10% platform fee)</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Delivery Information -->
-        <div class="detail-section" *ngIf="selectedOrder.delivery_status">
-          <h3><i class="fas fa-truck"></i> Delivery Status</h3>
-          <div class="delivery-progress">
-            <div class="progress-step" [class.completed]="selectedOrder.delivery_status !== 'pending'">
-              <div class="step-icon">📝</div>
-              <div class="step-label">Order Placed</div>
-            </div>
-            <div class="progress-line" [class.completed]="selectedOrder.delivery_status === 'processing' || selectedOrder.delivery_status === 'shipped' || selectedOrder.delivery_status === 'delivered'"></div>
-            <div class="progress-step" [class.completed]="selectedOrder.delivery_status === 'processing' || selectedOrder.delivery_status === 'shipped' || selectedOrder.delivery_status === 'delivered'">
-              <div class="step-icon">🔄</div>
-              <div class="step-label">Processing</div>
-            </div>
-            <div class="progress-line" [class.completed]="selectedOrder.delivery_status === 'shipped' || selectedOrder.delivery_status === 'delivered'"></div>
-            <div class="progress-step" [class.completed]="selectedOrder.delivery_status === 'shipped' || selectedOrder.delivery_status === 'delivered'">
-              <div class="step-icon">🚚</div>
-              <div class="step-label">Shipped</div>
-            </div>
-            <div class="progress-line" [class.completed]="selectedOrder.delivery_status === 'delivered'"></div>
-            <div class="progress-step" [class.completed]="selectedOrder.delivery_status === 'delivered'">
-              <div class="step-icon">📦</div>
-              <div class="step-label">Delivered</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openDeliveryModal(selectedOrder!)" *ngIf="selectedOrder?.status === 'approved'">
-          <i class="fas fa-truck"></i> Update Delivery
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Update Delivery Modal -->
-  <div class="modal" *ngIf="showDeliveryModal" (click)="closeModals()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2><i class="fas fa-truck"></i> Update Delivery Status</h2>
-        <button class="close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body" *ngIf="selectedOrder">
-        <div class="order-summary">
-          <p><strong>Order:</strong> {{ selectedOrder.order_id }}</p>
-          <p><strong>Customer:</strong> {{ selectedOrder.customer_name }}</p>
-          <p><strong>Product:</strong> {{ selectedOrder.product_name }}</p>
-        </div>
-
-        <form [formGroup]="deliveryForm" (ngSubmit)="updateDeliveryStatus()">
-          <div class="form-group">
-            <label>Delivery Status *</label>
-            <select formControlName="delivery_status">
-              <option *ngFor="let status of deliveryStatusOptions" [value]="status.value">
-                {{ status.icon }} {{ status.label }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Tracking Number (Optional)</label>
-            <input type="text" formControlName="tracking_number" placeholder="Enter tracking number">
-          </div>
-
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <textarea formControlName="notes" rows="3" placeholder="Additional notes for customer"></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="deliveryForm.invalid || isUpdating">
-              <i class="fas fa-spinner fa-spin" *ngIf="isUpdating"></i>
-              {{ isUpdating ? 'Updating...' : 'Update Status' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </form>
   </div>
 </div>

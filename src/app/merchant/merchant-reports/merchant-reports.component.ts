@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-merchant-reports',
   templateUrl: './merchant-reports.component.html',
@@ -229,8 +230,8 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
           datasets: [{
             label: 'Sales',
             data: sales,
-            borderColor: '#667eea',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 3,
             fill: true,
             tension: 0.4
@@ -316,7 +317,7 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
               segments.medium_value?.count || 0,
               segments.low_value?.count || 0
             ],
-            backgroundColor: ['#28a745', '#fd7e14', '#6c757d'],
+            backgroundColor: ['#15803d', '#fd7e14', '#6c757d'],
             borderWidth: 0
           }]
         },
@@ -357,13 +358,13 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
             {
               label: 'Total Sales',
               data: sales,
-              backgroundColor: '#667eea',
+              backgroundColor: '#0a2d73',
               borderRadius: 8
             },
             {
               label: 'Net Income',
               data: net,
-              backgroundColor: '#28a745',
+              backgroundColor: '#15803d',
               borderRadius: 8
             }
           ]
@@ -429,11 +430,11 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
         a.download = `${type}_report_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('Export started');
+        notify('Export started');
       },
       error: (error) => {
         console.error('Error exporting report:', error);
-        alert('Failed to export report');
+        notify('Failed to export report', 'error');
       }
     });
   }
@@ -441,7 +442,7 @@ export class MerchantReportsComponent implements OnInit, OnDestroy {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS'
+      currency: 'GHS', currencyDisplay: 'code'
     }).format(amount || 0);
   }
 

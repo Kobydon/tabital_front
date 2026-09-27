@@ -15,7 +15,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #1a1a2e;
+    color: #02163f;
     
     .icon {
       font-size: 32px;
@@ -39,7 +39,7 @@
   &.success {
     background: #d4edda;
     color: #155724;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #15803d;
   }
   
   &.error {
@@ -60,7 +60,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid #0a2d73;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 16px;
@@ -106,11 +106,11 @@
     
     &:hover {
       background: #f8f9fa;
-      color: #667eea;
+      color: #0a2d73;
     }
     
     &.active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0a2d73, #02163f);
       color: white;
     }
   }
@@ -131,10 +131,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #1a1a2e;
+    color: #02163f;
     
     i {
-      color: #667eea;
+      color: #0a2d73;
     }
   }
   
@@ -174,13 +174,13 @@
         
         i {
           font-size: 18px;
-          color: #667eea;
+          color: #0a2d73;
         }
         
         .setting-title, .preference-title {
           font-weight: 600;
           font-size: 15px;
-          color: #1a1a2e;
+          color: #02163f;
         }
       }
       
@@ -204,7 +204,7 @@
         
         &:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: #0a2d73;
         }
       }
     }
@@ -224,7 +224,7 @@
     height: 0;
     
     &:checked + .toggle-slider {
-      background: #28a745;
+      background: #15803d;
     }
     
     &:checked + .toggle-slider:before {
@@ -281,7 +281,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #15803d, #15803d);
   color: white;
   border: none;
   
@@ -316,8 +316,8 @@
   transition: all 0.2s;
   
   &:hover {
-    border-color: #667eea;
-    color: #667eea;
+    border-color: #0a2d73;
+    color: #0a2d73;
   }
 }
 
@@ -329,13 +329,13 @@
   border-radius: 12px;
   cursor: pointer;
   margin-top: 12px;
-  color: #667eea;
+  color: #0a2d73;
   font-weight: 500;
   transition: all 0.2s;
   
   &:hover {
     background: #f8f9fa;
-    border-color: #667eea;
+    border-color: #0a2d73;
   }
 }
 
@@ -374,7 +374,7 @@
     
     i {
       font-size: 18px;
-      color: #667eea;
+      color: #0a2d73;
     }
     
     h4 {
@@ -407,7 +407,7 @@
     
     i {
       font-size: 20px;
-      color: #667eea;
+      color: #0a2d73;
     }
     
     .invoice-id, .key-name, .webhook-url {
@@ -434,7 +434,7 @@
   
   .invoice-amount {
     font-weight: 600;
-    color: #28a745;
+    color: #15803d;
     margin-right: 12px;
   }
 }

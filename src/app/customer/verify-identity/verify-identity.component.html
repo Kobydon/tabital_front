@@ -1,0 +1,71 @@
+<div class="verify">
+  <h1>Verify your identity</h1>
+
+  <div class="card" *ngIf="step === 'loading'">Loading…</div>
+
+  <div class="card" *ngIf="step === 'error'">{{ error }}</div>
+
+  <!-- Not switched on (local development) -->
+  <div class="card" *ngIf="step === 'intro' && status && !status.configured">
+    <p>Selfie verification isn't switched on yet. Upload your Ghana Card under
+      <a routerLink="/customer/documents">Documents</a> and our team will review it.</p>
+  </div>
+
+  <div class="card" *ngIf="step === 'intro' && status?.configured">
+    <div class="notice error" *ngIf="checkStatus === 'blocked'">
+      We couldn't verify your identity. {{ status.check?.reasons?.[0] }}
+    </div>
+    <div class="notice warn" *ngIf="checkStatus === 'error'">
+      The last check didn't finish. Please try again.
+    </div>
+
+    <p>We check your <strong>Ghana Card</strong> with the National Identification Authority and take a quick
+      <strong>selfie</strong> to confirm it's really you. It takes about a minute.</p>
+    <ul class="steps">
+      <li>Have good light and remove glasses or a hat</li>
+      <li>Hold your phone at eye level and follow the prompts</li>
+      <li>Your name, date of birth and Ghana Card number must match your profile</li>
+    </ul>
+
+    <label class="consent">
+      <input type="checkbox" [(ngModel)]="consent">
+      <span>I agree that Tabital Pay and its partner Smile ID may check my Ghana Card with the National
+        Identification Authority and compare my selfie with my ID photo, as described in the
+        <a [href]="legal.privacy" target="_blank" rel="noopener">privacy policy</a>.</span>
+    </label>
+
+    <div class="notice error" *ngIf="error">{{ error }}</div>
+    <div class="attempts" *ngIf="status">Attempts left: {{ status.attempts_left }}</div>
+
+    <button class="btn" [disabled]="!consent || status?.attempts_left === 0" (click)="begin()">Start</button>
+    <p class="hint">Details wrong? Update them in <a routerLink="/customer/profile">your profile</a> first.</p>
+  </div>
+
+  <div class="card camera" *ngIf="step === 'camera'">
+    <smart-camera-web></smart-camera-web>
+    <div class="notice error" *ngIf="error">{{ error }}</div>
+  </div>
+
+  <div class="card center" *ngIf="step === 'uploading'">
+    <div class="spinner"></div>
+    <p>Sending securely to Smile ID…</p>
+  </div>
+
+  <div class="card center" *ngIf="step === 'waiting'">
+    <ng-container *ngIf="checkStatus !== 'review'">
+      <div class="spinner"></div>
+      <p>Checking your identity. This usually takes a few minutes. You can leave this page; we'll update your account.</p>
+    </ng-container>
+    <ng-container *ngIf="checkStatus === 'review'">
+      <div class="big">🕵️</div>
+      <p>Our team is reviewing your check. We'll let you know within one working day.</p>
+    </ng-container>
+  </div>
+
+  <div class="card center" *ngIf="step === 'done'">
+    <div class="big">✅</div>
+    <h2>You're verified</h2>
+    <p>Your identity is confirmed. You can now shop and pay in instalments.</p>
+    <a class="btn" routerLink="/customer/shop">Go to the shop</a>
+  </div>
+</div>

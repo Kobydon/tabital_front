@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export type StatusType = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
 export type PriorityType = 'all' | 'low' | 'medium' | 'high' | 'urgent';
 
@@ -210,11 +212,11 @@ export class CustomerSupportComponent implements OnInit {
         this.ticketForm.reset();
         this.activeTab = 'tickets';
         this.loadTickets();
-        alert('Ticket created successfully!');
+        notify('Ticket created successfully!');
       },
       error: (error) => {
         console.error('Error creating ticket:', error);
-        alert('Failed to create ticket. Please try again.');
+        notify('Failed to create ticket. Please try again.', 'error');
       }
     });
   }
@@ -242,25 +244,25 @@ export class CustomerSupportComponent implements OnInit {
         this.showReplyModal = false;
         this.replyForm.reset();
         this.loadTickets();
-        alert('Reply sent successfully!');
+        notify('Reply sent successfully!');
       },
       error: (error) => {
         console.error('Error sending reply:', error);
-        alert('Failed to send reply. Please try again.');
+        notify('Failed to send reply. Please try again.', 'error');
       }
     });
   }
 
-  closeTicket(ticket: SupportTicket): void {
-    if (confirm('Are you sure you want to close this ticket?')) {
+  async closeTicket(ticket: SupportTicket): Promise<void> {
+    if (await ask('Are you sure you want to close this ticket?')) {
       this.customerService.closeTicket(ticket.id).subscribe({
         next: (response) => {
           this.loadTickets();
-          alert('Ticket closed successfully');
+          notify('Ticket closed successfully');
         },
         error: (error) => {
           console.error('Error closing ticket:', error);
-          alert('Failed to close ticket. Please try again.');
+          notify('Failed to close ticket. Please try again.', 'error');
         }
       });
     }

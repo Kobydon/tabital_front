@@ -4,6 +4,7 @@ import { Chart } from 'chart.js';
 import { Router } from '@angular/router';
 import { MerchantService } from 'src/app/merchant.service';
 
+import { notify } from 'src/app/shared/notify';
 @Component({
   selector: 'app-merchant-dashboard',
   templateUrl: './merchant-dashboard.component.html',
@@ -318,7 +319,6 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
               payoutGrowth: data.payout_growth || 0
             };
           }
-          console.log('Payout Stats loaded:', this.payoutStats);
           resolve();
         },
         error: (error) => {
@@ -448,10 +448,10 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
           {
             label: 'Sales',
             data: salesValues,
-            borderColor: '#667eea',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: '#0a2d73',
+            backgroundColor: 'rgba(10, 45, 115, 0.1)',
             borderWidth: 3,
-            pointBackgroundColor: '#667eea',
+            pointBackgroundColor: '#0a2d73',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
             pointRadius: 4,
@@ -559,11 +559,11 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
   createPaymentLink() {
     this.merchantService.quickAction('create_payment_link').subscribe({
       next: (response) => {
-        alert(`Payment Link Created: ${response.link}`);
+        notify(`Payment Link Created: ${response.link}`);
       },
       error: (error) => {
         console.error('Error creating payment link:', error);
-        alert('Failed to create payment link');
+        notify('Failed to create payment link', 'error');
       }
     });
   }
@@ -575,11 +575,11 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
   downloadReports() {
     this.merchantService.quickAction('download_reports').subscribe({
       next: () => {
-        alert('Reports are being generated and will be emailed to you');
+        notify('Reports are being generated and will be emailed to you');
       },
       error: (error) => {
         console.error('Error downloading reports:', error);
-        alert('Failed to download reports');
+        notify('Failed to download reports', 'error');
       }
     });
   }
@@ -587,11 +587,11 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
   contactSupport() {
     this.merchantService.quickAction('contact_support').subscribe({
       next: () => {
-        alert('Support ticket created. We will contact you shortly.');
+        notify('Support ticket created. We will contact you shortly.');
       },
       error: (error) => {
         console.error('Error contacting support:', error);
-        alert('Failed to create support ticket');
+        notify('Failed to create support ticket', 'error');
       }
     });
   }
@@ -599,7 +599,7 @@ export class MerchantDashboardComponent implements OnInit, OnDestroy, AfterViewI
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount || 0);

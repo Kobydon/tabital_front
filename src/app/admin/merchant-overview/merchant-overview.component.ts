@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { notify } from 'src/app/shared/notify';
 interface Merchant {
   id: number;
   merchant_id: string;
@@ -23,7 +24,7 @@ interface Merchant {
 @Component({
   selector: 'app-merchant-overview',
   templateUrl: './merchant-overview.component.html',
-  styleUrls: ['./merchant-overview.component.scss']
+  styles: [`.tp-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }`]
 })
 export class MerchantOverviewComponent implements OnInit {
   // Data
@@ -101,7 +102,7 @@ export class MerchantOverviewComponent implements OnInit {
   ) {
     this.updateStatusForm = this.fb.group({
       status: ['', Validators.required],
-      reason: ['']
+      reason: ['', [Validators.required, Validators.minLength(5)]]      // kept with the change
     });
     
     this.updateCommissionForm = this.fb.group({
@@ -137,7 +138,6 @@ formatDate(dateString: string): string {
   loadMerchantStats(): void {
     this.adminService.getMerchantStats().subscribe({
       next: (response: any) => {
-        console.log('Merchant stats:', response);
         this.merchantStats = response;
         this.updateStatsCards();
       },
@@ -178,7 +178,6 @@ formatDate(dateString: string): string {
     
     this.adminService.getAllMerchants(filters).subscribe({
       next: (response: any) => {
-        console.log('Merchants response:', response);
         if (Array.isArray(response)) {
           this.merchants = response;
           this.totalItems = response.length;
@@ -209,7 +208,7 @@ formatDate(dateString: string): string {
       },
       error: (error) => {
         console.error('Error loading merchant details:', error);
-        alert('Failed to load merchant details');
+        notify('Failed to load merchant details', 'error');
       }
     });
   }
@@ -233,7 +232,7 @@ formatDate(dateString: string): string {
     this.adminService.updateMerchantStatus(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Merchant status updated successfully');
+        notify('Merchant status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadMerchants();
         this.loadMerchantStats();
@@ -241,7 +240,7 @@ formatDate(dateString: string): string {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify(error?.message || 'Failed to update status', 'error');
       }
     });
   }
@@ -264,14 +263,14 @@ formatDate(dateString: string): string {
     this.adminService.updateMerchantCommission(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Commission rate updated successfully');
+        notify('Commission rate updated successfully');
         this.showUpdateCommissionModal = false;
         this.loadMerchants();
       },
       error: (error) => {
         console.error('Error updating commission:', error);
         this.isSubmitting = false;
-        alert('Failed to update commission rate');
+        notify('Failed to update commission rate', 'error');
       }
     });
   }
@@ -291,13 +290,13 @@ formatDate(dateString: string): string {
     this.adminService.adjustMerchantReserve(this.selectedMerchant.merchant.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Reserve amount adjusted successfully');
+        notify('Reserve amount adjusted successfully');
         this.showAdjustReserveModal = false;
       },
       error: (error) => {
         console.error('Error adjusting reserve:', error);
         this.isSubmitting = false;
-        alert('Failed to adjust reserve');
+        notify('Failed to adjust reserve', 'error');
       }
     });
   }
@@ -327,11 +326,11 @@ formatDate(dateString: string): string {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Merchants exported successfully!');
+        notify('Merchants exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting merchants:', error);
-        alert('Failed to export merchants');
+        notify('Failed to export merchants', 'error');
       }
     });
   }
@@ -340,6 +339,56 @@ formatDate(dateString: string): string {
   // FILTERS & SORTING
   // ============================================
 
+  // Merchant fee tier (§6.1): shown on the merchant; management changes it with a reason
+  tiers: { value: string; label: string; fee_percentage: number }[] = [];
+  showTierDialog = false;
+  tierValue = 'standard';
+  tierReason = '';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  sortMark(field: string): string {
+    return this.sortBy === field ? (this.sortOrder === 'asc' ? '▲' : '▼') : '';
+  }
+
+  riskTone(level: string | null | undefined): 'success' | 'warn' | 'error' | 'neutral' {
+    const l = (level || '').toLowerCase();
+    return l === 'low' ? 'success' : l === 'medium' ? 'warn' : l === 'high' ? 'error' : 'neutral';
+  }
+
+  tierTone(tier: string | null | undefined): 'success' | 'info' | 'warn' {
+    return tier === 'premium' ? 'success' : tier === 'high_risk' ? 'warn' : 'info';
+  }
+
+  openTierDialog(): void {
+    this.tierValue = this.selectedMerchant?.merchant?.fee_tier || 'standard';
+    this.tierReason = '';
+    this.showTierDialog = true;
+    if (!this.tiers.length) {
+      this.adminService.getMerchantFeeTiers().subscribe({ next: (res: any) => this.tiers = res.tiers || [] });
+    }
+  }
+
+  saveTier(): void {
+    const id = this.selectedMerchant?.merchant?.id;
+    if (!id || this.tierReason.trim().length < 5) return;
+    this.isSubmitting = true;
+    this.adminService.setMerchantFeeTier(id, this.tierValue, this.tierReason.trim()).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showTierDialog = false;
+        Object.assign(this.selectedMerchant.merchant, {
+          fee_tier: res.fee_tier, fee_tier_label: res.fee_tier_label, fee_percentage: res.fee_percentage });
+        notify(res?.message || 'Fee tier saved', 'success');
+        this.loadMerchants();
+      },
+      error: (err: any) => { this.isSubmitting = false; notify(err?.message || 'Could not save the fee tier', 'error'); }
+    });
+  }
   applyFilters(): void {
     this.currentPage = 1;
     this.loadMerchants();
@@ -431,7 +480,7 @@ formatDate(dateString: string): string {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

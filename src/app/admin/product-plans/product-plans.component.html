@@ -210,7 +210,7 @@
         <!-- Product Gallery -->
         <div class="product-gallery">
           <div class="main-image">
-            <img [src]="selectedProduct.product?.main_image || 'assets/default-product.png'" alt="{{ selectedProduct.product?.name }}">
+            <img [src]="selectedProduct.product?.main_image || 'assets/default-product.svg'" alt="{{ selectedProduct.product?.name }}">
           </div>
           <div class="gallery" *ngIf="selectedProduct.product?.gallery_images?.length > 0">
             <div class="gallery-item" *ngFor="let img of selectedProduct.product?.gallery_images">

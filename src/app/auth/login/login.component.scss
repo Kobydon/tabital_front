@@ -1,16 +1,10 @@
-/* Full page gradient background with animation */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.login-container {
+/* Login: Vault (tokens in src/styles/_tokens.scss) */
+.auth {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
   overflow: hidden;
   padding: 20px;
@@ -153,18 +147,7 @@ form {
 .password-group input {
   padding-right: 50px;
 }
-.logo-container {
-  text-align: center;
-  margin-bottom: 1rem;
-}
 
-
-.login-logo {
-  max-width: 150px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
 /* Eye icon positioning - right side */
 .eye-icon {
   position: absolute;
@@ -224,7 +207,7 @@ form {
 
 /* Button styling */
 .login-btn {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 14px;
   border: none;

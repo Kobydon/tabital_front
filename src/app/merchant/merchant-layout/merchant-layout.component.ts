@@ -25,83 +25,35 @@ export class MerchantLayoutComponent implements OnInit {
   merchant!: Merchant;
 
   merchantName: string = 'Merchant Store';
-  merchantEmail: string = 'merchant@email.com';
+  merchantEmail: string = '';
   merchantPhone: string = '';
-  merchantAvatar: string = '🏪';
+  merchantAvatar: string = '';
   merchantVerified: boolean = false;
 
   // ============================================
   // MENU
   // ============================================
 
-  menuItems = [
-    {
-      path: '/merchant/dashboard',
-      icon: '📊',
-      label: 'Dashboard'
-    },
-     {
-      path: '/merchant/products',
-      icon: '📦',
-      label: 'Products'
-    },
-    {
-      path: '/merchant/orders',
-      icon: '🛒',
-      label: 'Orders'
-    },
-    {
-      path: '/merchant/transactions',
-      icon: '💸',
-      label: 'Transactions'
-    },
-    // {
-    //   path: '/merchant/instalments',
-    //   icon: '📅',
-    //   label: 'Instalments'
-    // },
-    {
-      path: '/merchant/customers',
-      icon: '👥',
-      label: 'Customers'
-    },
-    // {
-    //   path: '/merchant/settlements',
-    //   icon: '💰',
-    //   label: 'Settlements'
-    // },
-    {
-      path: '/merchant/disputes',
-      icon: '⚠️',
-      label: 'Disputes'
-    },
-    {
-      path: '/merchant/reports',
-      icon: '📈',
-      label: 'Reports'
-    },
-
-     {
-      path: '/merchant/documents',
-      icon: '📄',
-      label: 'KYB Verification'
-    },
-    {
-      path: '/merchant/settings',
-      icon: '⚙️',
-      label: 'Account Settings'
-    },
-    // {
-    //   path: '/merchant/notifications',
-    //   icon: '🔔',
-    //   label: 'Notifications'
-    // },
-    {
-      path: '/merchant/support',
-      icon: '💬',
-      label: 'Support'
-    },
-    
+  // Vault navigation (grouped; Lucide icons, no emoji)
+  readonly navGroups = [
+    { label: 'Sell', items: [
+      { path: '/merchant/dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+      { path: '/merchant/payment-links', label: 'Payment links and QR', icon: 'qr-code' },
+      { path: '/merchant/orders', label: 'Orders', icon: 'package' },
+      { path: '/merchant/products', label: 'Products', icon: 'store' },
+      { path: '/merchant/customers', label: 'Customers', icon: 'users' },
+    ]},
+    { label: 'Money', items: [
+      { path: '/merchant/settlements', label: 'Settlements and payouts', icon: 'landmark' },
+      { path: '/merchant/transactions', label: 'Transactions', icon: 'arrow-right-left' },
+      { path: '/merchant/reports', label: 'Reports', icon: 'chart-line' },
+      { path: '/merchant/disputes', label: 'Disputes', icon: 'flag' },
+    ]},
+    { label: 'Account', items: [
+      { path: '/merchant/documents', label: 'Business verification', icon: 'badge-check' },
+      { path: '/merchant/settings', label: 'Settings', icon: 'settings' },
+      { path: '/merchant/support', label: 'Support', icon: 'message-circle' },
+    ]},
   ];
 
   constructor(
@@ -156,8 +108,7 @@ export class MerchantLayoutComponent implements OnInit {
           'Merchant Store';
 
         this.merchantEmail =
-          user.business_email ||
-          'merchant@email.com';
+          user.business_email || '';
 
         this.merchantPhone =
           user.business_phone ||
@@ -173,7 +124,6 @@ export class MerchantLayoutComponent implements OnInit {
 
         this.merchantAvatar = firstLetter;
 
-        console.log('Merchant Loaded:', user);
       },
 
       error: (error) => {
@@ -235,10 +185,6 @@ export class MerchantLayoutComponent implements OnInit {
 
   logout(): void {
 
-    this.authService.logout();
-
-    localStorage.clear();
-
-    this.router.navigate(['/login']);
+    this.authService.logout();      // clears the session (keeps only the fraud-check device id)
   }
 }

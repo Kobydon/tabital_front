@@ -1,0 +1,119 @@
+/* Vault shop (Concept A). Uses the brand tokens; replaces the old card, banner and plan styles. */
+.vault-shop { padding: 0; background: transparent; }
+
+.vs-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--tp-radius);
+  margin-bottom: 14px;
+  border: 1px solid var(--tp-line);
+  &--warn { background: var(--tp-warn-bg); color: var(--tp-warn); border-color: #f3dc9a; }
+  &--info { background: var(--tp-surface); color: var(--tp-navy-2); }
+  lucide-icon { flex: none; }
+  &__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  &__text strong { color: var(--tp-navy); font-size: var(--tp-text-md); }
+  &__text span { color: var(--tp-text); font-size: var(--tp-text-sm); }
+  @media (max-width: 560px) { flex-wrap: wrap; .tp-btn { width: 100%; } }
+}
+
+.vs-cats {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin: 6px 0 12px;
+  scrollbar-width: thin;
+}
+.vs-cat {
+  flex: none;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 99px;
+  border: 1.5px solid var(--tp-line-strong);
+  background: var(--tp-surface);
+  color: var(--tp-navy);
+  font: 600 var(--tp-text-sm) var(--tp-font-body);
+  cursor: pointer;
+  &.is-on { background: var(--tp-navy); border-color: var(--tp-navy); color: var(--tp-on-navy); }
+}
+
+.vs-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--tp-surface);
+  border: 1.5px solid var(--tp-line-strong);
+  border-radius: var(--tp-radius-sm);
+  padding: 0 12px;
+  min-height: 48px;
+  margin-bottom: 18px;
+  color: var(--tp-muted);
+  input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: var(--tp-text-md) var(--tp-font-body); color: var(--tp-navy); min-height: 44px; }
+  &:focus-within { border-color: var(--tp-navy-2); }
+  &__clear { border: 0; background: none; color: var(--tp-muted); cursor: pointer; display: grid; place-items: center; width: 32px; height: 32px; }
+  &__count { font-size: var(--tp-text-xs); white-space: nowrap; }
+}
+
+.vs-loading { display: flex; align-items: center; gap: 10px; color: var(--tp-text); padding: 24px 4px; }
+
+.vs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 16px;
+}
+.vs-card {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-line);
+  border-radius: var(--tp-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--tp-shadow-1);
+  &__img {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    max-width: 100%;
+    background: var(--tp-surface-2);
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  }
+  &__stock { position: absolute; top: 10px; left: 10px; }
+  &__body { padding: 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  &__merchant { margin: 0; font-size: var(--tp-text-xs); color: var(--tp-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  &__name { margin: 0; font: 600 var(--tp-text-md) / 1.3 var(--tp-font-heading); color: var(--tp-navy); }
+  &__price { font: 700 var(--tp-text-xl) var(--tp-font-heading); color: var(--tp-navy); font-variant-numeric: tabular-nums; }
+  &__split { margin: 0 0 10px; font-size: var(--tp-text-sm); color: var(--tp-text); strong { color: var(--tp-navy); } }
+  &__plus { color: var(--tp-muted); }
+  .tp-btn { margin-top: auto; }
+}
+
+/* Plans side by side */
+.vs-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 10px;
+  margin: 8px 0;
+}
+.vs-plan {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  min-height: 44px;
+  border: 1.5px solid var(--tp-line-strong);
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-surface);
+  color: var(--tp-navy);
+  font: inherit;
+  cursor: pointer;
+  &.is-on { border-color: var(--tp-navy); box-shadow: inset 0 0 0 1px var(--tp-navy); background: var(--tp-navy-soft); }
+  &.is-blocked { opacity: 0.75; }
+  &__name { font: 700 var(--tp-text-md) var(--tp-font-heading); }
+  &__today { font: 700 var(--tp-text-lg) var(--tp-font-heading); font-variant-numeric: tabular-nums; small { font: 600 var(--tp-text-xs) var(--tp-font-body); color: var(--tp-muted); } }
+  &__then { font-size: var(--tp-text-xs); color: var(--tp-text); }
+  &__total { font-size: var(--tp-text-xs); color: var(--tp-muted); }
+  &__blocked { margin-top: 4px; font-size: var(--tp-text-xs); color: var(--tp-error); font-weight: 600; }
+}
+.vs-plans__note { font-size: var(--tp-text-xs); color: var(--tp-muted); margin: 4px 0 12px; }

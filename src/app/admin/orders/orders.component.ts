@@ -2,9 +2,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService } from '../admin.service';
+import { AdminAccess } from 'src/app/ui/admin-access';
+import { notify } from 'src/app/shared/notify';
 // import { AdminService } from '../../admin.service';
 
 export interface AdminOrder {
+  customer_user_id?: number | null;   // for revealing the masked phone
   id: number;
   order_id: string;
   customer_name: string;
@@ -17,7 +20,15 @@ export interface AdminOrder {
   down_payment_amount: number;
   installment_amount: number;
   number_of_installments: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  down_payment_status?: 'unpaid' | 'paid';
+  down_payment_reference?: string;
+  down_payment_paid_at?: string;
+  refund_status?: string | null;
+  // Phase 6
+  fraud_flags?: { id: number; code: string; severity: string; message: string }[];
+  identity_verified_by?: string | null;
+  employment_verified?: boolean;
   delivery_address: string;
   created_at: string;
   approved_at?: string;
@@ -26,8 +37,7 @@ export interface AdminOrder {
 
 @Component({
   selector: 'app-admin-orders',
-  templateUrl: './orders.component.html',
-  styleUrls: ['./orders.component.scss']
+  templateUrl: './orders.component.html'
 })
 export class AdminOrdersComponent implements OnInit {
   // Data
@@ -42,7 +52,7 @@ export class AdminOrdersComponent implements OnInit {
   pageSize = 10;
   totalItems = 0;
   totalPages = 1;
-  activeTab: 'all' | 'pending' | 'approved' | 'rejected' | 'completed' = 'all';
+  activeTab: 'all' | 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed' = 'pending';   // the queue opens on what needs a decision
   showOrderModal = false;
   showApproveModal = false;
   showRejectModal = false;
@@ -54,30 +64,30 @@ export class AdminOrdersComponent implements OnInit {
   approveForm: FormGroup;
   rejectForm: FormGroup;
   
-  // Stats
-  stats = {
-    total_orders: 0,
-    pending_orders: 0,
-    approved_orders: 0,
-    rejected_orders: 0,
-    completed_orders: 0,
-    total_revenue: 0
-  };
-  
-  // Status Options
-  statusOptions = [
-    { value: 'pending', label: 'Pending', icon: '⏳', color: '#ffc107' },
-    { value: 'approved', label: 'Approved', icon: '✅', color: '#28a745' },
-    { value: 'rejected', label: 'Rejected', icon: '❌', color: '#dc3545' },
-    { value: 'completed', label: 'Completed', icon: '🎉', color: '#17a2b8' }
+  // Counts for the whole queue, from the server (not just this page)
+  counts: Record<string, number> = {};
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  readonly tabs: { value: AdminOrdersComponent['activeTab']; label: string }[] = [
+    { value: 'pending', label: 'Awaiting approval' },
+    { value: 'awaiting_payment', label: 'Awaiting down payment' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'all', label: 'All' },
   ];
 
   constructor(
     private adminService: AdminService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    public access: AdminAccess
   ) {
+    access.load();
     this.approveForm = this.fb.group({
-      admin_notes: ['']
+      admin_notes: [''],
+      // Fill in only once the down payment has actually been received
+      down_payment_reference: [''],
+      down_payment_method: ['mobile_money']
     });
     
     this.rejectForm = this.fb.group({
@@ -109,11 +119,10 @@ export class AdminOrdersComponent implements OnInit {
         this.filteredOrders = this.orders;
         this.totalItems = response.total || 0;
         this.totalPages = response.total_pages || 1;
-        this.calculateStats();
+        this.counts = response.counts || {};
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading orders:', error);
         this.isLoading = false;
         this.orders = [];
         this.filteredOrders = [];
@@ -121,25 +130,28 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
 
-  calculateStats(): void {
-    this.stats.total_orders = this.orders.length;
-    this.stats.pending_orders = this.orders.filter(o => o.status === 'pending').length;
-    this.stats.approved_orders = this.orders.filter(o => o.status === 'approved').length;
-    this.stats.rejected_orders = this.orders.filter(o => o.status === 'rejected').length;
-    this.stats.completed_orders = this.orders.filter(o => o.status === 'completed').length;
-    this.stats.total_revenue = this.orders
-      .filter(o => o.status === 'approved' || o.status === 'completed')
-      .reduce((sum, o) => sum + o.total_payable, 0);
+  count(status: string): number {
+    return this.counts[status] || 0;
+  }
+
+  planLabel(order: AdminOrder): string {
+    const n = order.number_of_installments;
+    return !n || n <= 1 ? 'Paid in full' : `Pay in ${n}`;
   }
 
   // ============================================
   // FILTER METHODS
   // ============================================
 
-  filterByTab(tab: 'all' | 'pending' | 'approved' | 'rejected' | 'completed'): void {
+  filterByTab(tab: 'all' | 'awaiting_payment' | 'pending' | 'approved' | 'rejected' | 'completed'): void {
     this.activeTab = tab;
     this.currentPage = 1;
     this.loadOrders();
+  }
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
   }
 
   applyFilters(): void {
@@ -149,7 +161,7 @@ export class AdminOrdersComponent implements OnInit {
 
   resetFilters(): void {
     this.searchTerm = '';
-    this.activeTab = 'all';
+    this.activeTab = 'pending';
     this.currentPage = 1;
     this.loadOrders();
   }
@@ -181,20 +193,23 @@ export class AdminOrdersComponent implements OnInit {
     this.isProcessing = true;
     
     const data = {
-      admin_notes: this.approveForm.value.admin_notes || 'Order approved by admin'
+      admin_notes: this.approveForm.value.admin_notes || 'Order approved by admin',
+      down_payment_reference: (this.approveForm.value.down_payment_reference || '').trim(),
+      down_payment_method: this.approveForm.value.down_payment_method || 'mobile_money'
     };
-    
+
     this.adminService.approveOrder(this.selectedOrder.id, data).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isProcessing = false;
         this.showApproveModal = false;
         this.loadOrders();
-        alert('Order approved successfully!');
+        notify(response?.down_payment_status === 'paid'
+          ? 'Order approved. Down payment recorded as received.'
+          : 'Order approved. The down payment is awaiting verification in Instalments.');
       },
       error: (error) => {
-        console.error('Error approving order:', error);
         this.isProcessing = false;
-        alert('Failed to approve order. Please try again.');
+        notify(error?.error?.error || error?.message || 'Failed to approve order. Please try again.', 'error');
       }
     });
   }
@@ -209,16 +224,16 @@ export class AdminOrdersComponent implements OnInit {
     };
     
     this.adminService.rejectOrder(this.selectedOrder.id, data).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isProcessing = false;
         this.showRejectModal = false;
         this.loadOrders();
-        alert('Order rejected successfully!');
+        // The message says whether the down payment was refunded automatically
+        notify(response?.message || 'Order rejected successfully!');
       },
       error: (error) => {
-        console.error('Error rejecting order:', error);
         this.isProcessing = false;
-        alert('Failed to reject order. Please try again.');
+        notify(error?.error?.error || 'Failed to reject order. Please try again.', 'error');
       }
     });
   }
@@ -251,8 +266,7 @@ export class AdminOrdersComponent implements OnInit {
         window.URL.revokeObjectURL(url);
       },
       error: (error) => {
-        console.error('Error exporting orders:', error);
-        alert('Failed to export orders.');
+        notify('Failed to export orders.', 'error');
       }
     });
   }
@@ -267,66 +281,17 @@ export class AdminOrdersComponent implements OnInit {
     this.loadOrders();
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
   // ============================================
   // HELPER METHODS
   // ============================================
 
-  formatCurrency(amount: number): string {
-    if (!amount && amount !== 0) return 'GHS 0.00';
-    return new Intl.NumberFormat('en-GH', { 
-      style: 'currency', 
-      currency: 'GHS',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  }
-
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'pending': return 'status-pending';
-      case 'approved': return 'status-approved';
-      case 'rejected': return 'status-rejected';
-      case 'completed': return 'status-completed';
-      case 'cancelled': return 'status-cancelled';
+  getRefundLabel(refundStatus: string | null | undefined): string {
+    switch (refundStatus) {
+      case 'refunded': return 'Down payment refunded via Paystack';
+      case 'refund_failed': return 'Refund failed: refund manually';
+      case 'manual_refund_required': return 'Refund the down payment manually';
+      case 'refund_required': return 'Paid after rejection: refund required';
       default: return '';
-    }
-  }
-
-  getStatusIcon(status: string): string {
-    switch (status) {
-      case 'pending': return '⏳';
-      case 'approved': return '✅';
-      case 'rejected': return '❌';
-      case 'completed': return '🎉';
-      default: return '📋';
     }
   }
 }

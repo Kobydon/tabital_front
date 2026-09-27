@@ -1,15 +1,13 @@
+import { UiModule } from '../ui/ui.module';
 import { NgModule } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
  import { LayoutComponent } from './layout/layout.component';
 import { AdminRoutingModule } from './admin-routing.module';
-import { CustomersComponent } from './customers/customers.component';
-import { MerchantsComponent } from './merchants/merchants.component';
 import { AllUsersComponent } from './all-users/all-users.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TransactionsComponent } from './transactions/transactions.component';
-import { MerchantDetailsComponent } from './merchant-details/merchant-details.component';
 import { ChargesComponent } from './charges/charges.component';
 import { AdminOrdersComponent } from './orders/orders.component';
 // import { ApproveKybKycComponent } from './approve-kyb-kyc/approve-kyb-kyc.component';
@@ -20,6 +18,12 @@ import { MerchantOverviewComponent } from './merchant-overview/merchant-overview
 import { AdminTransactionsComponent } from './admin-transactions/admin-transactions.component';
 import { AdminInstalmentsComponent } from './admin-instalments/admin-instalments.component';
 import { AdminCollectionComponent } from './admin-collection/admin-collection.component';
+import { AdminDisputesComponent } from './admin-disputes/admin-disputes.component';
+import { IdentityReviewComponent } from './identity-review/identity-review.component';
+import { FraudReviewComponent } from './fraud-review/fraud-review.component';
+import { UnitEconomicsComponent } from './unit-economics/unit-economics.component';
+import { PiiAccessLogComponent } from './pii-access-log/pii-access-log.component';
+import { TeamComponent } from './team/team.component';
 import { SettlementsComponent } from './settlements/settlements.component';
 import { ReportsAnalyticsComponent } from './reports-analytics/reports-analytics.component';
 import { ProductPlansComponent } from './product-plans/product-plans.component';
@@ -34,11 +38,8 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
   declarations: [
     DashboardComponent,
     LayoutComponent,
-    CustomersComponent,
-    MerchantsComponent,
     AllUsersComponent,
     TransactionsComponent,
-    MerchantDetailsComponent,
     ChargesComponent,
     AdminOrdersComponent,
     ApproveKybKycComponent,
@@ -48,6 +49,12 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
     AdminTransactionsComponent,
     AdminInstalmentsComponent,
     AdminCollectionComponent,
+    AdminDisputesComponent,
+    IdentityReviewComponent,
+    FraudReviewComponent,
+    UnitEconomicsComponent,
+    PiiAccessLogComponent,
+    TeamComponent,
     SettlementsComponent,
     ReportsAnalyticsComponent,
     ProductPlansComponent,
@@ -56,7 +63,7 @@ import { AdminProfileComponent } from './admin-profile/admin-profile.component';
 
   ],
   imports: [
-    CommonModule,ReactiveFormsModule,FormsModule,
+    UiModule, CommonModule,ReactiveFormsModule,FormsModule,
     RouterModule,DecimalPipe,FormsModule,TitleCasePipe,
     AdminRoutingModule , // ✅ This is correct
        

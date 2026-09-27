@@ -1,0 +1,75 @@
+<!-- Sell in store / on WhatsApp: Vault -->
+<tp-page-header title="Sell" subtitle="Make a one-use link or QR code for a product. The customer scans it, pays the down payment, and you hand the item over."></tp-page-header>
+
+<div class="pl-layout">
+  <tp-card title="New sale" subtitle="Each link works once">
+    <tp-field label="Product" for="pl-product" [required]="true"
+              [hint]="products.length ? '' : 'No active products in stock. Add one under Products.'">
+      <select id="pl-product" [(ngModel)]="form.product_id">
+        <option [ngValue]="null">Choose a product…</option>
+        <option *ngFor="let p of products" [ngValue]="p.id">{{ p.name }} · {{ p.price | money }}</option>
+      </select>
+    </tp-field>
+    <div class="pl-row">
+      <tp-field label="Quantity" for="pl-qty">
+        <input id="pl-qty" type="number" min="1" [max]="selectedProduct?.stock_quantity || 1" [(ngModel)]="form.quantity">
+      </tp-field>
+      <tp-field label="Link expires after" for="pl-exp">
+        <select id="pl-exp" [(ngModel)]="form.expires_in_hours">
+          <option *ngFor="let o of expiryOptions" [ngValue]="o.h">{{ o.label }}</option>
+        </select>
+      </tp-field>
+    </div>
+    <tp-field label="Note (optional)" for="pl-note" hint="Shown to the customer, e.g. Counter 2, colour black">
+      <input id="pl-note" type="text" maxlength="200" [(ngModel)]="form.note">
+    </tp-field>
+    <p class="pl-error" role="alert" *ngIf="error"><lucide-icon name="triangle-alert" [size]="16"></lucide-icon> {{ error }}</p>
+    <button tpButton [block]="true" [disabled]="!form.product_id || creating" [loading]="creating" (click)="create()">
+      <lucide-icon name="qr-code" [size]="18"></lucide-icon> {{ creating ? 'Creating…' : 'Create link and QR code' }}
+    </button>
+  </tp-card>
+
+  <tp-card *ngIf="shown" [title]="shown.product_name + (shown.quantity > 1 ? ' × ' + shown.quantity : '')"
+           [subtitle]="'Expires ' + (shown.expires_at | tpDate:'datetime')">
+    <div class="pl-qr">
+      <div class="pl-qr__amount">{{ shown.price * shown.quantity | money }}</div>
+      <img *ngIf="qrUrl" [src]="qrUrl" alt="QR code for this sale. The customer scans it with their phone camera.">
+      <code class="pl-qr__url">{{ shown.url }}</code>
+    </div>
+    <div class="pl-share">
+      <button tpButton="secondary" size="sm" type="button" (click)="copy(shown)">
+        <lucide-icon [name]="copied ? 'check' : 'copy'" [size]="16"></lucide-icon> {{ copied ? 'Copied' : 'Copy link' }}
+      </button>
+      <a tpButton="secondary" size="sm" [href]="whatsappUrl(shown)" target="_blank" rel="noopener">
+        <lucide-icon name="message-circle" [size]="16"></lucide-icon> WhatsApp
+      </a>
+      <button tpButton="secondary" size="sm" type="button" (click)="downloadQr(shown)">
+        <lucide-icon name="download" [size]="16"></lucide-icon> Save QR
+      </button>
+    </div>
+  </tp-card>
+</div>
+
+<tp-card title="Recent links">
+  <div *ngIf="isLoading" class="pl-loading"><span class="tp-spinner" aria-hidden="true"></span> Loading…</div>
+  <div class="pl-table-wrap" *ngIf="!isLoading && links.length">
+    <table class="pl-table">
+      <thead><tr><th>Product</th><th class="num">Amount</th><th>Note</th><th>Expires</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of links">
+          <td>{{ l.product_name }}<span class="pl-sub" *ngIf="l.quantity > 1"> × {{ l.quantity }}</span></td>
+          <td class="num">{{ l.price * l.quantity | money }}</td>
+          <td>{{ l.note || '—' }}</td>
+          <td>{{ l.expires_at | tpDate:'datetime' }}</td>
+          <td><tp-chip [tone]="l.status === 'used' ? 'success' : l.usable ? 'info' : 'neutral'" [label]="statusLabel(l)"></tp-chip></td>
+          <td class="pl-actions">
+            <button *ngIf="l.usable" tpButton="ghost" size="sm" type="button" (click)="open(l)">Show QR</button>
+            <button *ngIf="l.usable" tpButton="danger" size="sm" type="button" (click)="cancel(l)">Cancel</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <tp-empty-state *ngIf="!isLoading && !links.length" icon="link" title="No links yet"
+                  text="Your payment links and QR codes will appear here."></tp-empty-state>
+</tp-card>

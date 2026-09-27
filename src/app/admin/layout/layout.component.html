@@ -1,35 +1,16 @@
-<div class="admin-layout">
-  <!-- Sidebar Overlay for mobile -->
-  <div class="sidebar-overlay" 
-       [class.show]="isMobile && isMobileOpen" 
-       (click)="closeSidebar()">
-  </div>
+<!-- Admin shell: Vault (shared styles in src/styles/_shell.scss) -->
+<div class="tp-shell" [class.tp-shell--collapsed]="isCollapsed" [class.tp-shell--drawer-open]="isMobileOpen">
+  <a class="tp-skip-link" href="#main">Skip to content</a>
 
-  <!-- Sidebar -->
-  <aside class="sidebar" 
-         [class.collapsed]="!isMobile && isCollapsed"
-         [class.mobile-open]="isMobile && isMobileOpen">
-    
-    <!-- Toggle Button -->
-    <button class="toggle-btn" (click)="toggleSidebar()">
-      <span class="icon">
-        <!-- Different icons for mobile vs desktop -->
-        <ng-container *ngIf="isMobile">
-          {{ isMobileOpen ? '←' : '→' }}
-        </ng-container>
-        <ng-container *ngIf="!isMobile">
-          {{ isCollapsed ? '→' : '←' }}
-        </ng-container>
-      </span>
-    </button>
-
-    <!-- Logo -->
-    <div class="logo">
-      <div class="logo-icon">⚡</div>
-      <div class="logo-text" *ngIf="!isMobile || (isMobile && isMobileOpen)">
-        <h2>AdminHub</h2>
-        <p>Dashboard</p>
-      </div>
+  <aside class="tp-side" aria-label="Admin navigation">
+    <div class="tp-side__brand">
+      <img class="tp-side__logo" src="assets/brand/logo-on-navy@1x.png"
+           srcset="assets/brand/logo-on-navy@1x.png 1x, assets/brand/logo-on-navy@2x.png 2x"
+           width="40" height="30" alt="Tabital Pay">
+      <span class="tp-side__name" *ngIf="!isCollapsed"><span aria-hidden="true">Tabital Pay</span> <small class="tp-side__role">{{ access.isManagement ? 'Management' : 'Operations' }}</small></span>
+      <button type="button" class="tp-side__close" (click)="closeSidebar()" aria-label="Close menu">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
     </div>
 
     <!-- Navigation Menu -->
@@ -182,69 +163,49 @@
             <span class="icon">👤</span>
             <span>Profile</span>
           </a>
-          <!-- <a routerLink="settings/notifications" routerLinkActive="active" (click)="isMobile && closeSidebar()">
+          <a routerLink="settings/notifications" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">🔔</span>
             <span>Notifications</span>
-          </a>`LinkActive="active" (click)="isMobile && closeSidebar()">
+          </a>
+          <a routerLink="system-settings" routerLinkActive="active" (click)="isMobile && closeSidebar()">
             <span class="icon">💻</span>
             <span>System</span>
-          </a> -->
+          </a>
         </div>
       </div>
     </nav>
 
-    <!-- User Profile Section -->
-    <div class="user-profile" (click)="toggleUserMenu()">
-      <div class="avatar">
-        <img src="https://ui-avatars.com/api/?background=667eea&color=fff&name=Admin" alt="Admin">
-      </div>
-      <div class="user-info" *ngIf="!isMobile || (isMobile && isMobileOpen)">
-        <h4>Admin User</h4>
-        <p>admin@example.com</p>
-      </div>
-      <span class="dropdown-icon" *ngIf="!isMobile || (isMobile && isMobileOpen)">{{ showUserMenu ? '▼' : '▲' }}</span>
-    </div>
-
-    <!-- User Dropdown Menu -->
-    <div class="user-menu" [class.show]="showUserMenu">
-      <a routerLink="/admin/profile" (click)="isMobile && closeSidebar()">
-        <span class="icon">👤</span>
-        My Profile
-      </a>
-      <a routerLink="/admin/settings" (click)="isMobile && closeSidebar()">
-        <span class="icon">⚙️</span>
-        Account Settings
-      </a>
-      <hr>
-      <button class="logout-btn" (click)="logout()">
-        <span class="icon">🚪</span>
-        Logout
+    <div class="tp-side__foot">
+      <button type="button" class="tp-side__item" (click)="logout()">
+        <lucide-icon name="log-out" [size]="18"></lucide-icon>
+        <span *ngIf="!isCollapsed">Log out</span>
+      </button>
+      <button type="button" class="tp-side__collapse" (click)="isCollapsed = !isCollapsed"
+              [attr.aria-label]="isCollapsed ? 'Expand menu' : 'Collapse menu'">
+        <lucide-icon [name]="isCollapsed ? 'chevron-right' : 'chevron-left'" [size]="16"></lucide-icon>
       </button>
     </div>
   </aside>
+  <div class="tp-scrim" *ngIf="isMobileOpen" (click)="closeSidebar()" aria-hidden="true"></div>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <header class="header">
-      <div class="header-left" *ngIf="isMobile">
-        <button class="mobile-menu-btn" (click)="toggleSidebar()">
-          <span class="icon">☰</span>
-        </button>
+  <div class="tp-main">
+    <header class="tp-top">
+      <button type="button" class="tp-top__menu" (click)="isMobileOpen = true" aria-label="Open menu">
+        <lucide-icon name="menu" [size]="22"></lucide-icon>
+      </button>
+      <div class="tp-top__title">
+        <h1>Operations</h1>
+        <p>Approvals, risk and money movement</p>
       </div>
-      <div class="header-right">
-        <div class="notifications">
-          <span class="icon">🔔</span>
-          <span class="badge">3</span>
-        </div>
-        <div class="search-bar">
-          <span class="icon">🔍</span>
-          <input type="text" placeholder="Search...">
-        </div>
+      <div class="tp-top__actions">
+        <a tpButton="secondary" size="sm" routerLink="/admin/orders">
+          <lucide-icon name="clipboard-list" [size]="16"></lucide-icon> Orders to approve
+        </a>
       </div>
     </header>
-    
-    <div class="content">
+
+    <main id="main" class="tp-content tp-content--wide" tabindex="-1">
       <router-outlet></router-outlet>
-    </div>
-  </main>
+    </main>
+  </div>
 </div>

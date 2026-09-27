@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
+import { notify } from 'src/app/shared/notify';
 export interface CustomerKYC {
   customer_id: number;
   customer_name: string;
@@ -33,7 +34,8 @@ export interface CustomerDocument {
 @Component({
    selector: 'app-appove-customer-kyc',
   templateUrl: './appove-customer-kyc.component.html',
-  styleUrls: ['./appove-customer-kyc.component.scss']
+  styles: [`.kyc-preview { margin: 0 0 16px; } .kyc-preview img { max-width: 100%; border-radius: 8px; }
+    .kyc-preview iframe { width: 100%; height: 60vh; border: 1px solid var(--tp-line); border-radius: 8px; }`]
 })
 export class ApproveCustomerKycComponent implements OnInit {
   // Data
@@ -103,7 +105,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadPendingKYC(): void {
     this.adminService.getPendingCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Pending Customer KYC response:', response);
         this.pendingCustomers = response.pending_verifications || [];
         this.stats.pending = this.pendingCustomers.length;
         this.stats.totalDocuments = this.pendingCustomers.reduce(
@@ -112,7 +113,6 @@ export class ApproveCustomerKycComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error: any) => {
-        console.error('Error loading pending customer KYC:', error);
         this.isLoading = false;
       }
     });
@@ -121,7 +121,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadVerifiedKYC(): void {
     this.adminService.getVerifiedCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Verified Customer KYC response:', response);
         this.verifiedCustomers = response.verified_customers || [];
         this.stats.verified = this.verifiedCustomers.length;
       },
@@ -132,7 +131,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   loadRejectedKYC(): void {
     this.adminService.getRejectedCustomerKYC().subscribe({
       next: (response: any) => {
-        console.log('Rejected Customer KYC response:', response);
         this.rejectedCustomers = response.rejected_customers || [];
         this.stats.rejected = this.rejectedCustomers.length;
       },
@@ -145,9 +143,16 @@ export class ApproveCustomerKycComponent implements OnInit {
   // ============================================
 
   viewCustomerDetails(customer: CustomerKYC): void {
-    console.log('Viewing customer:', customer);
     this.selectedCustomer = customer;
     this.showCustomerModal = true;
+  }
+
+  countDocs(customer: CustomerKYC, status: string): number {
+    return (customer.documents || []).filter(d => d.status === status).length;
+  }
+
+  levelLabel(level: string | null | undefined): string {
+    return ({ biometric: 'Smile ID selfie', verified: 'Documents', standard: 'Basic', basic: 'Basic' } as Record<string, string>)[level || ''] || 'Basic';
   }
 
   approveCustomer(): void {
@@ -157,14 +162,13 @@ export class ApproveCustomerKycComponent implements OnInit {
     this.adminService.approveCustomerKYC(this.selectedCustomer.customer_id).subscribe({
       next: (response: any) => {
         this.isProcessing = false;
-        alert('✅ Customer KYC approved successfully!');
+        notify('Customer KYC approved successfully!', 'success');
         this.closeAllModals();
         this.loadAllData();
       },
       error: (error: any) => {
-        console.error('Error approving customer:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve customer. Please try again.');
+        notify(error?.message || 'Failed to approve customer. Please try again.', 'error');
       }
     });
   }
@@ -180,7 +184,6 @@ export class ApproveCustomerKycComponent implements OnInit {
   openRejectModalForDocument(document: CustomerDocument): void {
     this.rejectType = 'document';
     this.selectedDocument = document;
-    this.selectedCustomer = null;
     this.rejectForm.reset();
     this.showRejectModal = true;
   }
@@ -198,28 +201,26 @@ export class ApproveCustomerKycComponent implements OnInit {
       this.adminService.rejectCustomerKYC(this.selectedCustomer.customer_id, reason).subscribe({
         next: (response: any) => {
           this.isProcessing = false;
-          alert('❌ Customer KYC rejected.');
+          notify('Customer KYC rejected.', 'success');
           this.closeAllModals();
           this.loadAllData();
         },
         error: (error: any) => {
-          console.error('Error rejecting customer:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject customer. Please try again.');
+          notify(error?.message || 'Failed to reject customer. Please try again.', 'error');
         }
       });
     } else if (this.rejectType === 'document' && this.selectedDocument) {
       this.adminService.rejectCustomerDocument(this.selectedDocument.id, reason).subscribe({
         next: (response: any) => {
           this.isProcessing = false;
-          alert('❌ Document rejected.');
-          this.closeAllModals();
-          this.loadAllData();
+          notify('Document rejected.', 'success');
+          this.showRejectModal = false;
+          this.markDocument('rejected', reason);
         },
         error: (error: any) => {
-          console.error('Error rejecting document:', error);
           this.isProcessing = false;
-          alert('❌ Failed to reject document. Please try again.');
+          notify(error?.message || 'Failed to reject document. Please try again.', 'error');
         }
       });
     }
@@ -231,7 +232,6 @@ export class ApproveCustomerKycComponent implements OnInit {
 // In approve-customer-kyc.component.ts
 
 viewDocument(document: CustomerDocument): void {
-    console.log('Viewing document:', document);
     this.selectedDocument = document;
     this.pdfError = false;
     this.isPdfLoading = true;
@@ -246,7 +246,6 @@ viewDocument(document: CustomerDocument): void {
     
     // Check if file_data exists
     if (document.file_data) {
-        console.log('File data available, length:', document.file_data.length);
         // Process file data as before
         if (document.mime_type === 'application/pdf') {
             this.displayPdfPreview(document.file_data);
@@ -257,10 +256,9 @@ viewDocument(document: CustomerDocument): void {
             this.isPdfLoading = false;
         }
     } else {
-        console.error('No file data available for document:', document.id, document.file_name);
         this.isPdfLoading = false;
         // Show a message to the user
-        alert(`Document file not found on server: ${document.file_name || 'Unknown file'}\n\nPlease check that the file was uploaded correctly.`);
+        notify(`Document file not found on server: ${document.file_name || 'Unknown file'}\n\nPlease check that the file was uploaded correctly.`);
     }
     
     this.showDocumentModal = true;
@@ -279,7 +277,6 @@ viewDocument(document: CustomerDocument): void {
       this.isPdfLoading = false;
       this.pdfError = false;
     } catch (error) {
-      console.error('Error creating PDF preview:', error);
       this.isPdfLoading = false;
       this.pdfError = true;
       this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
@@ -290,7 +287,7 @@ viewDocument(document: CustomerDocument): void {
 
   downloadDocument(): void {
     if (!this.selectedDocument || !this.selectedDocument.file_data) {
-      alert('No document data available for download');
+      notify('No document data available for download', 'warning');
       return;
     }
     
@@ -314,13 +311,11 @@ viewDocument(document: CustomerDocument): void {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading document:', error);
-      alert('Failed to download document. Please try again.');
+      notify('Failed to download document. Please try again.', 'error');
     }
   }
 
   onPdfError(): void {
-    console.error('PDF failed to load');
     this.pdfError = true;
     this.isPdfLoading = false;
   }
@@ -332,14 +327,12 @@ viewDocument(document: CustomerDocument): void {
     this.adminService.approveCustomerDocument(this.selectedDocument.id).subscribe({
       next: (response: any) => {
         this.isProcessing = false;
-        alert('✅ Document approved successfully!');
-        this.closeAllModals();
-        this.loadAllData();
+        notify('Document approved successfully!', 'success');
+        this.markDocument('verified');
       },
       error: (error: any) => {
-        console.error('Error approving document:', error);
         this.isProcessing = false;
-        alert('❌ Failed to approve document. Please try again.');
+        notify(error?.message || 'Failed to approve document. Please try again.', 'error');
       }
     });
   }
@@ -370,21 +363,27 @@ viewDocument(document: CustomerDocument): void {
     this.isPdfLoading = false;
   }
 
-  stopPropagation(event: Event): void {
-    event.stopPropagation();
+  /** Back from a document to the customer it belongs to. */
+  closeDocument(): void {
+    this.showDocumentModal = false;
+    if (this.currentPdfUrl) {
+      URL.revokeObjectURL(this.currentPdfUrl);
+      this.currentPdfUrl = null;
+    }
+    this.pdfUrl = null;
+    this.imageUrl = null;
+    this.selectedDocument = null;
   }
 
-  getDocumentIcon(docType: string | undefined | null): string {
-    const icons: Record<string, string> = {
-      'kyc_front': '🪪',
-      'kyc_back': '🪪',
-      'salary_certificate': '📄',
-      'bank_statement': '🏦',
-      'passport_photo': '📸',
-      'proof_of_address': '🏠'
-    };
-    return icons[docType || ''] || '📄';
+  private markDocument(status: string, reason?: string): void {
+    if (this.selectedDocument) {
+      this.selectedDocument.status = status;
+      if (reason) this.selectedDocument.rejection_reason = reason;
+    }
+    this.closeDocument();
+    this.loadAllData();
   }
+
 
   getDocumentTypeName(docType: string | undefined | null): string {
     const names: Record<string, string> = {
@@ -407,14 +406,6 @@ viewDocument(document: CustomerDocument): void {
     }
   }
 
-  getStatusIcon(status: string | undefined | null): string {
-    switch (status) {
-      case 'verified': return '✅';
-      case 'pending': return '⏳';
-      case 'rejected': return '❌';
-      default: return '📄';
-    }
-  }
 
   getStatusText(status: string | undefined | null): string {
     switch (status) {

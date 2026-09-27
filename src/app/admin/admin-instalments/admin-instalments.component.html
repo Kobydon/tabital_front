@@ -122,9 +122,6 @@
               <button class="action-btn view" (click)="viewPlanDetails(plan)" title="View Details">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn edit" (click)="openUpdateStatusModal(plan)" title="Update Status">
-                <i class="fas fa-edit"></i>
-              </button>
             </td>
           </tr>
           <tr *ngIf="instalments.length === 0">
@@ -250,7 +247,7 @@
             </div>
             <div class="info-item">
               <label>Phone:</label>
-              <span>{{ selectedPlan.customer?.phone }}</span>
+              <span><tp-reveal [userId]="selectedPlan.customer?.id" field="phone" [value]="selectedPlan.customer?.phone" label="customer phone"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Email:</label>
@@ -269,7 +266,7 @@
             </div>
             <div class="info-item">
               <label>Phone:</label>
-              <span>{{ selectedPlan.merchant?.phone }}</span>
+              <span><tp-reveal [userId]="selectedPlan.merchant?.id" field="phone" [value]="selectedPlan.merchant?.phone" label="merchant phone"></tp-reveal></span>
             </div>
             <div class="info-item">
               <label>Email:</label>
@@ -300,8 +297,9 @@
               <span>{{ formatCurrency(payment.amount + payment.late_fee) }}</span>
               <td>
                 <span class="status-badge" [class]="getPaymentStatusClass(payment.status)">
-                  {{ payment.status | titlecase }}
+                  {{ payment.status === 'pending_verification' ? 'Awaiting verification' : (payment.status | titlecase) }}
                 </span>
+                <small class="payment-ref" *ngIf="payment.payment_reference">Ref: {{ payment.payment_reference }}</small>
               </td>
               <td class="actions">
                 <button class="action-btn" (click)="openMarkPaidModal(payment)" *ngIf="payment.status !== 'paid'" title="Mark as Paid">
@@ -320,13 +318,65 @@
             </div>
           </div>
         </div>
+
+        <!-- Ledger: append-only record of every money event on this plan -->
+        <div class="info-section ledger-section" *ngIf="selectedPlan.ledger">
+          <h3><i class="fas fa-book"></i> Ledger</h3>
+          <div class="ledger-balance">
+            <span>Customer balance (from ledger)</span>
+            <strong>{{ formatCurrency(selectedPlan.ledger.customer_balance) }}</strong>
+          </div>
+
+          <p class="ledger-empty" *ngIf="!selectedPlan.ledger.entries?.length">
+            No ledger entries yet. This plan was created before the ledger; run <code>flask ledger-backfill</code>.
+          </p>
+
+          <ng-container *ngIf="customerLedgerEntries().length">
+            <h4>Customer account</h4>
+            <div class="ledger-table">
+              <div class="ledger-header">
+                <span>Date</span>
+                <span>Entry</span>
+                <span>Amount</span>
+                <span>Reference</span>
+                <span>Note</span>
+              </div>
+              <div class="ledger-row" *ngFor="let e of customerLedgerEntries()">
+                <span>{{ formatDateTime(e.created_at) }}</span>
+                <span>{{ ledgerTypeLabel(e.entry_type) }}</span>
+                <span class="ledger-amount" [class.credit]="e.amount < 0" [class.debit]="e.amount > 0">
+                  {{ e.amount < 0 ? '−' : '+' }}{{ formatCurrency(e.amount < 0 ? -e.amount : e.amount) }}
+                </span>
+                <span>{{ e.reference || '-' }}</span>
+                <span>{{ e.note || '-' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="merchantLedgerEntries().length">
+            <h4>Merchant account</h4>
+            <div class="ledger-table">
+              <div class="ledger-header">
+                <span>Date</span>
+                <span>Entry</span>
+                <span>Amount</span>
+                <span>Reference</span>
+                <span>Note</span>
+              </div>
+              <div class="ledger-row" *ngFor="let e of merchantLedgerEntries()">
+                <span>{{ formatDateTime(e.created_at) }}</span>
+                <span>{{ ledgerTypeLabel(e.entry_type) }}</span>
+                <span class="ledger-amount">{{ formatCurrency(e.amount) }}</span>
+                <span>{{ e.reference || '-' }}</span>
+                <span>{{ e.note || '-' }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
       </div>
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeModals()">Close</button>
-        <button class="btn-primary" (click)="openUpdateStatusModal(selectedPlan.plan)">
-          <i class="fas fa-edit"></i> Update Status
-        </button>
       </div>
     </div>
   </div>

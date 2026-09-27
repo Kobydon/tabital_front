@@ -3,6 +3,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
+import { ask } from 'src/app/ui/confirm';
 
 export interface NotificationSettings {
   email_notifications: boolean;
@@ -200,8 +201,8 @@ export class CustomerSettingsComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  resetToDefault(): void {
-    if (confirm('Are you sure you want to reset all settings to default?')) {
+  async resetToDefault(): Promise<void> {
+    if (await ask('Are you sure you want to reset all settings to default?')) {
       const defaultSettings = {
         email_notifications: true,
         sms_notifications: true,

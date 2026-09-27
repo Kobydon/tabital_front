@@ -1,9 +1,7 @@
 <div class="login-container">
   <div class="login-card">
-   <div class="logo-container">
-  <img src="assets/img/login.png" alt="Tabital Pay" class="login-logo">
-</div>
-    <!-- <div class="subtitle">Sign in to continue your journey</div> -->
+    <h2>✨ Welcome Back</h2>
+    <div class="subtitle">Sign in to continue your journey</div>
 
     <form [formGroup]="form" (ngSubmit)="login()">
       <!-- Phone Input with Icon -->
@@ -37,31 +35,19 @@
         </button>
       </div>
 
-      <!-- Forgot Password Link -->
-      <div class="forgot-password">
-        <a routerLink="/forgot-password">Forgot Password?</a>
-      </div>
+        <div class="auth__row"><a routerLink="/forgot-password">Forgot password?</a></div>
 
-      <!-- Error Message -->
-      <div class="error" *ngIf="error">
-        {{ error }}
-      </div>
+        <div class="auth__error" role="alert" *ngIf="error">
+          <lucide-icon name="triangle-alert" [size]="16"></lucide-icon> {{ error }}
+        </div>
 
-      <!-- Login Button with Loading State -->
-      <button 
-        type="submit" 
-        class="login-btn"
-        [disabled]="loading">
-        <span *ngIf="loading" class="spinner"></span>
-        <span *ngIf="!loading">🚀 Login</span>
-        <span *ngIf="loading">Logging in...</span>
-      </button>
-    </form>
+        <button tpButton type="submit" [block]="true" [disabled]="loading" [loading]="loading">
+          <span *ngIf="loading" class="tp-spinner" aria-hidden="true"></span>
+          {{ loading ? 'Signing in…' : 'Sign in' }}
+        </button>
+      </form>
 
-    <!-- Signup Link -->
-    <p class="link">
-      New to our platform?
-      <a routerLink="/signup">Create an account →</a>
-    </p>
-  </div>
+      <p class="auth__alt">New to Tabital Pay? <a routerLink="/signup">Create an account</a></p>
+    </div>
+  </section>
 </div>

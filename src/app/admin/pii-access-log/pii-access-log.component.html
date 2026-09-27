@@ -1,0 +1,30 @@
+<div class="tp-page">
+  <tp-page-header title="Personal data access"
+    subtitle="Admin screens show Ghana Card, phone, MoMo and account numbers masked. Each time someone reveals one, it's recorded here with their reason.">
+    <button tpButton="secondary" size="sm" type="button" (click)="load()" [disabled]="loading">Refresh</button>
+  </tp-page-header>
+
+  <tp-card>
+    <p *ngIf="loading">Loading…</p>
+    <p *ngIf="error" class="tp-field__error" role="alert">{{ error }}</p>
+
+    <tp-empty-state *ngIf="!loading && !error && !reveals.length" icon="eye-off" title="No reveals yet"
+      text="Nobody has revealed a masked value."></tp-empty-state>
+
+    <div class="tp-table-wrap" *ngIf="!loading && reveals.length">
+      <table class="tp-table">
+        <caption class="tp-sr-only">Latest 200 reveals, newest first</caption>
+        <thead><tr><th scope="col">When</th><th scope="col">Admin</th><th scope="col">Whose data</th><th scope="col">What</th><th scope="col">Reason</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of reveals">
+            <td>{{ r.at | tpDate }} {{ r.at | date:'HH:mm' }}</td>
+            <td>{{ r.admin || '—' }}</td>
+            <td>{{ r.user_name || ('User ' + r.user_id) }}</td>
+            <td><tp-chip tone="warn" [label]="labels[r.field] || r.field"></tp-chip></td>
+            <td>{{ r.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </tp-card>
+</div>

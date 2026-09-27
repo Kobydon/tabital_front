@@ -3,6 +3,7 @@ import { AdminService } from '../admin.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { notify } from 'src/app/shared/notify';
 interface InstalmentPlan {
   id: number;
   plan_id: string;
@@ -116,7 +117,6 @@ export class AdminInstalmentsComponent implements OnInit {
   loadInstalmentStats(): void {
     this.adminService.getInstalmentStats().subscribe({
       next: (response: any) => {
-        console.log('Instalment stats:', response);
         this.instalmentStats = response;
         this.updateStatsCards();
       },
@@ -149,7 +149,6 @@ export class AdminInstalmentsComponent implements OnInit {
     
     this.adminService.getAllInstalments(filters).subscribe({
       next: (response: any) => {
-        console.log('Instalments response:', response);
         if (Array.isArray(response)) {
           this.instalments = response;
           this.totalItems = response.length;
@@ -180,7 +179,7 @@ export class AdminInstalmentsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading plan details:', error);
-        alert('Failed to load plan details');
+        notify('Failed to load plan details', 'error');
       }
     });
   }
@@ -209,7 +208,7 @@ export class AdminInstalmentsComponent implements OnInit {
     this.adminService.updateInstalmentStatus(this.selectedPlan.plan.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Plan status updated successfully');
+        notify('Plan status updated successfully');
         this.showUpdateStatusModal = false;
         this.loadInstalments();
         this.loadInstalmentStats();
@@ -217,7 +216,7 @@ export class AdminInstalmentsComponent implements OnInit {
       error: (error) => {
         console.error('Error updating status:', error);
         this.isSubmitting = false;
-        alert('Failed to update status');
+        notify('Failed to update status', 'error');
       }
     });
   }
@@ -237,7 +236,7 @@ export class AdminInstalmentsComponent implements OnInit {
     this.adminService.applyLateFee(this.selectedPayment.id).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Late fee applied successfully');
+        notify('Late fee applied successfully');
         this.showApplyLateFeeModal = false;
         this.loadInstalments();
         this.loadInstalmentStats();
@@ -245,7 +244,7 @@ export class AdminInstalmentsComponent implements OnInit {
       error: (error) => {
         console.error('Error applying late fee:', error);
         this.isSubmitting = false;
-        alert('Failed to apply late fee');
+        notify('Failed to apply late fee', 'error');
       }
     });
   }
@@ -265,7 +264,7 @@ export class AdminInstalmentsComponent implements OnInit {
     this.adminService.waiveLateFee(this.selectedPayment.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Late fee waived successfully');
+        notify('Late fee waived successfully');
         this.showWaiveLateFeeModal = false;
         this.loadInstalments();
         this.loadInstalmentStats();
@@ -273,7 +272,7 @@ export class AdminInstalmentsComponent implements OnInit {
       error: (error) => {
         console.error('Error waiving late fee:', error);
         this.isSubmitting = false;
-        alert('Failed to waive late fee');
+        notify('Failed to waive late fee', 'error');
       }
     });
   }
@@ -296,7 +295,7 @@ export class AdminInstalmentsComponent implements OnInit {
     this.adminService.markPaymentAsPaid(this.selectedPayment.id, data).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        alert('Payment marked as paid successfully');
+        notify('Payment marked as paid successfully');
         this.showMarkPaidModal = false;
         this.loadInstalments();
         this.loadInstalmentStats();
@@ -304,7 +303,7 @@ export class AdminInstalmentsComponent implements OnInit {
       error: (error) => {
         console.error('Error marking payment as paid:', error);
         this.isSubmitting = false;
-        alert('Failed to mark payment as paid');
+        notify('Failed to mark payment as paid', 'error');
       }
     });
   }
@@ -324,11 +323,11 @@ export class AdminInstalmentsComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        alert('Instalments exported successfully!');
+        notify('Instalments exported successfully!');
       },
       error: (error) => {
         console.error('Error exporting instalments:', error);
-        alert('Failed to export instalments');
+        notify('Failed to export instalments', 'error');
       }
     });
   }
@@ -403,15 +402,47 @@ export class AdminInstalmentsComponent implements OnInit {
       case 'pending': return 'payment-pending';
       case 'overdue': return 'payment-overdue';
       case 'partial': return 'payment-partial';
+      case 'pending_verification': return 'payment-verification';
       default: return '';
     }
+  }
+
+  // ============================================
+  // LEDGER (read-only audit trail from the API)
+  // ============================================
+
+  ledgerTypeLabel(entryType: string): string {
+    switch (entryType) {
+      case 'plan_opened': return 'Contract opened';
+      case 'payment_received': return 'Payment received';
+      case 'late_fee_charged': return 'Late fee charged';
+      case 'late_fee_waived': return 'Late fee waived';
+      case 'merchant_fee': return 'Merchant fee (MDR)';
+      case 'merchant_payable': return 'Owed to merchant';
+      default: return entryType;
+    }
+  }
+
+  customerLedgerEntries(): any[] {
+    return (this.selectedPlan?.ledger?.entries || []).filter((e: any) => e.account === 'customer');
+  }
+
+  merchantLedgerEntries(): any[] {
+    return (this.selectedPlan?.ledger?.entries || []).filter((e: any) => e.account === 'merchant');
+  }
+
+  formatDateTime(value: string): string {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('en-GH', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   }
 
   formatCurrency(amount: number): string {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

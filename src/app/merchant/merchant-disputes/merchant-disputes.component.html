@@ -154,11 +154,13 @@
           </td>
           <td class="date-cell">{{ formatDate(dispute.created_at) }}</td>
           <td class="actions">
-            <button class="action-icon view" (click)="viewDisputeDetails(dispute)" title="View Details">👁️</button>
-            <button class="action-icon respond" (click)="openResponseModal(dispute)" title="Respond">💬</button>
-            <button class="action-icon accept" (click)="openAcceptModal(dispute)" title="Accept & Refund">✅</button>
-            <button class="action-icon reject" (click)="openRejectModal(dispute)" title="Reject">❌</button>
-            <button class="action-icon escalate" (click)="openEscalateModal(dispute)" title="Escalate">⚠️</button>
+            <button class="action-text" (click)="viewDisputeDetails(dispute)">Details</button>
+            <ng-container *ngIf="dispute.status !== 'resolved' && dispute.status !== 'closed'">
+              <button class="action-text" (click)="openResponseModal(dispute)">Respond</button>
+              <button class="action-text" (click)="openAcceptModal(dispute)">Agree</button>
+              <button class="action-text" (click)="openRejectModal(dispute)">Disagree</button>
+              <button class="action-text" (click)="openEscalateModal(dispute)">Escalate</button>
+            </ng-container>
           </td>
         </tr>
       </tbody>
@@ -286,26 +288,24 @@
   <div class="modal" *ngIf="showAcceptModal" (click)="closeModals()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Accept Dispute & Refund</h2>
-        <button class="close" (click)="closeModals()">✕</button>
+        <h2>Agree with the customer</h2>
+        <button class="close" (click)="closeModals()" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <div class="dispute-info">
           <p><strong>Dispute ID:</strong> {{ selectedDispute?.dispute_id }}</p>
-          <p><strong>Original Amount:</strong> {{ formatCurrency(selectedDispute?.amount || 0) }}</p>
+          <p><strong>Sale amount:</strong> {{ formatCurrency(selectedDispute?.amount || 0) }}</p>
         </div>
+        <p class="form-note">Tabital reviews the dispute and decides. If it's resolved for the customer, their plan is
+          cancelled and the sale is taken off your settlements. You don't refund anything yourself.</p>
         <form [formGroup]="acceptForm" (ngSubmit)="acceptDispute()">
           <div class="form-group">
-            <label>Refund Amount *</label>
-            <input type="number" step="0.01" formControlName="refund_amount" placeholder="Enter refund amount">
-          </div>
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <textarea formControlName="notes" rows="3" placeholder="Add any notes about this resolution"></textarea>
+            <label>Notes (optional)</label>
+            <textarea formControlName="notes" rows="3" placeholder="Anything Tabital should know"></textarea>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-success" [disabled]="acceptForm.invalid">Accept & Refund</button>
+            <button type="submit" class="btn-success" [disabled]="acceptForm.invalid">Send to Tabital</button>
           </div>
         </form>
       </div>
@@ -316,7 +316,7 @@
   <div class="modal" *ngIf="showRejectModal" (click)="closeModals()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Reject Dispute</h2>
+        <h2>Disagree with the customer</h2>
         <button class="close" (click)="closeModals()">✕</button>
       </div>
       <div class="modal-body">
@@ -325,12 +325,12 @@
         </div>
         <form [formGroup]="rejectForm" (ngSubmit)="rejectDispute()">
           <div class="form-group">
-            <label>Reason for Rejection *</label>
-            <textarea formControlName="reason" rows="4" placeholder="Explain why you're rejecting this dispute..."></textarea>
+            <label>Why do you disagree? *</label>
+            <textarea formControlName="reason" rows="4" placeholder="What happened? Tabital reviews both sides and decides."></textarea>
           </div>
           <div class="modal-actions">
             <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-            <button type="submit" class="btn-danger" [disabled]="rejectForm.invalid">Reject Dispute</button>
+            <button type="submit" class="btn-danger" [disabled]="rejectForm.invalid">Send to Tabital</button>
           </div>
         </form>
       </div>

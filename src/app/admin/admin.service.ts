@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
@@ -98,7 +99,7 @@ export interface ApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private API = 'https://tabital.onrender.com';
+  private API = environment.apiUrl;
   private readonly TOKEN_KEY = 'access_token';
 
   constructor(private http: HttpClient) {}
@@ -119,18 +120,19 @@ export class AdminService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('API Error:', error);
-    let errorMessage = 'An unexpected error occurred';
+    // The API explains itself in { error } (sometimes { message }); keep that text
+    const serverMessage: string | undefined = error.error?.error || error.error?.message;
+    let errorMessage = serverMessage || 'An unexpected error occurred';
     if (error.status === 401) {
       errorMessage = 'Session expired. Please login again.';
       localStorage.removeItem(this.TOKEN_KEY);
-    } else if (error.status === 403) {
+    } else if (error.status === 403 && !serverMessage) {
       errorMessage = 'You do not have permission to perform this action.';
-    } else if (error.status === 404) {
+    } else if (error.status === 404 && !serverMessage) {
       errorMessage = 'Resource not found.';
-    } else if (error.error?.message) {
-      errorMessage = error.error.message;
     }
-    return throwError(() => new Error(errorMessage));
+    // Keep status and body too, so callers can read err.error.error as with a raw HTTP error
+    return throwError(() => Object.assign(new Error(errorMessage), { status: error.status, error: error.error }));
   }
 
   // ============================================
@@ -380,6 +382,22 @@ markPaymentReceived(paymentId: number, data: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+/** Customers saying they paid outside the app; the instalment stays due until a claim is confirmed. */
+getPaymentClaims(status = 'pending'): Observable<any> {
+  return this.http.get(`${this.API}/admin/payment-claims?status=${encodeURIComponent(status)}`, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+confirmPaymentClaim(claimId: number, body: { amount_received?: number; payment_reference?: string }): Observable<any> {
+  return this.http.post(`${this.API}/admin/payment-claims/${claimId}/confirm`, body, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
+rejectPaymentClaim(claimId: number, reason: string): Observable<any> {
+  return this.http.post(`${this.API}/admin/payment-claims/${claimId}/reject`, { reason }, { headers: this.getAuthHeaders() })
+    .pipe(catchError(this.handleError.bind(this)));
+}
+
 setPaymentPlan(paymentId: number, data: any): Observable<any> {
   return this.http.post(`${this.API}/admin/collection/${paymentId}/payment-plan`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
@@ -432,8 +450,25 @@ exportOverduePayments(filters?: any): Observable<Blob> {
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  approveMerchantKYC(merchantId: number): Observable<any> {
-    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, {}, { headers: this.getAuthHeaders() })
+  /** Merchant fee tiers (§6.1): the options, a merchant's tier and history, and changing it (with a reason). */
+  getMerchantFeeTiers(): Observable<any> {
+    return this.http.get(`${this.API}/admin/merchant-fee-tiers`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  getMerchantFeeTier(merchantId: number): Observable<any> {
+    return this.http.get(`${this.API}/admin/merchants/${merchantId}/fee-tier`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  setMerchantFeeTier(merchantId: number, feeTier: string, reason: string): Observable<any> {
+    return this.http.put(`${this.API}/admin/merchants/${merchantId}/fee-tier`, { fee_tier: feeTier, reason },
+      { headers: this.getAuthHeaders() }).pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /** body.fee_tier (optional): the merchant fee tier chosen at approval. */
+  approveMerchantKYC(merchantId: number, body: { fee_tier?: string; fee_tier_reason?: string } = {}): Observable<any> {
+    return this.http.put(`${this.API}/admin/kyc/approve/${merchantId}`, body, { headers: this.getAuthHeaders() })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
@@ -652,6 +687,38 @@ updateCustomerCreditLimit(customerId: number, data: any): Observable<any> {
     .pipe(catchError(this.handleError.bind(this)));
 }
 
+// ---------- Servicing (Phase 4) ----------
+getDisputes(status: string = ''): Observable<any> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : '';
+  return this.http.get(`${this.API}/admin/disputes${q}`, { headers: this.getAuthHeaders() });
+}
+
+resolveDispute(disputeId: number, data: { outcome: string; notes: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/disputes/${disputeId}/resolve`, data, { headers: this.getAuthHeaders() });
+}
+
+runServicing(): Observable<any> {
+  return this.http.post(`${this.API}/admin/servicing/run`, {}, { headers: this.getAuthHeaders() });
+}
+
+// ---------- Underwriting (Phase 3) ----------
+// No handleError here so screens can show the server's message
+setCustomerCreditLimit(customerId: number, data: { credit_limit: number | null; reason: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/credit-limit`, data, { headers: this.getAuthHeaders() });
+}
+
+getCustomerUnderwriting(customerId: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/customers/${customerId}/underwriting`, { headers: this.getAuthHeaders() });
+}
+
+updateCustomerUnderwriting(customerId: number, data: any): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/underwriting`, data, { headers: this.getAuthHeaders() });
+}
+
+rerunCustomerUnderwriting(customerId: number): Observable<any> {
+  return this.http.post(`${this.API}/admin/customers/${customerId}/underwriting/rerun`, {}, { headers: this.getAuthHeaders() });
+}
+
 addCustomerNote(customerId: number, data: any): Observable<any> {
   return this.http.post(`${this.API}/admin/customers/${customerId}/note`, data, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
@@ -786,6 +853,86 @@ exportTransactions(filters?: any): Observable<Blob> {
 getSettlementStats(): Observable<any> {
   return this.http.get(`${this.API}/admin/settlements/stats`, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
+}
+
+// Business settings (validated, audited)
+getBusinessSettings(): Observable<any> {
+  return this.http.get(`${this.API}/admin/business-settings`, { headers: this.getAuthHeaders() });
+}
+
+saveBusinessSettings(changes: Record<string, any>, reason: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/business-settings`, { changes, reason }, { headers: this.getAuthHeaders() });
+}
+
+getBusinessSettingsHistory(): Observable<any> {
+  return this.http.get(`${this.API}/admin/business-settings/history`, { headers: this.getAuthHeaders() });
+}
+
+// Phase 7: unit economics and portfolio reporting
+getEconomicsSummary(from: string, to: string): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/summary?from=${from}&to=${to}`, { headers: this.getAuthHeaders() });
+}
+
+downloadEconomicsCsv(from: string, to: string): Observable<Blob> {
+  return this.http.get(`${this.API}/admin/economics/export?from=${from}&to=${to}`,
+    { headers: this.getAuthHeaders(), responseType: 'blob' });
+}
+
+getEconomicsPortfolio(): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/portfolio`, { headers: this.getAuthHeaders() });
+}
+
+getEconomicsCohorts(): Observable<any> {
+  return this.http.get(`${this.API}/admin/economics/cohorts`, { headers: this.getAuthHeaders() });
+}
+
+getEconomicsScenario(params: Record<string, string | number>): Observable<any> {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== '' && v !== null && v !== undefined) qs.append(k, String(v)); });
+  return this.http.get(`${this.API}/admin/economics/scenario?${qs.toString()}`, { headers: this.getAuthHeaders() });
+}
+
+// Phase 6: identity checks (Smile ID), fraud signals, employment verification
+getIdentityChecks(status = 'review'): Observable<any> {
+  return this.http.get(`${this.API}/admin/identity-checks?status=${encodeURIComponent(status)}`, { headers: this.getAuthHeaders() });
+}
+
+decideIdentityCheck(id: number, approve: boolean, note: string): Observable<any> {
+  return this.http.post(`${this.API}/admin/identity-checks/${id}/decide`, { approve, note }, { headers: this.getAuthHeaders() });
+}
+
+getFraudSignals(filters: { status?: string; severity?: string; user_id?: number } = {}): Observable<any> {
+  const qs = new URLSearchParams();
+  qs.append('status', filters.status ?? 'open');
+  if (filters.severity) qs.append('severity', filters.severity);
+  if (filters.user_id) qs.append('user_id', String(filters.user_id));
+  return this.http.get(`${this.API}/admin/fraud-signals?${qs.toString()}`, { headers: this.getAuthHeaders() });
+}
+
+reviewFraudSignal(id: number, status: 'cleared' | 'confirmed', note: string): Observable<any> {
+  return this.http.put(`${this.API}/admin/fraud-signals/${id}`, { status, note }, { headers: this.getAuthHeaders() });
+}
+
+setEmploymentVerification(customerId: number, body: { verified: boolean; method?: string; note: string }): Observable<any> {
+  return this.http.put(`${this.API}/admin/customers/${customerId}/employment-verification`, body, { headers: this.getAuthHeaders() });
+}
+
+// Phase 5: settlement batches (reviewed and approved here, paid by Paystack transfer)
+getSettlementBatches(status?: string): Observable<any> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+  return this.http.get(`${this.API}/admin/settlement-batches${qs}`, { headers: this.getAuthHeaders() });
+}
+
+getSettlementBatch(id: number): Observable<any> {
+  return this.http.get(`${this.API}/admin/settlement-batches/${id}`, { headers: this.getAuthHeaders() });
+}
+
+generateSettlementBatches(): Observable<any> {
+  return this.http.post(`${this.API}/admin/settlement-batches/generate`, {}, { headers: this.getAuthHeaders() });
+}
+
+approveSettlementBatch(id: number): Observable<any> {
+  return this.http.post(`${this.API}/admin/settlement-batches/${id}/approve`, {}, { headers: this.getAuthHeaders() });
 }
 
 getAllSettlements(filters?: any): Observable<any> {

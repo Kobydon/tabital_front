@@ -1,9 +1,11 @@
+import { environment } from 'src/environments/environment';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CustomerService } from '../../customers.service';
 import { Router } from '@angular/router';
 import { AdminService } from 'src/app/admin/admin.service';
 
+import { notify } from 'src/app/shared/notify';
 export interface Product {
   id: number;
   product_id: string;
@@ -20,6 +22,8 @@ export interface Product {
   merchant_id: number;
   merchant_name: string;
   status: string;
+  // Server-priced teaser: GHS down_payment today, then installments x installment_amount
+  split_preview?: { plan: string; down_payment: number; installments: number; installment_amount: number; delivery_fee: number } | null;
 }
 
 export interface InstallmentOption {
@@ -36,14 +40,24 @@ export interface InstallmentCalculation {
     percentage: number;
     amount: number;
   };
+  due_now: number;
   remaining_balance: number;
   installment_details: {
     total_installments: number;
     remaining_installments: number;
     installment_amount: number;
   };
+  // Customer's underwriting result for this quote (Phase 3)
+  credit?: {
+    eligible: boolean;
+    tier: string | null;
+    credit_limit: number;
+    available_limit: number;
+    reasons: string[];
+  } | null;
   fees: {
     service_fee: number;
+    delivery_fee: number;
     merchant_fee_percentage: number;
     merchant_fee_amount: number;
     late_fee_percentage: number;
@@ -53,6 +67,21 @@ export interface InstallmentCalculation {
     merchant_payout: number;
   };
   payment_schedule: PaymentSchedule[];
+  // Disclosures shown before the customer commits (§10); values come from the server's settings
+  key_facts?: {
+    late_fee_percentage: number;
+    second_late_fee_percentage: number;
+    second_late_fee_after_days: number;
+    late_fee_cap_percentage: number;
+    deferment_enabled: boolean;
+    deferment_fee_percentage: number;
+    deferment_max_per_plan: number;
+    deferment_months: number;
+    dispute_resolution_days: number;
+    terms_url: string;
+    terms_version: string;
+    privacy_url: string;
+  };
 }
 
 export interface PaymentSchedule {
@@ -72,9 +101,12 @@ export interface CustomerKYC {
 @Component({
   selector: 'app-customer-shop',
   templateUrl: './shop.component.html',
-  styleUrls: ['./shop.component.scss']
+  styleUrls: ['./shop.component.scss', './shop-vault.scss']
 })
 export class CustomerShopComponent implements OnInit {
+  /** Terms, privacy and agreement links (environment.legal, §10). */
+  readonly legal = environment.legal;
+
   // Data
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -91,6 +123,8 @@ export class CustomerShopComponent implements OnInit {
   isLoading = true;
   isCalculating = false;
   isPurchasing = false;
+  // When on, Payment 1 (down payment + delivery) is paid on Paystack at checkout
+  paystackEnabled = false;
   currentPage = 1;
   pageSize = 12;
   totalItems = 0;
@@ -102,10 +136,7 @@ export class CustomerShopComponent implements OnInit {
   
   // Forms
   purchaseForm: FormGroup;
-  
-  // Constants
-  readonly DELIVERY_FEE = 50;
-  
+
   // Categories
   categories = [
     'Electronics', 'Phones', 'Laptops', 'Tablets', 'Accessories',
@@ -127,7 +158,12 @@ export class CustomerShopComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.customerService.getPaymentConfig().subscribe({
+      next: (cfg) => this.paystackEnabled = !!cfg?.paystack_enabled,
+      error: () => this.paystackEnabled = false
+    });
     this.checkKYCStatus();
+    this.loadCredit();
     this.loadProducts();
     this.loadInstallmentOptions();
   }
@@ -150,6 +186,29 @@ export class CustomerShopComponent implements OnInit {
         console.error('Error fetching customer profile:', error);
         this.isKYCPending = true;
       }
+    });
+  }
+
+  // Vault: eligibility and available limit up front, before the customer picks a product
+  credit: any = null;
+  loadCredit(): void {
+    this.customerService.getCredit().subscribe({ next: (c: any) => { this.credit = c; }, error: () => { this.credit = null; } });
+  }
+
+  // Every plan for the open product, priced by the server, shown side by side
+  planOptions: any[] = [];
+  planOptionsLoading = false;
+  loadPlanOptions(): void {
+    if (!this.selectedProduct) return;
+    this.planOptionsLoading = true;
+    this.customerService.getPlanOptions(this.selectedProduct.id, this.purchaseForm.value.quantity || 1).subscribe({
+      next: (res: any) => {
+        // Pay in 4 first (the main plan), full payment last
+        const order = [4, 3, 2, 1];
+        this.planOptions = [...(res.options || [])].sort((a, b) => order.indexOf(a.n_payments) - order.indexOf(b.n_payments));
+        this.planOptionsLoading = false;
+      },
+      error: () => { this.planOptions = []; this.planOptionsLoading = false; }
     });
   }
 
@@ -183,7 +242,7 @@ export class CustomerShopComponent implements OnInit {
 
   navigateToKYC(): void {
     this.showKYCBlockModal = false;
-    this.router.navigate(['/customer/documents']);
+    this.router.navigate(['/customer/verify-identity']);     // Phase 6: selfie + Ghana Card check
   }
 
   // ============================================
@@ -221,16 +280,18 @@ export class CustomerShopComponent implements OnInit {
   loadInstallmentOptions(): void {
     this.installmentOptions = [
       { months: 1, label: 'Full Payment', interest_rate: 0, is_active: true },
-      { months: 2, label: '2 Months - 50% Down, 50% Later', interest_rate: 0, is_active: true },
-      { months: 3, label: '3 Months - 50% Down, 25% + 25% Later', interest_rate: 0, is_active: true },
-      { months: 4, label: '4 Months - 40% Down', interest_rate: 0, is_active: true },
+      { months: 2, label: 'Pay in 2', interest_rate: 0, is_active: true },
+      { months: 3, label: 'Pay in 3', interest_rate: 0, is_active: true },
+      { months: 4, label: 'Pay in 4', interest_rate: 0, is_active: true },
       { months: 6, label: '6 Months', interest_rate: 0, is_active: false, coming_soon: true }
     ];
   }
 
   calculateInstallment(product: Product, months: number): void {
     this.isCalculating = true;
+    this.calculation = null;
     
+    // The server is the only source of plan amounts. If it can't quote, we don't show one.
     this.customerService.calculateInstallmentPlan({
       product_price: product.price,
       number_of_installments: months,
@@ -240,132 +301,11 @@ export class CustomerShopComponent implements OnInit {
         this.calculation = response;
         this.isCalculating = false;
       },
-      error: (error) => {
-        console.error('Error calculating installment:', error);
-        this.calculateManually(product, months);
+      error: () => {
+        this.isCalculating = false;
+        notify('We could not calculate this payment plan right now. Please try again.', 'error');
       }
     });
-  }
-
-  calculateManually(product: Product, months: number): void {
-    const quantity = this.purchaseForm.value.quantity || 1;
-    const totalPrice = product.price * quantity;
-    const serviceFee = 0;
-    const lateFeePercentage = 10;
-    const deliveryFee = this.DELIVERY_FEE;
-    
-    let downPaymentPercentage = 0;
-    let downPaymentAmount = 0;
-    let remainingBalanceAfterDown = 0;
-    let totalInstallments = 0;
-    let remainingInstallments = 0;
-    let installmentAmount = 0;
-    
-    // Set down payment percentage based on months
-    if (months === 1) {
-      downPaymentPercentage = 100;
-    } else if (months === 2 || months === 3) {
-      downPaymentPercentage = 50;
-    } else if (months === 4) {
-      downPaymentPercentage = 40;
-    }
-    
-    downPaymentAmount = totalPrice * downPaymentPercentage / 100;
-    remainingBalanceAfterDown = totalPrice - downPaymentAmount;
-    totalInstallments = months;
-    remainingInstallments = totalInstallments - 1;
-    
-    // Calculate installment amount for remaining payments
-    if (remainingInstallments > 0) {
-      installmentAmount = remainingBalanceAfterDown / remainingInstallments;
-    } else {
-      installmentAmount = 0;
-    }
-    
-    const totalPayable = totalPrice + deliveryFee + serviceFee;
-    const paymentSchedule: PaymentSchedule[] = [];
-    const currentDate = new Date();
-    
-    // First payment (Due Now) - includes delivery fee
-    paymentSchedule.push({
-      installment_number: 1,
-      amount: downPaymentAmount + deliveryFee,
-      due_date: currentDate.toISOString(),
-      status: 'due_now',
-      description: `${downPaymentPercentage}% Down Payment + Delivery Fee`
-    });
-    
-    // Subsequent payments
-    for (let i = 1; i <= remainingInstallments; i++) {
-      const dueDate = new Date(currentDate);
-      dueDate.setMonth(dueDate.getMonth() + i);
-      
-      let paymentDescription = '';
-      if (months === 2) {
-        paymentDescription = `Final Payment (Remaining ${100 - downPaymentPercentage}%)`;
-      } else if (months === 3) {
-        const percent = (100 - downPaymentPercentage) / remainingInstallments;
-        paymentDescription = `Payment ${i + 1} of ${months} (${percent}% of product)`;
-      } else if (months === 4) {
-        const percent = (100 - downPaymentPercentage) / remainingInstallments;
-        paymentDescription = `Payment ${i + 1} of ${months} (${percent}% of product)`;
-      } else {
-        paymentDescription = `Installment ${i + 1} of ${months}`;
-      }
-      
-      paymentSchedule.push({
-        installment_number: i + 1,
-        amount: installmentAmount,
-        due_date: dueDate.toISOString(),
-        status: 'pending',
-        description: paymentDescription
-      });
-    }
-    
-    this.calculation = {
-      product_price: totalPrice,
-      down_payment: {
-        percentage: downPaymentPercentage,
-        amount: downPaymentAmount + deliveryFee
-      },
-      remaining_balance: remainingBalanceAfterDown,
-      installment_details: {
-        total_installments: totalInstallments,
-        remaining_installments: remainingInstallments,
-        installment_amount: installmentAmount
-      },
-      fees: {
-        service_fee: serviceFee,
-        merchant_fee_percentage: 10,
-        merchant_fee_amount: totalPrice * 0.1,
-        late_fee_percentage: lateFeePercentage
-      },
-      totals: {
-        total_payable: totalPayable,
-        merchant_payout: totalPrice * 0.9
-      },
-      payment_schedule: paymentSchedule
-    };
-    
-    this.isCalculating = false;
-  }
-
-  // Helper method to calculate down payment percentage
-  getDownPaymentPercentage(months: number): number {
-    switch(months) {
-      case 1: return 100;
-      case 2: return 50;
-      case 3: return 50;
-      case 4: return 40;
-      default: return 0;
-    }
-  }
-
-  // Helper method to calculate due now amount
-  getDueNowAmount(productPrice: number, months: number): number {
-    const downPaymentPercentage = this.getDownPaymentPercentage(months);
-    const downPaymentAmount = productPrice * downPaymentPercentage / 100;
-    return downPaymentAmount + this.DELIVERY_FEE;
   }
 
   // ============================================
@@ -374,15 +314,18 @@ export class CustomerShopComponent implements OnInit {
 
   viewProduct(product: Product): void {
     this.selectedProduct = product;
-    this.purchaseForm.patchValue({ quantity: 1, selected_installments: 1 });
+    // Pay in 4 is the main plan; customers who can't use credit start on paying in full
+    const start = this.credit?.eligible ? 4 : 1;
+    this.purchaseForm.patchValue({ quantity: 1, selected_installments: start });
     this.showProductModal = true;
-    this.calculateInstallment(product, 1);
+    this.calculateInstallment(product, start);
+    this.loadPlanOptions();
   }
 
   selectInstallment(months: number): void {
     const option = this.installmentOptions.find(opt => opt.months === months);
     if (option && !option.is_active) {
-      alert(`${option.label} is coming soon! Please select another payment plan.`);
+      notify(`${option.label} is coming soon! Please select another payment plan.`);
       return;
     }
     
@@ -412,11 +355,29 @@ export class CustomerShopComponent implements OnInit {
     
     const months = this.purchaseForm.value.selected_installments || 1;
     this.calculateInstallment(this.selectedProduct, months);
+    this.loadPlanOptions();
+  }
+
+  // Why this plan can't be bought right now, or null if it can (the server checks again at checkout)
+  creditBlockReason(): string | null {
+    const credit = this.calculation?.credit;
+    const months = this.purchaseForm.value.selected_installments;
+    if (!credit || months === 1) return null;         // full payment uses no credit
+    if (!credit.eligible) return credit.reasons?.[0] || 'You are not eligible for a payment plan yet';
+    if ((this.calculation?.product_price || 0) > credit.available_limit) {
+      return `This is above your available limit of ${this.formatCurrency(credit.available_limit)}`;
+    }
+    return null;
   }
 
   openCheckout(): void {
     if (this.isKYCPending) {
       this.showKYCBlockedModal();
+      return;
+    }
+    const blocked = this.creditBlockReason();
+    if (blocked) {
+      notify(blocked);
       return;
     }
     
@@ -425,37 +386,36 @@ export class CustomerShopComponent implements OnInit {
   }
 
   placeOrder(): void {
-    if (this.purchaseForm.invalid) return;
-    
+    if (this.purchaseForm.invalid || this.isPurchasing) return;     // no double orders from a double tap
+
     this.isPurchasing = true;
     
+    // Only the choice is sent. The server prices the order from the stored product.
     const orderData = {
       product_id: this.selectedProduct?.id,
-      product_name: this.selectedProduct?.name,
-      product_price: this.selectedProduct?.price,
-      merchant_id: this.selectedProduct?.merchant_id,
-      merchant_name: this.selectedProduct?.merchant_name,
       quantity: this.purchaseForm.value.quantity,
       number_of_installments: this.purchaseForm.value.selected_installments,
       delivery_address: this.purchaseForm.value.delivery_address,
-      down_payment_amount: this.calculation?.down_payment.amount,
-      installment_amount: this.calculation?.installment_details.installment_amount,
-      total_payable: this.calculation?.totals.total_payable,
-      payment_schedule: this.calculation?.payment_schedule
+      accept_terms: this.purchaseForm.value.agree_terms === true      // recorded with the order (§10)
     };
     
     this.customerService.createPurchaseOrder(orderData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
+        // Down payment is collected now: go to Paystack's secure checkout
+        if (response?.authorization_url) {
+          window.location.href = response.authorization_url;
+          return;
+        }
         this.isPurchasing = false;
         this.showCheckoutModal = false;
         this.showProductModal = false;
-        alert('Order placed successfully! Waiting for admin approval.');
+        notify(response?.message || 'Order placed successfully! Waiting for admin approval.');
         this.router.navigate(['/customer/orders']);
       },
       error: (error) => {
-        console.error('Error placing order:', error);
         this.isPurchasing = false;
-        alert('Failed to place order. Please try again.');
+        const reasons: string[] = error?.error?.reasons || [];
+        notify([error?.error?.error || 'Failed to place order. Please try again.', ...reasons].join('\n• '), 'error');
       }
     });
   }
@@ -465,8 +425,16 @@ export class CustomerShopComponent implements OnInit {
   // ============================================
 
   applyFilters(): void {
+    clearTimeout(this.searchTimer);
     this.currentPage = 1;
     this.loadProducts();
+  }
+
+  // Wait until the customer stops typing, instead of calling the API on every key
+  private searchTimer: any = null;
+  onSearchChange(): void {
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
   }
 
   resetFilters(): void {
@@ -549,7 +517,7 @@ export class CustomerShopComponent implements OnInit {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

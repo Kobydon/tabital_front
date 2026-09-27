@@ -1,8 +1,10 @@
 // src/app/customer/components/instalments/instalments.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
 export type PlanStatus = 'all' | 'active' | 'completed' | 'overdue';
 
 export interface InstalmentPlan {
@@ -92,10 +94,89 @@ export class CustomerInstalmentsComponent implements OnInit {
     { value: 'cash', label: 'Cash', icon: '💰' }
   ];
 
+  /** The earliest unpaid instalment across active plans (Vault "next payment" card). */
+  get nextDue(): { plan: InstalmentPlan; payment: PaymentSchedule } | null {
+    let best: { plan: InstalmentPlan; payment: PaymentSchedule } | null = null;
+    for (const plan of this.instalments) {
+      if (plan.status !== 'active') continue;
+      for (const payment of plan.payment_schedule || []) {
+        if (payment.status !== 'pending' && payment.status !== 'overdue') continue;
+        if (!best || new Date(payment.due_date) < new Date(best.payment.due_date)) best = { plan, payment };
+      }
+    }
+    return best;
+  }
+
+  /** Worth offering Defer on the next payment (the server checks the real rules when asked). */
+  get canDeferNext(): boolean {
+    const nd = this.nextDue;
+    return !!nd && nd.payment.installment_number > 1 && nd.payment.status === 'pending' &&
+      !(nd.payment.late_fee || 0) && this.getDaysRemaining(nd.payment.due_date) >= 0;
+  }
+
+  deferNext(): void {
+    const nd = this.nextDue;
+    if (!nd) return;
+    this.viewInstalmentDetails(nd.plan);     // the deferment panel lives in the plan details
+    this.openDeferment(nd.payment, nd.plan);
+  }
+
+  // Deferment (§4)
+  deferQuote: any = null;
+  deferLoading = false;
+  deferAgree = false;
+  deferring = false;
+  deferError = '';
+
+  openDeferment(payment: PaymentSchedule, plan: InstalmentPlan): void {
+    this.deferQuote = null;
+    this.deferAgree = false;
+    this.deferError = '';
+    this.deferLoading = true;
+    this.customerService.getDefermentQuote(plan.id, payment.id).subscribe({
+      next: (q: any) => { this.deferQuote = q; this.deferLoading = false; },
+      error: (err: any) => { this.deferLoading = false; this.deferError = err.error?.error || 'Could not check deferment'; }
+    });
+  }
+
+  closeDeferment(): void {
+    this.deferQuote = null;
+    this.deferError = '';
+    this.deferLoading = false;
+  }
+
+  confirmDeferment(): void {
+    if (!this.deferQuote?.allowed || !this.deferAgree) return;
+    this.deferring = true;
+    this.customerService.startDeferment(this.deferQuote.plan_id, this.deferQuote.payment_id).subscribe({
+      next: (res: any) => {
+        if (res?.authorization_url) {
+          window.location.href = res.authorization_url;      // Paystack; dates move once it's confirmed
+          return;
+        }
+        this.deferring = false;
+      },
+      error: (err: any) => {
+        this.deferring = false;
+        this.deferError = err.error?.error || 'Could not start the payment';
+      }
+    });
+  }
+
+  // Buyer protection
+  showDisputeForm = false;
+  isSubmittingDispute = false;
+  disputeForm: FormGroup;
+
   constructor(
     private customerService: CustomerService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
+    this.disputeForm = this.fb.group({
+      reason: ['product_not_received', Validators.required],
+      description: ['', [Validators.required, Validators.minLength(10)]]
+    });
     this.paymentForm = this.fb.group({
       amount: ['', [Validators.required, Validators.min(0.01)]],
       payment_method: ['', Validators.required],
@@ -123,12 +204,9 @@ loadInstalmentPlans(): void {
   
   this.customerService.getMyPlans(filters).subscribe({
     next: (response: any) => {
-      console.log('API Response:', JSON.stringify(response, null, 2)); // DEBUG LOG
       
       if (response && response.plans) {
         response.plans.forEach((plan: any, index: number) => {
-          console.log(`Plan ${index} - ID: ${plan.id}, Name: ${plan.product_name}`);
-          console.log(`Payment Schedule:`, plan.payment_schedule);
         });
       }
       
@@ -147,7 +225,7 @@ loadInstalmentPlans(): void {
   private mapInstalmentPlan(plan: any): InstalmentPlan {
     const totalAmount = plan.total_amount || 0;
     const paidAmount = plan.amount_paid || 0;
-    const remainingAmount = plan.amount_outstanding || (totalAmount - paidAmount);
+    const remainingAmount = plan.amount_outstanding ?? (totalAmount - paidAmount);   // 0 is a real balance
     const paymentSchedule = (plan.payment_schedule || []).map((schedule: any) => ({
       id: schedule.id,
       installment_number: schedule.installment_number,
@@ -225,58 +303,37 @@ loadInstalmentPlans(): void {
     this.showDetailsModal = true;
   }
 
+  // Payments go through the Make Payment page (Paystack card/MoMo, or a transfer reference).
+  // The old in-page form posted to an endpoint that doesn't exist.
   openPaymentModal(payment: PaymentSchedule, instalment: InstalmentPlan): void {
-    this.selectedPayment = payment;
-    this.selectedInstalment = instalment;
-    this.paymentForm.reset();
-    this.paymentForm.patchValue({
-      amount: payment.amount
-    });
-    this.showPaymentModal = true;
+    this.router.navigate(['/customer/make-payment'], { queryParams: { planId: instalment.id } });
   }
 
-  makePayment(): void {
-    if (this.paymentForm.invalid || !this.selectedInstalment || !this.selectedPayment) return;
-    
-    this.isPaying = true;
-    
-    const paymentData = {
+  submitDispute(): void {
+    if (this.disputeForm.invalid || !this.selectedInstalment) return;
+    this.isSubmittingDispute = true;
+    this.customerService.createDispute({
       plan_id: this.selectedInstalment.id,
-      installment_number: this.selectedPayment.installment_number,
-      amount: this.paymentForm.value.amount,
-      payment_method: this.paymentForm.value.payment_method,
-      payment_reference: this.paymentForm.value.payment_reference,
-      notes: this.paymentForm.value.notes
-    };
-    
-    this.customerService.makeInstalmentPayment(paymentData).subscribe({
-      next: (response) => {
-        this.isPaying = false;
-        this.showPaymentModal = false;
-        // Update local data
-        if (this.selectedPayment && this.selectedInstalment) {
-          this.selectedPayment.status = 'paid';
-          this.selectedPayment.paid_date = new Date().toISOString();
-          this.selectedPayment.payment_reference = response.payment_reference;
-          this.selectedInstalment.paid_amount += this.selectedPayment.amount;
-          this.selectedInstalment.remaining_amount -= this.selectedPayment.amount;
-          this.selectedInstalment.paid_installments++;
-          
-          if (this.selectedInstalment.paid_installments === this.selectedInstalment.total_installments) {
-            this.selectedInstalment.status = 'completed';
-          }
-        }
-        
+      reason: this.disputeForm.value.reason,
+      description: this.disputeForm.value.description
+    }).subscribe({
+      next: (res: any) => {
+        this.isSubmittingDispute = false;
+        this.showDisputeForm = false;
+        this.disputeForm.reset({ reason: 'product_not_received', description: '' });
+        notify(res?.message || 'Report sent. Your payments are paused while we review it.');
+        this.closeModals();
         this.loadInstalmentPlans();
-        alert('Payment successful!');
       },
       error: (error) => {
-        console.error('Error making payment:', error);
-        this.isPaying = false;
-        alert('Payment failed. Please try again.');
+        this.isSubmittingDispute = false;
+        notify(error?.error?.error || 'Could not send your report. Please try again.', 'error');
       }
     });
   }
+
+  // (The old in-page payment form was removed: it set an amount in the browser and marked the
+  // instalment paid before the server confirmed. Payments go through Make Payment / Paystack.)
 
   downloadReceipt(payment: PaymentSchedule, instalment: InstalmentPlan): void {
     this.customerService.downloadReceipt(instalment.id, payment.installment_number).subscribe({
@@ -290,7 +347,7 @@ loadInstalmentPlans(): void {
       },
       error: (error) => {
         console.error('Error downloading receipt:', error);
-        alert('Failed to download receipt.');
+        notify('Failed to download receipt.', 'error');
       }
     });
   }
@@ -300,6 +357,7 @@ loadInstalmentPlans(): void {
   // ============================================
 
   closeModals(): void {
+    this.closeDeferment();
     this.showDetailsModal = false;
     this.showPaymentModal = false;
     this.showReceiptModal = false;
@@ -315,7 +373,7 @@ loadInstalmentPlans(): void {
     if (!amount && amount !== 0) return 'GHS 0.00';
     return new Intl.NumberFormat('en-GH', { 
       style: 'currency', 
-      currency: 'GHS',
+      currency: 'GHS', currencyDisplay: 'code',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
@@ -396,7 +454,7 @@ loadInstalmentPlans(): void {
   }
 
   getProgressColor(percentage: number): string {
-    if (percentage >= 75) return '#28a745';
+    if (percentage >= 75) return '#15803d';
     if (percentage >= 50) return '#17a2b8';
     if (percentage >= 25) return '#ffc107';
     return '#dc3545';

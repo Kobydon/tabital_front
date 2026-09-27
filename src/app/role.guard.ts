@@ -33,13 +33,10 @@ export class RoleGuard implements CanActivate {
 
     const expectedRole = route.data['role'];
     
-    console.log('🔒 RoleGuard - Expected Role:', expectedRole);
-    console.log('🔒 RoleGuard - Current URL:', this.router.url);
 
     // CHECK TOKEN FIRST
     const token = this.authService.getToken();
     if (!token) {
-      console.log('❌ No token found');
       return this.router.parseUrl('/login');
     }
 
@@ -49,21 +46,17 @@ export class RoleGuard implements CanActivate {
     if (storedUser) {
       try {
         const currentUser = JSON.parse(storedUser);
-        console.log('📦 Stored User Role:', currentUser?.role);
         
         // Check if user is approved
         if (currentUser?.status === 'suspended' || currentUser?.status === 'banned') {
-          console.log('❌ User is suspended/banned');
           this.authService.logout();
           return this.router.parseUrl('/login');
         }
         
         // ROLE MATCH
         if (currentUser?.role === expectedRole) {
-          console.log('✅✅✅ Role matches! Access GRANTED ✅✅✅');
           return true;
         } else {
-          console.log(`❌ Role mismatch! Expected: ${expectedRole}, Got: ${currentUser?.role}`);
           // IMPORTANT: Return UrlTree instead of calling navigate directly
           return this.getRedirectUrl(currentUser?.role);
         }
@@ -73,7 +66,6 @@ export class RoleGuard implements CanActivate {
     }
 
     // FETCH FROM API IF NO STORED USER
-    console.log('🔄 No stored user, fetching from API...');
     return this.adminService.getCurrentUser().pipe(
       tap((user: any) => {
         if (user && user.role) {
@@ -99,7 +91,6 @@ export class RoleGuard implements CanActivate {
   // ============================================
 
   private getRedirectUrl(role: string): UrlTree {
-    console.log('🔄 Getting redirect URL for role:', role);
     
     switch (role) {
       case 'admin':

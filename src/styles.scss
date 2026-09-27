@@ -1,1 +1,109 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Tabital Pay global styles and brand tokens.
+ * Colours come from tabitalpay.com (Astra theme palette); fonts match the website.
+ * Component styles should use these variables instead of hard-coded colours.
+ */
+@import './styles/tokens';
+@import './styles/ui';
+@import './styles/shell';
+
+html, body {
+  margin: 0;
+  background: var(--tp-bg);
+  color: var(--tp-navy);
+  font-family: var(--tp-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Components that never set a font were falling back to Times New Roman */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--tp-font-heading);
+  color: var(--tp-navy);
+  text-wrap: balance;
+}
+
+a {
+  color: var(--tp-navy-2);
+}
+
+/* Money and other figures line up in columns */
+.amount, .net, .num, td.num, .summary-value, .kpi strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard focus is always visible, even where a component removed its outline */
+:focus-visible {
+  outline: 3px solid var(--tp-gold) !important;
+  outline-offset: 2px !important;
+}
+
+/* Screen-reader-only text (e.g. labels for icon buttons) */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Toasts (shared/notify.ts) in brand colours; all pass AA with white text */
+#toast-container {
+  > div {
+    opacity: 1;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(2, 22, 63, 0.18);
+    font-family: var(--tp-font-body);
+    width: min(360px, calc(100vw - 32px));
+  }
+  > div:hover { box-shadow: 0 8px 24px rgba(2, 22, 63, 0.25); }
+  .toast-title { font-family: var(--tp-font-heading); font-weight: 600; }
+  .toast-message { white-space: pre-line; line-height: 1.4; }
+  .toast-success { background-color: var(--tp-success); }
+  .toast-error { background-color: var(--tp-error); }
+  .toast-warning { background-color: var(--tp-warn); }
+  .toast-info { background-color: var(--tp-navy-2); }
+  .toast-progress { background-color: var(--tp-gold); opacity: 0.9; }
+}
+
+@media (max-width: 480px) {
+  #toast-container.toast-top-right { top: 12px; right: 16px; left: 16px; }
+}
+
+/* Key facts block on checkout screens (§10 disclosures) */
+.key-facts {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-line);
+  border-left: 4px solid var(--tp-gold);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0;
+  h5 { margin: 0 0 6px; font-size: 14px; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin: 4px 0; font-size: 13px; color: var(--tp-text); }
+}
+
+.late-fee-line {
+  display: block;
+  color: var(--tp-error);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

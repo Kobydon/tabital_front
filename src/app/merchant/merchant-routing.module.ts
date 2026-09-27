@@ -17,6 +17,7 @@ import { RoleGuard } from '../role.guard';
 import { ProductComponent } from './product/product.component';
 import { MerchantOrdersComponent } from './merchant-order/merchant-order.component';
 import { MerchantDocumentComponent } from './merchant-document/merchant-document.component';
+import { PaymentLinksComponent } from './payment-links/payment-links.component';
 
 const routes: Routes = [
   {
@@ -31,6 +32,7 @@ const routes: Routes = [
       { path: 'instalments', component: MerchantInstalmentsComponent, data: { title: 'Instalments' } },
       { path: 'customers', component: MerchantCustomersComponent, data: { title: 'Customers' } },
       { path: 'settlements', component: MerchantSettlementsComponent, data: { title: 'Settlements' } },
+      { path: 'payment-links', component: PaymentLinksComponent, data: { title: 'Payment Links' } },
       { path: 'disputes', component: MerchantDisputesComponent, data: { title: 'Disputes' } },
       { path: 'reports', component: MerchantReportsComponent, data: { title: 'Reports' } },
       { path: 'settings', component: MerchantSettingsComponent, data: { title: 'Settings' } },

@@ -3,6 +3,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CustomerService } from 'src/app/customers.service';
 
+import { notify } from 'src/app/shared/notify';
+import { ask } from 'src/app/ui/confirm';
 export interface NotificationMessage {
   id: number;
   notification_id: string;
@@ -64,7 +66,7 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
 ];
   typeOptions = [
     { value: 'all', label: 'All Types', icon: '📋', color: '#6c757d' },
-    { value: 'payment', label: 'Payments', icon: '💰', color: '#28a745' },
+    { value: 'payment', label: 'Payments', icon: '💰', color: '#15803d' },
     { value: 'transaction', label: 'Transactions', icon: '🔄', color: '#17a2b8' },
     { value: 'kyc', label: 'KYC', icon: '🆔', color: '#ffc107' },
     { value: 'promotion', label: 'Promotions', icon: '🎁', color: '#f9a826' },
@@ -280,8 +282,8 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
     });
   }
 
-  deleteNotification(notification: NotificationMessage): void {
-    if (confirm('Are you sure you want to delete this notification?')) {
+  async deleteNotification(notification: NotificationMessage): Promise<void> {
+    if (await ask('Are you sure you want to delete this notification?')) {
       this.customerService.deleteNotification(notification.id).subscribe({
         next: () => {
           this.notifications = this.notifications.filter(n => n.id !== notification.id);
@@ -295,8 +297,8 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
     }
   }
 
-  clearAll(): void {
-    if (confirm('Are you sure you want to clear all notifications?')) {
+  async clearAll(): Promise<void> {
+    if (await ask('Are you sure you want to clear all notifications?')) {
       this.customerService.clearAllNotifications().subscribe({
         next: () => {
           this.notifications = [];
@@ -331,17 +333,17 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
   saveSettings(): void {
     this.customerService.updateNotificationSettings(this.settingsForm.value).subscribe({
       next: (response) => {
-        alert('Notification settings saved successfully!');
+        notify('Notification settings saved successfully!');
       },
       error: (error) => {
         console.error('Error saving notification settings:', error);
-        alert('Failed to save settings. Please try again.');
+        notify('Failed to save settings. Please try again.', 'error');
       }
     });
   }
 
-  resetSettings(): void {
-    if (confirm('Reset all notification settings to default?')) {
+  async resetSettings(): Promise<void> {
+    if (await ask('Reset all notification settings to default?')) {
       this.settingsForm.reset({
         email_notifications: true,
         sms_notifications: true,
@@ -422,7 +424,7 @@ filterOptions: { value: 'all' | 'unread' | 'read'; label: string; icon: string }
 
   getTypeColor(type: string): string {
     const colors: Record<string, string> = {
-      payment: '#28a745',
+      payment: '#15803d',
       transaction: '#17a2b8',
       kyc: '#ffc107',
       promotion: '#f9a826',

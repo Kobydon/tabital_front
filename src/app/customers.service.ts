@@ -1,3 +1,4 @@
+import { environment } from '../environments/environment';
 // src/app/services/customer.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
@@ -132,7 +133,7 @@ export interface PaymentOverview {
   providedIn: 'root'
 })
 export class CustomerService {
-  private API = 'https://tabital.onrender.com';
+  private API = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 private getAuthHeaders(isFormData: boolean = false): HttpHeaders {
@@ -254,6 +255,54 @@ getPaymentStats(): Observable<any> {
 makeOnePayment(paymentData: any): Observable<any> {
   return this.http.post(`${this.API}/customer/payments/make`, paymentData, { headers: this.getAuthHeaders() })
     .pipe(catchError(this.handleError.bind(this)));
+}
+
+// ---------- Paystack (card / MoMo) ----------
+// These don't go through handleError so the page can show the server's message.
+getPaymentConfig(): Observable<{ paystack_enabled: boolean }> {
+  return this.http.get<{ paystack_enabled: boolean }>(`${this.API}/customer/payments/config`, { headers: this.getAuthHeaders() });
+}
+
+startPaystackPayment(planId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/payments/paystack/initialize`, { plan_id: planId }, { headers: this.getAuthHeaders() });
+}
+
+// ---------- Servicing (Phase 4): saved cards, autopay, disputes ----------
+getSavedCards(): Observable<any> {
+  return this.http.get(`${this.API}/customer/payment-methods`, { headers: this.getAuthHeaders() });
+}
+
+updateSavedCard(methodId: number, data: { autopay_enabled?: boolean; is_default?: boolean }): Observable<any> {
+  return this.http.put(`${this.API}/customer/payment-methods/${methodId}`, data, { headers: this.getAuthHeaders() });
+}
+
+removeSavedCard(methodId: number): Observable<any> {
+  return this.http.delete(`${this.API}/customer/payment-methods/${methodId}`, { headers: this.getAuthHeaders() });
+}
+
+createDispute(data: { plan_id: number; reason: string; description: string }): Observable<any> {
+  return this.http.post(`${this.API}/customer/disputes`, data, { headers: this.getAuthHeaders() });
+}
+
+getDisputes(): Observable<any> {
+  return this.http.get(`${this.API}/customer/disputes`, { headers: this.getAuthHeaders() });
+}
+
+// ---------- Underwriting (Phase 3) ----------
+getCredit(): Observable<any> {
+  return this.http.get(`${this.API}/customer/credit`, { headers: this.getAuthHeaders() });
+}
+
+updateUnderwritingDetails(data: any): Observable<any> {
+  return this.http.put(`${this.API}/customer/underwriting`, data, { headers: this.getAuthHeaders() });
+}
+
+payOrderDownPayment(orderId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/orders/${orderId}/pay`, {}, { headers: this.getAuthHeaders() });
+}
+
+verifyPaystackPayment(reference: string): Observable<any> {
+  return this.http.get(`${this.API}/customer/payments/paystack/verify/${encodeURIComponent(reference)}`, { headers: this.getAuthHeaders() });
 }
 
 // Add these methods to customers.service.ts
@@ -664,9 +713,44 @@ getTicketDetails(ticketId: number): Observable<any> {
 // customers.service.ts - Add these methods
 
 // Create purchase order
+// Errors pass through untouched: callers show the server's reason (not eligible, over limit, KYC...)
 createPurchaseOrder(orderData: any): Observable<any> {
-  return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() })
-    .pipe(catchError(this.handleError.bind(this)));
+  return this.http.post(`${this.API}/customer/purchase`, orderData, { headers: this.getAuthHeaders() });
+}
+
+// Vault shop: every plan for a product, priced by the server
+getPlanOptions(productId: number, quantity = 1, inStore = false): Observable<any> {
+  return this.http.post(`${this.API}/customer/plan-options`, { product_id: productId, quantity, in_store: inStore }, { headers: this.getAuthHeaders() });
+}
+
+// Deferment (§4): quote, then pay the fee through Paystack
+getDefermentQuote(planId: number, paymentId?: number): Observable<any> {
+  const qs = paymentId ? `?payment_id=${paymentId}` : '';
+  return this.http.get(`${this.API}/customer/plans/${planId}/deferment${qs}`, { headers: this.getAuthHeaders() });
+}
+
+startDeferment(planId: number, paymentId: number): Observable<any> {
+  return this.http.post(`${this.API}/customer/plans/${planId}/deferment`, { payment_id: paymentId, agree: true },
+    { headers: this.getAuthHeaders() });
+}
+
+// Identity check with Smile ID (Phase 6)
+getIdentityStatus(): Observable<any> {
+  return this.http.get(`${this.API}/customer/identity`, { headers: this.getAuthHeaders() });
+}
+
+startIdentityCheck(consent: boolean): Observable<any> {
+  return this.http.post(`${this.API}/customer/identity/start`, { consent }, { headers: this.getAuthHeaders() });
+}
+
+reportIdentitySubmitted(checkId: number, jobId: string): Observable<any> {
+  return this.http.post(`${this.API}/customer/identity/${checkId}/submitted`, { job_id: jobId },
+    { headers: this.getAuthHeaders() });
+}
+
+// Merchant payment link / QR code (in-store sale)
+getPaymentLink(token: string): Observable<any> {
+  return this.http.get(`${this.API}/customer/payment-links/${encodeURIComponent(token)}`, { headers: this.getAuthHeaders() });
 }
 
 // Get customer orders
@@ -745,15 +829,11 @@ getCustomerDocuments(): Observable<any> {
 // src/app/services/customer.service.ts
 
 uploadKycDocuments(formData: FormData): Observable<any> {
-  console.log('Uploading KYC documents...');
-  console.log('FormData entries:');
   
   // Log FormData contents for debugging
   formData.forEach((value, key) => {
     if (value instanceof File) {
-      console.log(`${key}: ${value.name} (${value.size} bytes, type: ${value.type})`);
     } else {
-      console.log(`${key}: ${value}`);
     }
   });
   
