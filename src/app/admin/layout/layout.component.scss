@@ -1,2 +1,5 @@
-/* The shell's styles are global and shared: src/styles/_shell.scss */
-:host { display: block; }
+@use 'src/styles/shell';
+
+:host {
+  display: block;
+}

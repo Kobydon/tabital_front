@@ -1,544 +1,360 @@
-<!-- signup.component.html -->
-<div class="signup-container">
-  <div class="signup-card">
-    <!-- Header Section -->
-    <div class="header">
-       <div class="logo-container">
-  <img src="assets/img/login.png" alt="Tabital Pay" class="login-logo">
+<!-- Sign-up: Vault. Navy brand panel + form card (matches login). -->
+<div class="auth su">
+  <section class="auth__brand" aria-hidden="true">
+    <div class="auth__mark">
+      <img class="auth__logo" src="assets/brand/logo-on-navy@1x.png"
+           srcset="assets/brand/logo-on-navy@1x.png 1x, assets/brand/logo-on-navy@2x.png 2x"
+           width="48" height="36" alt="Tabital Pay">
+      Tabital Pay
+    </div>
+    <p class="auth__tag">Own it today. Pay later.</p>
+    <ul class="auth__points" *ngIf="activeTab === 'customer'">
+      <li><lucide-icon name="calendar-clock" [size]="18"></lucide-icon> Pay in 2, 3 or 4, interest-free when you pay on time</li>
+      <li><lucide-icon name="receipt" [size]="18"></lucide-icon> See the down payment, every instalment and all fees before you agree</li>
+      <li><lucide-icon name="shield-check" [size]="18"></lucide-icon> Pay by MoMo or card, secured by Paystack</li>
+    </ul>
+    <ul class="auth__points" *ngIf="activeTab === 'merchant'">
+      <li><lucide-icon name="banknote" [size]="18"></lucide-icon> Get paid for each sale once you confirm delivery</li>
+      <li><lucide-icon name="shield-check" [size]="18"></lucide-icon> Tabital carries the repayment risk, not you</li>
+      <li><lucide-icon name="store" [size]="18"></lucide-icon> Sell online or in store with payment links and QR codes</li>
+    </ul>
+  </section>
+
+  <section class="auth__panel su__panel">
+    <div class="auth__card su__card">
+      <h1>Create your account</h1>
+      <p class="auth__sub">
+        {{ activeTab === 'customer'
+          ? 'Shop now and pay over time. It takes about 5 minutes.'
+          : 'Register your business to offer Tabital Pay to your customers.' }}
+      </p>
+
+      <div class="su__tabs" role="tablist" aria-label="Account type">
+        <button type="button" role="tab" id="su-tab-customer" aria-controls="su-form"
+                [attr.aria-selected]="activeTab === 'customer'" [class.is-active]="activeTab === 'customer'"
+                (click)="switchTab('customer')">
+          <lucide-icon name="user" [size]="18"></lucide-icon> I'm a shopper
+        </button>
+        <button type="button" role="tab" id="su-tab-merchant" aria-controls="su-form"
+                [attr.aria-selected]="activeTab === 'merchant'" [class.is-active]="activeTab === 'merchant'"
+                (click)="switchTab('merchant')">
+          <lucide-icon name="store" [size]="18"></lucide-icon> I'm a business
+        </button>
+      </div>
+
+      <div class="auth__error" role="alert" *ngIf="generalError">
+        <lucide-icon name="triangle-alert" [size]="16"></lucide-icon> {{ generalError }}
+      </div>
+
+      <!-- ================= CUSTOMER ================= -->
+      <form *ngIf="activeTab === 'customer' && customerForm" id="su-form" role="tabpanel" aria-labelledby="su-tab-customer"
+            [formGroup]="customerForm" (ngSubmit)="submitCustomer()" novalidate>
+        <p class="su__req-note">Fields marked <span aria-hidden="true">*</span><span class="tp-sr-only">with an asterisk</span> are required.</p>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="user" [size]="18"></lucide-icon> About you</legend>
+          <div class="su__grid">
+            <tp-field label="Full name" for="su-full-name" [required]="true" hint="As it appears on your Ghana Card"
+                      [error]="bad(customerForm, 'full_name') ? 'Enter your full name' : null">
+              <input id="su-full-name" formControlName="full_name" type="text" autocomplete="name">
+            </tp-field>
+
+            <tp-field label="Date of birth" for="su-dob" [required]="true" hint="You must be 18 or older"
+                      [error]="bad(customerForm, 'dob') ? 'Enter your date of birth' : null">
+              <input id="su-dob" formControlName="dob" type="date" [max]="today" autocomplete="bday">
+            </tp-field>
+
+            <tp-field label="Email" for="su-business-email" [required]="true"
+                      [error]="bad(customerForm, 'business_email') ? getEmailErrorMessage(customerForm.get('business_email')) : null">
+              <input id="su-business-email" formControlName="business_email" type="email" autocomplete="email"
+                     inputmode="email" (input)="clearServerError('business_email')">
+              <a *ngIf="customerForm.get('business_email')?.errors?.['emailAlreadyExists']" routerLink="/login" class="su__login">Sign in instead</a>
+            </tp-field>
+
+            <tp-field label="Phone number" for="su-phone" [required]="true" hint="You'll sign in with this number, e.g. 0241234567"
+                      [error]="bad(customerForm, 'phone') ? getMobileNumberErrorMessage(customerForm.get('phone')) : null">
+              <input id="su-phone" formControlName="phone" type="tel" inputmode="tel" autocomplete="tel"
+                     (input)="clearServerError('phone')">
+              <a *ngIf="customerForm.get('phone')?.errors?.['phoneAlreadyExists']" routerLink="/login" class="su__login">Sign in instead</a>
+            </tp-field>
+
+            <tp-field label="Ghana Card number" for="su-national-id" [required]="true" hint="e.g. GHA-123456789-0. We verify it with a selfie later."
+                      [error]="bad(customerForm, 'national_id') ? 'Enter your full Ghana Card number' : null">
+              <input id="su-national-id" formControlName="national_id" type="text" autocomplete="off">
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="map-pin" [size]="18"></lucide-icon> Where you live</legend>
+          <div class="su__grid">
+            <tp-field label="City or town" for="su-city" [required]="true"
+                      [error]="bad(customerForm, 'city') ? 'Enter your city or town' : null">
+              <input id="su-city" formControlName="city" type="text" autocomplete="address-level2">
+            </tp-field>
+
+            <tp-field label="Ghana Post GPS address" for="su-gps" hint="e.g. GA-123-4567">
+              <input id="su-gps" formControlName="gps" type="text" autocomplete="off">
+            </tp-field>
+
+            <tp-field class="su__full" label="Home address" for="su-address" [required]="true" hint="House number, street and a landmark"
+                      [error]="bad(customerForm, 'address') ? 'Enter your home address' : null">
+              <textarea id="su-address" formControlName="address" rows="2" autocomplete="street-address"></textarea>
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="briefcase" [size]="18"></lucide-icon> Work and income</legend>
+          <p class="su__lead">We use this to set your spending limit, and we check it against your salary details before you buy.</p>
+          <div class="su__grid">
+            <tp-field label="Job title" for="su-designation">
+              <input id="su-designation" formControlName="designation" type="text" autocomplete="organization-title">
+            </tp-field>
+
+            <tp-field label="Employer" for="su-company">
+              <input id="su-company" formControlName="company" type="text" autocomplete="organization">
+            </tp-field>
+
+            <tp-field label="Monthly salary (GHS)" for="su-monthly-salary" [required]="true" hint="Your take-home pay each month"
+                      [error]="bad(customerForm, 'monthly_salary') ? 'Enter your monthly salary' : null">
+              <input id="su-monthly-salary" type="number" inputmode="decimal" min="0" step="1" formControlName="monthly_salary">
+            </tp-field>
+
+            <tp-field label="Started with this employer" for="su-employment-start-date" [required]="true"
+                      [error]="bad(customerForm, 'employment_start_date') ? 'Enter the date you started with your current employer' : null">
+              <input id="su-employment-start-date" type="date" formControlName="employment_start_date" [max]="today">
+            </tp-field>
+
+            <tp-field label="Is your salary paid into a bank account?" for="su-salary-paid-to-bank" [required]="true"
+                      [error]="bad(customerForm, 'salary_paid_to_bank') ? 'Choose Yes or No' : null">
+              <select id="su-salary-paid-to-bank" formControlName="salary_paid_to_bank">
+                <option [ngValue]="null">Select</option>
+                <option [ngValue]="true">Yes</option>
+                <option [ngValue]="false">No</option>
+              </select>
+            </tp-field>
+
+            <tp-field label="Mobile Money number" for="su-momo-number" [required]="true" hint="The MoMo number in your name"
+                      [error]="bad(customerForm, 'momo_number') ? getMobileNumberErrorMessage(customerForm.get('momo_number')) : null">
+              <input id="su-momo-number" formControlName="momo_number" type="tel" inputmode="tel" autocomplete="off">
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="users" [size]="18"></lucide-icon> A person we can contact</legend>
+          <p class="su__lead">Someone who knows you, such as a relative or colleague. Let them know you've named them.</p>
+          <div class="su__grid">
+            <tp-field label="Their full name" for="su-ref-name" [required]="true"
+                      [error]="bad(customerForm, 'ref_name') ? 'Enter their full name' : null">
+              <input id="su-ref-name" formControlName="ref_name" type="text" autocomplete="off">
+            </tp-field>
+
+            <tp-field label="Their phone number" for="su-ref-phone" [required]="true"
+                      [error]="bad(customerForm, 'ref_phone') ? getMobileNumberErrorMessage(customerForm.get('ref_phone')) : null">
+              <input id="su-ref-phone" formControlName="ref_phone" type="tel" inputmode="tel" autocomplete="off">
+            </tp-field>
+
+            <tp-field label="How you know them" for="su-ref-relationship" [required]="true" hint="e.g. brother, colleague, friend"
+                      [error]="bad(customerForm, 'ref_relationship') ? 'Tell us how you know them' : null">
+              <input id="su-ref-relationship" formControlName="ref_relationship" type="text" autocomplete="off">
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <ng-container *ngTemplateOutlet="security; context: { $implicit: customerForm, p: 'su' }"></ng-container>
+
+        <div class="su__agree">
+          <label for="su-agree">
+            <input id="su-agree" type="checkbox" formControlName="agree">
+            <span>I agree to the <a [href]="legal.terms" target="_blank" rel="noopener">Terms and Conditions</a>
+              and the <a [href]="legal.privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
+          </label>
+          <span class="tp-field__error" role="alert" *ngIf="bad(customerForm, 'agree')">You need to agree to continue</span>
+        </div>
+
+        <div class="auth__error" role="alert" *ngIf="customerForm.invalid && customerForm.touched">
+          <lucide-icon name="triangle-alert" [size]="16"></lucide-icon> Some details are missing or need fixing. Check the fields marked in red.
+        </div>
+
+        <button tpButton type="submit" [block]="true" [disabled]="!customerForm.get('agree')?.value || isLoading" [loading]="isLoading">
+          <span *ngIf="isLoading" class="tp-spinner" aria-hidden="true"></span>
+          {{ isLoading ? 'Creating your account…' : 'Create account' }}
+        </button>
+      </form>
+
+      <!-- ================= MERCHANT ================= -->
+      <form *ngIf="activeTab === 'merchant' && merchantForm" id="su-form" role="tabpanel" aria-labelledby="su-tab-merchant"
+            [formGroup]="merchantForm" (ngSubmit)="submitMerchant()" novalidate>
+        <p class="su__req-note">Fields marked <span aria-hidden="true">*</span><span class="tp-sr-only">with an asterisk</span> are required.</p>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="building-2" [size]="18"></lucide-icon> Your business</legend>
+          <div class="su__grid">
+            <tp-field class="su__full" label="Business name" for="su-business-name" [required]="true" hint="As registered"
+                      [error]="bad(merchantForm, 'business_name') ? 'Enter your business name' : null">
+              <input id="su-business-name" formControlName="business_name" type="text" autocomplete="organization">
+            </tp-field>
+
+            <tp-field label="Owner's full name" for="su-owner-name" [required]="true"
+                      [error]="bad(merchantForm, 'owner_name') ? 'Enter the owner\'s full name' : null">
+              <input id="su-owner-name" formControlName="owner_name" type="text" autocomplete="name">
+            </tp-field>
+
+            <tp-field label="Business type" for="su-business-type">
+              <select id="su-business-type" formControlName="business_type">
+                <option value="">Select</option>
+                <option value="retail">Retail</option>
+                <option value="wholesale">Wholesale</option>
+                <option value="manufacturer">Manufacturer</option>
+                <option value="distributor">Distributor</option>
+                <option value="service">Service provider</option>
+                <option value="ecommerce">E-commerce</option>
+                <option value="restaurant">Restaurant</option>
+              </select>
+            </tp-field>
+
+            <tp-field label="Phone number" for="sm-phone" [required]="true" hint="You'll sign in with this number"
+                      [error]="bad(merchantForm, 'phone') ? getMobileNumberErrorMessage(merchantForm.get('phone')) : null">
+              <input id="sm-phone" formControlName="phone" type="tel" inputmode="tel" autocomplete="tel"
+                     (input)="clearServerError('phone')">
+              <a *ngIf="merchantForm.get('phone')?.errors?.['phoneAlreadyExists']" routerLink="/login" class="su__login">Sign in instead</a>
+            </tp-field>
+
+            <tp-field label="Other business phone" for="su-business-phone"
+                      [error]="bad(merchantForm, 'business_phone') ? getMobileNumberErrorMessage(merchantForm.get('business_phone')) : null">
+              <input id="su-business-phone" formControlName="business_phone" type="tel" inputmode="tel" autocomplete="off">
+            </tp-field>
+
+            <tp-field class="su__full" label="Business email" for="sm-business-email" hint="You can also sign in with this email"
+                      [error]="bad(merchantForm, 'business_email') ? getEmailErrorMessage(merchantForm.get('business_email')) : null">
+              <input id="sm-business-email" formControlName="business_email" type="email" inputmode="email" autocomplete="email"
+                     (input)="clearServerError('business_email')">
+              <a *ngIf="merchantForm.get('business_email')?.errors?.['emailAlreadyExists']" routerLink="/login" class="su__login">Sign in instead</a>
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="map-pin" [size]="18"></lucide-icon> Location</legend>
+          <div class="su__grid">
+            <tp-field label="City or town" for="sm-city" [required]="true"
+                      [error]="bad(merchantForm, 'city') ? 'Enter your city or town' : null">
+              <input id="sm-city" formControlName="city" type="text" autocomplete="address-level2">
+            </tp-field>
+
+            <tp-field class="su__full" label="Shop address" for="sm-address" [required]="true" hint="Street, area and a landmark"
+                      [error]="bad(merchantForm, 'address') ? 'Enter your shop address' : null">
+              <textarea id="sm-address" formControlName="address" rows="2" autocomplete="street-address"></textarea>
+            </tp-field>
+
+            <tp-field class="su__full" label="Registered business address" for="su-business-address" hint="If different from the shop">
+              <textarea id="su-business-address" formControlName="business_address" rows="2"></textarea>
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <fieldset class="su__section">
+          <legend><lucide-icon name="package" [size]="18"></lucide-icon> What you sell</legend>
+          <div class="su__grid">
+            <tp-field label="Main products" for="su-product-type" [required]="true"
+                      [error]="bad(merchantForm, 'product_type') ? 'Choose what you mainly sell' : null">
+              <select id="su-product-type" formControlName="product_type">
+                <option value="">Select</option>
+                <option>Electronics</option>
+                <option>Phones & Tablets</option>
+                <option>Fashion & Clothing</option>
+                <option>Home & Furniture</option>
+                <option>Groceries</option>
+                <option>Services</option>
+                <option>Other</option>
+              </select>
+            </tp-field>
+
+            <tp-field label="Years in business" for="su-years-in-business" [required]="true"
+                      [error]="bad(merchantForm, 'years_in_business') ? 'Choose how long you\'ve been in business' : null">
+              <select id="su-years-in-business" formControlName="years_in_business">
+                <option value="">Select</option>
+                <option>Less than 1 year</option>
+                <option>1–3 years</option>
+                <option>3–5 years</option>
+                <option>5+ years</option>
+              </select>
+            </tp-field>
+
+            <tp-field class="su__full" label="Where do you sell?" for="su-has-shop">
+              <select id="su-has-shop" formControlName="has_shop">
+                <option value="">Select</option>
+                <option value="yes">In a physical shop</option>
+                <option value="no">Online only</option>
+                <option value="both">Both online and in a shop</option>
+              </select>
+            </tp-field>
+
+            <tp-field *ngIf="showShopUrl()" class="su__full" label="Online shop or social media page" for="su-shop-url" [required]="true"
+                      hint="Your website, Instagram, Facebook or online store link"
+                      [error]="bad(merchantForm, 'shop_url')
+                        ? (merchantForm.get('shop_url')?.errors?.['required'] ? 'Enter the link to where you sell online' : 'Enter a valid link, e.g. https://example.com')
+                        : null">
+              <input id="su-shop-url" formControlName="shop_url" type="url" inputmode="url" autocomplete="url">
+            </tp-field>
+
+            <tp-field class="su__full" label="About your business" for="su-description" hint="What you sell and who your customers are">
+              <textarea id="su-description" formControlName="description" rows="3"></textarea>
+            </tp-field>
+          </div>
+        </fieldset>
+
+        <ng-container *ngTemplateOutlet="security; context: { $implicit: merchantForm, p: 'sm' }"></ng-container>
+
+        <div class="su__agree">
+          <label for="sm-agree">
+            <input id="sm-agree" type="checkbox" formControlName="agree">
+            <span>I agree to the <a [href]="legal.merchantAgreement" target="_blank" rel="noopener">Merchant Agreement</a>
+              and the <a [href]="legal.privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
+          </label>
+          <span class="tp-field__error" role="alert" *ngIf="bad(merchantForm, 'agree')">You need to agree to continue</span>
+        </div>
+
+        <div class="auth__error" role="alert" *ngIf="merchantForm.invalid && merchantForm.touched">
+          <lucide-icon name="triangle-alert" [size]="16"></lucide-icon> Some details are missing or need fixing. Check the fields marked in red.
+        </div>
+
+        <button tpButton type="submit" [block]="true" [disabled]="!merchantForm.get('agree')?.value || isLoading" [loading]="isLoading">
+          <span *ngIf="isLoading" class="tp-spinner" aria-hidden="true"></span>
+          {{ isLoading ? 'Registering your business…' : 'Register business' }}
+        </button>
+      </form>
+
+      <p class="auth__alt">Already have an account? <a routerLink="/login">Sign in</a></p>
+      <p class="su__help">Need help? <a href="mailto:info@tabitalpay.com">info@tabitalpay.com</a></p>
+    </div>
+  </section>
 </div>
-      <p class="subtitle">Create your account and start your journey with us</p>
+
+<!-- Password fields, shared by both forms (p = id prefix) -->
+<ng-template #security let-form let-p="p">
+  <fieldset class="su__section" [formGroup]="form">
+    <legend><lucide-icon name="lock" [size]="18"></lucide-icon> Password</legend>
+    <div class="su__grid">
+      <tp-field label="Create a password" [for]="p + '-password'" [required]="true"
+                hint="At least 6 characters. Mix letters, numbers and symbols."
+                [error]="bad(form, 'password') ? getPasswordErrorMessage(form.get('password')) : null">
+        <div class="auth__pw">
+          <input [id]="p + '-password'" formControlName="password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password">
+          <button type="button" class="auth__eye" (click)="showPassword = !showPassword"
+                  [attr.aria-label]="showPassword ? 'Hide passwords' : 'Show passwords'" [attr.aria-pressed]="showPassword">
+            <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
+          </button>
+        </div>
+      </tp-field>
+
+      <tp-field label="Confirm password" [for]="p + '-confirmPassword'" [required]="true"
+                [error]="bad(form, 'confirmPassword') ? 'Enter your password again'
+                  : (hasPasswordMismatch(form) ? 'The passwords don\'t match' : null)">
+        <input [id]="p + '-confirmPassword'" formControlName="confirmPassword" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password">
+      </tp-field>
     </div>
-
-    <!-- Tab Switcher -->
-    <div class="tabs">
-      <button 
-        [class.active]="activeTab === 'customer'" 
-        (click)="switchTab('customer')"
-        class="tab-btn">
-        <span class="tab-icon">👤</span>
-        Customer
-      </button>
-      <button 
-        [class.active]="activeTab === 'merchant'" 
-        (click)="switchTab('merchant')"
-        class="tab-btn">
-        <span class="tab-icon">🏪</span>
-        Merchant
-      </button>
-    </div>
-
-    <!-- General Server Error -->
-    <div class="general-error" *ngIf="serverErrors['general']">
-      <span class="error-icon">⚠️</span>
-      {{ serverErrors['general'] }}
-    </div>
-
-    <!-- ================= CUSTOMER FORM ================= -->
-    <form *ngIf="activeTab === 'customer' && customerForm" [formGroup]="customerForm" (ngSubmit)="submitCustomer()" class="signup-form">
-      
-      <!-- Personal Information Section -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">👤</span>
-          Personal Information
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-full-name">Full Name *</label>
-            <input id="su-full-name" formControlName="full_name" type="text" placeholder="Enter your full name" [class.error]="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('full_name')?.invalid && customerForm.get('full_name')?.touched">
-              Full name is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-business-email">Email *</label>
-            <input id="su-business-email" 
-              formControlName="business_email" 
-              type="email" 
-              placeholder="your@email.com"
-              [class.error]="customerForm.get('business_email')?.invalid && customerForm.get('business_email')?.touched"
-              (input)="clearServerError('business_email')">
-            <small class="error-text" *ngIf="customerForm.get('business_email')?.invalid && customerForm.get('business_email')?.touched">
-              <span *ngIf="customerForm.get('business_email')?.errors?.['required']">Email address is required</span>
-              <span *ngIf="customerForm.get('business_email')?.errors?.['email']">Please enter a valid email address</span>
-              <span *ngIf="customerForm.get('business_email')?.errors?.['emailAlreadyExists']" class="duplicate-error">
-                ⚠️ This email is already registered. 
-                <a routerLink="/login" class="error-link">Login instead?</a>
-              </span>
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-phone">Phone Number *</label>
-            <input id="su-phone" 
-              formControlName="phone" 
-              type="tel" 
-              placeholder="024XXXXXXX"
-              [class.error]="customerForm.get('phone')?.invalid && customerForm.get('phone')?.touched"
-              (input)="clearServerError('phone')">
-            <small class="error-text" *ngIf="customerForm.get('phone')?.invalid && customerForm.get('phone')?.touched">
-              <span *ngIf="!customerForm.get('phone')?.errors?.['phoneAlreadyExists']">
-                {{ getMobileNumberErrorMessage(customerForm.get('phone')) }}
-              </span>
-              <span *ngIf="customerForm.get('phone')?.errors?.['phoneAlreadyExists']" class="duplicate-error">
-                ⚠️ This phone number is already registered. 
-                <a routerLink="/login" class="error-link">Login instead?</a>
-              </span>
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-dob">Date of Birth *</label>
-            <input id="su-dob" formControlName="dob" type="date" [class.error]="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('dob')?.invalid && customerForm.get('dob')?.touched">
-              Date of birth is required
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Location Section -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">📍</span>
-          Location Details
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-city">City *</label>
-            <input id="su-city" formControlName="city" placeholder="Accra, Kumasi, etc." [class.error]="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
-              City is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-gps">Ghana Post GPS</label>
-            <input id="su-gps" formControlName="gps" placeholder="GA-123-4567">
-          </div>
-
-          <div class="form-field full-width">
-            <label for="su-address">Full Address *</label>
-            <textarea id="su-address" formControlName="address" placeholder="House number, street, landmark" rows="2" [class.error]="customerForm.get('address')?.invalid && customerForm.get('address')?.touched"></textarea>
-            <small class="error-text" *ngIf="customerForm.get('address')?.invalid && customerForm.get('address')?.touched">
-              Address is required
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Employment Section -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">💼</span>
-          Employment & Income
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-designation">Job Title</label>
-            <input id="su-designation" formControlName="designation" placeholder="e.g., Software Engineer">
-          </div>
-
-          <div class="form-field">
-            <label for="su-company">Company Name</label>
-            <input id="su-company" formControlName="company" placeholder="Company/organization">
-          </div>
-
-          <!-- Underwriting details (verified by Tabital before a limit is given) -->
-          <div class="form-field">
-            <label for="su-monthly-salary">Monthly Salary (GHS) *</label>
-            <input id="su-monthly-salary" type="number" min="0" step="1" formControlName="monthly_salary" placeholder="e.g. 4500"
-                   [class.error]="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
-            <small class="hint">Net monthly salary. We'll check it against your salary certificate.</small>
-            <small class="error-text" *ngIf="customerForm.get('monthly_salary')?.invalid && customerForm.get('monthly_salary')?.touched">
-              Enter your monthly salary
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-employment-start-date">Employed Since *</label>
-            <input id="su-employment-start-date" type="date" formControlName="employment_start_date" [max]="today"
-                   [class.error]="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('employment_start_date')?.invalid && customerForm.get('employment_start_date')?.touched">
-              Enter the date you started with your current employer
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-salary-paid-to-bank">Is your salary paid into a bank account? *</label>
-            <select id="su-salary-paid-to-bank" formControlName="salary_paid_to_bank"
-                    [class.error]="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
-              <option [ngValue]="null">Select</option>
-              <option [ngValue]="true">Yes</option>
-              <option [ngValue]="false">No</option>
-            </select>
-            <small class="error-text" *ngIf="customerForm.get('salary_paid_to_bank')?.invalid && customerForm.get('salary_paid_to_bank')?.touched">
-              Please choose Yes or No
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-national-id">Ghana Card Number *</label>
-            <input id="su-national-id" formControlName="national_id" placeholder="GHA-XXXXXXXXX-X"
-                   [class.error]="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('national_id')?.invalid && customerForm.get('national_id')?.touched">
-              Enter your full Ghana Card number
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-momo-number">Mobile Money Number *</label>
-            <input id="su-momo-number" formControlName="momo_number" placeholder="024XXXXXXX"
-                   [class.error]="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('momo_number')?.invalid && customerForm.get('momo_number')?.touched">
-              {{ getMobileNumberErrorMessage(customerForm.get('momo_number')) }}
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reference Section -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">👥</span>
-          Reference Information
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-ref-name">Reference Name *</label>
-            <input id="su-ref-name" formControlName="ref_name" placeholder="Full name of reference" [class.error]="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('ref_name')?.invalid && customerForm.get('ref_name')?.touched">
-              Reference name is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-ref-phone">Reference Phone *</label>
-            <input id="su-ref-phone" formControlName="ref_phone" placeholder="Reference's phone number" [class.error]="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('ref_phone')?.invalid && customerForm.get('ref_phone')?.touched">
-              {{ getMobileNumberErrorMessage(customerForm.get('ref_phone')) }}
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-ref-relationship">Relationship *</label>
-            <input id="su-ref-relationship" formControlName="ref_relationship" placeholder="Friend, family, colleague" [class.error]="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('ref_relationship')?.invalid && customerForm.get('ref_relationship')?.touched">
-              Relationship is required
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Account Setup -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">🔐</span>
-          Account Security
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-password">Create Password *</label>
-            <input id="su-password" formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('password')?.invalid && customerForm.get('password')?.touched">
-              {{ getPasswordErrorMessage(customerForm.get('password')) }}
-            </small>
-            <small class="hint-text" *ngIf="!customerForm.get('password')?.value">
-              💡 Use a mix of letters, numbers, and symbols for a strong password
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-confirmPassword">Confirm Password *</label>
-            <input id="su-confirmPassword" formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="customerForm.get('confirmPassword')?.invalid && customerForm.get('confirmPassword')?.touched">
-            <small class="error-text" *ngIf="customerForm.get('confirmPassword')?.invalid && customerForm.get('confirmPassword')?.touched">
-              Please confirm your password
-            </small>
-            <small class="error-text" *ngIf="customerForm.errors?.['passwordMismatch'] && customerForm.get('confirmPassword')?.touched">
-              ⚠️ Passwords do not match
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Terms & Conditions -->
-      <div class="terms">
-        <label for="su-agree" class="checkbox-label">
-          <input id="su-agree" type="checkbox" formControlName="agree">
-          <span>I agree to the <a [href]="legal.terms" target="_blank" rel="noopener" class="terms-link">Terms and Conditions</a> and <a [href]="legal.privacy" target="_blank" rel="noopener" class="terms-link">Privacy Policy</a></span>
-        </label>
-        <small class="error-text" *ngIf="customerForm.get('agree')?.invalid && customerForm.get('agree')?.touched">
-          You must agree to the terms
-        </small>
-      </div>
-
-      <!-- Submit Button -->
-      <button type="submit" class="submit-btn" [disabled]="!customerForm.get('agree')?.value || isLoading">
-        <span *ngIf="!isLoading">🚀 Create Customer Account</span>
-        <span *ngIf="isLoading" class="spinner"></span>
-        <span *ngIf="isLoading">Creating account...</span>
-      </button>
-      
-      <!-- Show validation summary -->
-      <div *ngIf="customerForm.invalid && customerForm.touched" class="validation-summary">
-        <small>⚠️ Please fill in all required fields correctly</small>
-      </div>
-    </form>
-
-    <!-- ================= MERCHANT FORM ================= -->
-    <form *ngIf="activeTab === 'merchant' && merchantForm" [formGroup]="merchantForm" (ngSubmit)="submitMerchant()" class="signup-form">
-      
-      <!-- Business Information -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">🏢</span>
-          Business Information
-        </h3>
-        <div class="form-grid">
-          <div class="form-field full-width">
-            <label for="su-business-name">Business Name *</label>
-            <input id="su-business-name" formControlName="business_name" placeholder="Official business name" [class.error]="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('business_name')?.invalid && merchantForm.get('business_name')?.touched">
-              Business name is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-business-type">Business Type</label>
-            <select id="su-business-type" formControlName="business_type">
-              <option value="">Select business type</option>
-              <option value="retail">Retail</option>
-              <option value="wholesale">Wholesale</option>
-              <option value="manufacturer">Manufacturer</option>
-              <option value="distributor">Distributor</option>
-              <option value="service">Service Provider</option>
-              <option value="ecommerce">E-commerce</option>
-              <option value="restaurant">Restaurant</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="su-owner-name">Owner Name *</label>
-            <input id="su-owner-name" formControlName="owner_name" placeholder="Full name of owner" [class.error]="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('owner_name')?.invalid && merchantForm.get('owner_name')?.touched">
-              Owner name is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="sm-phone">Phone Number *</label>
-            <input id="sm-phone" 
-              formControlName="phone" 
-              placeholder="Business contact number"
-              [class.error]="merchantForm.get('phone')?.invalid && merchantForm.get('phone')?.touched"
-              (input)="clearServerError('phone')">
-            <small class="error-text" *ngIf="merchantForm.get('phone')?.invalid && merchantForm.get('phone')?.touched">
-              <span *ngIf="!merchantForm.get('phone')?.errors?.['phoneAlreadyExists']">
-                {{ getMobileNumberErrorMessage(merchantForm.get('phone')) }}
-              </span>
-              <span *ngIf="merchantForm.get('phone')?.errors?.['phoneAlreadyExists']" class="duplicate-error">
-                ⚠️ This phone number is already registered. 
-                <a routerLink="/login" class="error-link">Login instead?</a>
-              </span>
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-business-phone">Business Phone</label>
-            <input id="su-business-phone" formControlName="business_phone" placeholder="Alternative business phone" [class.error]="merchantForm.get('business_phone')?.invalid && merchantForm.get('business_phone')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('business_phone')?.invalid && merchantForm.get('business_phone')?.touched">
-              {{ getMobileNumberErrorMessage(merchantForm.get('business_phone')) }}
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="sm-business-email">Business Email</label>
-            <input id="sm-business-email" 
-              formControlName="business_email" 
-              type="email" 
-              placeholder="business@example.com"
-              [class.error]="merchantForm.get('business_email')?.invalid && merchantForm.get('business_email')?.touched"
-              (input)="clearServerError('business_email')">
-            <small class="error-text" *ngIf="merchantForm.get('business_email')?.invalid && merchantForm.get('business_email')?.touched">
-              <span *ngIf="merchantForm.get('business_email')?.errors?.['email']">Valid email address required</span>
-              <span *ngIf="merchantForm.get('business_email')?.errors?.['emailAlreadyExists']" class="duplicate-error">
-                ⚠️ This email is already registered. 
-                <a routerLink="/login" class="error-link">Login instead?</a>
-              </span>
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="sm-city">City *</label>
-            <input id="sm-city" formControlName="city" placeholder="City/Town" [class.error]="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('city')?.invalid && merchantForm.get('city')?.touched">
-              City is required
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Location Details -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">📍</span>
-          Location Details
-        </h3>
-        <div class="form-grid">
-          <div class="form-field full-width">
-            <label for="sm-address">Shop Address *</label>
-            <textarea id="sm-address" formControlName="address" placeholder="Full shop address with landmark" rows="2" [class.error]="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched"></textarea>
-            <small class="error-text" *ngIf="merchantForm.get('address')?.invalid && merchantForm.get('address')?.touched">
-              Shop address is required
-            </small>
-          </div>
-
-          <div class="form-field full-width">
-            <label for="su-business-address">Business Address</label>
-            <textarea id="su-business-address" formControlName="business_address" placeholder="Alternative business address" rows="2"></textarea>
-          </div>
-        </div>
-      </div>
-
-      <!-- Business Details -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">📊</span>
-          Business Details
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="su-product-type">Product Type *</label>
-            <select id="su-product-type" formControlName="product_type" [class.error]="merchantForm.get('product_type')?.invalid && merchantForm.get('product_type')?.touched">
-              <option value="">Select category</option>
-              <option>Electronics</option>
-              <option>Phones & Tablets</option>
-              <option>Fashion & Clothing</option>
-              <option>Home & Furniture</option>
-              <option>Groceries</option>
-              <option>Services</option>
-              <option>Other</option>
-            </select>
-            <small class="error-text" *ngIf="merchantForm.get('product_type')?.invalid && merchantForm.get('product_type')?.touched">
-              Product type is required
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-has-shop">Physical Shop *</label>
-            <select id="su-has-shop" formControlName="has_shop" [class.error]="merchantForm.get('has_shop')?.invalid && merchantForm.get('has_shop')?.touched">
-              <option value="">Select option</option>
-              <option value="yes">Yes, I have a physical shop</option>
-              <option value="no">No, online only</option>
-              <option value="both">Both, online and physical shop</option>
-            </select>
-            <small class="error-text" *ngIf="merchantForm.get('has_shop')?.invalid && merchantForm.get('has_shop')?.touched">
-              Please specify if you have a physical shop
-            </small>
-          </div>
-          
-          <!-- Conditional Shop URL Field -->
-          <div class="form-field full-width" *ngIf="showShopUrl()">
-            <label for="su-shop-url">Shop URL / Website <span class="optional-badge">Required</span></label>
-            <div class="url-input-wrapper">
-              <span class="url-prefix">🔗</span>
-              <input id="su-shop-url" 
-                formControlName="shop_url" 
-                type="url" 
-                placeholder="https://your-shop.com or https://facebook.com/yourpage"
-                class="url-input"
-                [class.error]="merchantForm.get('shop_url')?.invalid && merchantForm.get('shop_url')?.touched">
-            </div>
-            <small class="hint-text">
-              💡 Enter your shop's website URL, social media page, or online store link
-            </small>
-            <small class="error-text" *ngIf="merchantForm.get('shop_url')?.invalid && merchantForm.get('shop_url')?.touched">
-              <span *ngIf="merchantForm.get('shop_url')?.errors?.['required']">Shop URL is required when you have a physical shop</span>
-              <span *ngIf="merchantForm.get('shop_url')?.errors?.['invalidUrl']">Please enter a valid URL (e.g., https://example.com)</span>
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="su-years-in-business">Years in Business *</label>
-            <select id="su-years-in-business" formControlName="years_in_business" [class.error]="merchantForm.get('years_in_business')?.invalid && merchantForm.get('years_in_business')?.touched">
-              <option value="">Select range</option>
-              <option>Less than 1 year</option>
-              <option>1–3 years</option>
-              <option>3–5 years</option>
-              <option>5+ years</option>
-            </select>
-            <small class="error-text" *ngIf="merchantForm.get('years_in_business')?.invalid && merchantForm.get('years_in_business')?.touched">
-              Years in business is required
-            </small>
-          </div>
-
-          <div class="form-field full-width">
-            <label for="su-description">Business Description</label>
-            <textarea id="su-description" formControlName="description" placeholder="Describe your business, products, and services" rows="3"></textarea>
-          </div>
-        </div>
-      </div>
-
-      <!-- Account Security -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <span class="section-icon">🔐</span>
-          Account Security
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="sm-password">Create Password *</label>
-            <input id="sm-password" formControlName="password" type="password" placeholder="Minimum 6 characters" [class.error]="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('password')?.invalid && merchantForm.get('password')?.touched">
-              {{ getPasswordErrorMessage(merchantForm.get('password')) }}
-            </small>
-            <small class="hint-text" *ngIf="!merchantForm.get('password')?.value">
-              💡 Use a mix of letters, numbers, and symbols for a strong password
-            </small>
-          </div>
-
-          <div class="form-field">
-            <label for="sm-confirmPassword">Confirm Password *</label>
-            <input id="sm-confirmPassword" formControlName="confirmPassword" type="password" placeholder="Confirm your password" [class.error]="merchantForm.get('confirmPassword')?.invalid && merchantForm.get('confirmPassword')?.touched">
-            <small class="error-text" *ngIf="merchantForm.get('confirmPassword')?.invalid && merchantForm.get('confirmPassword')?.touched">
-              Please confirm your password
-            </small>
-            <small class="error-text" *ngIf="merchantForm.errors?.['passwordMismatch'] && merchantForm.get('confirmPassword')?.touched">
-              ⚠️ Passwords do not match
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Terms -->
-      <div class="terms">
-        <label for="sm-agree" class="checkbox-label">
-          <input id="sm-agree" type="checkbox" formControlName="agree">
-          <span>I agree to the <a [href]="legal.merchantAgreement" target="_blank" rel="noopener" class="terms-link">Merchant Agreement</a> and <a [href]="legal.privacy" target="_blank" rel="noopener" class="terms-link">Privacy Policy</a></span>
-        </label>
-        <small class="error-text" *ngIf="merchantForm.get('agree')?.invalid && merchantForm.get('agree')?.touched">
-          You must agree to the terms
-        </small>
-      </div>
-
-      <!-- Submit Button -->
-      <button type="submit" class="submit-btn" [disabled]="!merchantForm.get('agree')?.value || isLoading">
-        <span *ngIf="!isLoading">🏪 Register Business</span>
-        <span *ngIf="isLoading" class="spinner"></span>
-        <span *ngIf="isLoading">Registering...</span>
-      </button>
-      
-      <!-- Show validation summary -->
-      <div *ngIf="merchantForm.invalid && merchantForm.touched" class="validation-summary">
-        <small>⚠️ Please fill in all required fields correctly</small>
-      </div>
-    </form>
-
-    <!-- Login Link -->
-    <p class="login-link">
-      Already have an account?
-      <a routerLink="/login">Sign in →</a>
-    </p>
-  </div>
-</div>
+  </fieldset>
+</ng-template>

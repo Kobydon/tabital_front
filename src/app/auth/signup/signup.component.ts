@@ -3,7 +3,7 @@ import { environment } from 'src/environments/environment';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../auth.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
@@ -57,13 +57,18 @@ export class SignupComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder, 
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.customerForm = this.createCustomerForm();
     this.merchantForm = this.createMerchantForm();
   }
 
   ngOnInit() {
+    // The website's For Business page links to /signup?type=merchant
+    if (this.route.snapshot.queryParamMap.get('type') === 'merchant') {
+      this.activeTab = 'merchant';
+    }
     this.setupConditionalValidators();
     this.setupRealtimeDuplicateCheck();
   }
@@ -263,6 +268,14 @@ export class SignupComponent implements OnInit, OnDestroy {
   // ERROR MESSAGE HELPERS
   // ============================================
 
+  /** True when a field should show its error (touched and invalid). */
+  bad(form: FormGroup, name: string): boolean {
+    const c = form.get(name);
+    return !!(c && c.invalid && c.touched);
+  }
+
+  showPassword = false;
+
   hasPasswordMismatch(form: FormGroup): boolean {
     return !!(form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched);
   }
@@ -282,7 +295,7 @@ export class SignupComponent implements OnInit, OnDestroy {
       return 'Mobile number is required';
     }
     if (control?.errors?.['phoneAlreadyExists']) {
-      return '⚠️ This phone number is already registered. Please use a different number or login.';
+      return 'This phone number is already registered.';
     }
     return 'Valid mobile number required';
   }
@@ -302,10 +315,10 @@ export class SignupComponent implements OnInit, OnDestroy {
       return 'Password is too long (maximum 128 characters)';
     }
     if (control?.errors?.['weakPassword']) {
-      return '⚠️ Password is too weak. Please choose a stronger password.';
+      return 'Password is too weak. Please choose a stronger password.';
     }
     if (control?.errors?.['weakPasswordSuggestion']) {
-      return '💡 Tip: Use a mix of uppercase, lowercase, numbers, and special characters.';
+      return 'Tip: use a mix of uppercase, lowercase, numbers, and special characters.';
     }
     return '';
   }
@@ -322,7 +335,7 @@ export class SignupComponent implements OnInit, OnDestroy {
       return 'Please enter a valid email address';
     }
     if (control?.errors?.['emailAlreadyExists']) {
-      return '⚠️ This email is already registered. Please use a different email or login.';
+      return 'This email is already registered.';
     }
     return '';
   }
@@ -395,7 +408,7 @@ export class SignupComponent implements OnInit, OnDestroy {
         
         if (phoneControl) {
           phoneControl.setErrors({ ...phoneControl.errors, phoneAlreadyExists: true });
-          this.serverErrors['phone'] = 'This phone number is already registered. Please use a different number or login.';
+          this.serverErrors['phone'] = 'This phone number is already registered.';
         }
       }
     }
